@@ -76,6 +76,7 @@ export const insertEquipmentSchema = createInsertSchema(equipment).omit({
 export const insertPlateSolvingJobSchema = createInsertSchema(plateSolvingJobs).omit({
   id: true,
   submittedAt: true,
+  completedAt: true,
 });
 
 export type AstroImage = typeof astrophotographyImages.$inferSelect;

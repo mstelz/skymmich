@@ -71,8 +71,33 @@ export class MemStorage implements IStorage {
     const id = this.currentAstroImageId++;
     const now = new Date();
     const astroImage: AstroImage = {
-      ...image,
       id,
+      immichId: image.immichId || null,
+      title: image.title,
+      filename: image.filename,
+      thumbnailUrl: image.thumbnailUrl || null,
+      fullUrl: image.fullUrl || null,
+      captureDate: image.captureDate || null,
+      focalLength: image.focalLength || null,
+      aperture: image.aperture || null,
+      iso: image.iso || null,
+      exposureTime: image.exposureTime || null,
+      frameCount: image.frameCount || null,
+      totalIntegration: image.totalIntegration || null,
+      telescope: image.telescope || null,
+      camera: image.camera || null,
+      mount: image.mount || null,
+      filters: image.filters || null,
+      plateSolved: image.plateSolved || false,
+      ra: image.ra || null,
+      dec: image.dec || null,
+      pixelScale: image.pixelScale || null,
+      fieldOfView: image.fieldOfView || null,
+      rotation: image.rotation || null,
+      astrometryJobId: image.astrometryJobId || null,
+      tags: image.tags || null,
+      objectType: image.objectType || null,
+      description: image.description || null,
       createdAt: now,
       updatedAt: now,
     };
@@ -103,7 +128,14 @@ export class MemStorage implements IStorage {
 
   async createEquipment(equipment: InsertEquipment): Promise<Equipment> {
     const id = this.currentEquipmentId++;
-    const equipmentItem: Equipment = { ...equipment, id };
+    const equipmentItem: Equipment = {
+      id,
+      name: equipment.name,
+      type: equipment.type,
+      specifications: equipment.specifications ?? null,
+      imageUrl: equipment.imageUrl ?? null,
+      description: equipment.description ?? null,
+    };
     this.equipment.set(id, equipmentItem);
     return equipmentItem;
   }
@@ -124,10 +156,13 @@ export class MemStorage implements IStorage {
   async createPlateSolvingJob(job: InsertPlateSolvingJob): Promise<PlateSolvingJob> {
     const id = this.currentJobId++;
     const plateSolvingJob: PlateSolvingJob = {
-      ...job,
       id,
+      imageId: job.imageId || null,
+      astrometryJobId: job.astrometryJobId || null,
+      status: job.status || "pending",
       submittedAt: new Date(),
       completedAt: null,
+      result: job.result || null,
     };
     this.plateSolvingJobs.set(id, plateSolvingJob);
     return plateSolvingJob;

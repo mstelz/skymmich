@@ -134,8 +134,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Submit to Astrometry.net
-      const loginResponse = await axios.post("http://nova.astrometry.net/api/login", {
-        request-json: JSON.stringify({ apikey: astrometryApiKey })
+      const loginData = new URLSearchParams();
+      loginData.append('request-json', JSON.stringify({ apikey: astrometryApiKey }));
+      
+      const loginResponse = await axios.post("http://nova.astrometry.net/api/login", loginData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
 
       if (loginResponse.data.status !== "success") {
@@ -145,18 +150,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionKey = loginResponse.data.session;
 
       // Submit image URL for solving
-      const submitResponse = await axios.post("http://nova.astrometry.net/api/url_upload", {
-        request-json: JSON.stringify({
-          session: sessionKey,
-          url: image.fullUrl,
-          scale_units: "arcminperpix",
-          scale_type: "ul",
-          scale_lower: 0.5,
-          scale_upper: 60,
-          center_ra: image.ra ? parseFloat(image.ra) : undefined,
-          center_dec: image.dec ? parseFloat(image.dec) : undefined,
-          radius: 2.0,
-        })
+      const submitData = new URLSearchParams();
+      submitData.append('request-json', JSON.stringify({
+        session: sessionKey,
+        url: image.fullUrl,
+        scale_units: "arcminperpix",
+        scale_type: "ul",
+        scale_lower: 0.5,
+        scale_upper: 60,
+        center_ra: image.ra ? parseFloat(image.ra) : undefined,
+        center_dec: image.dec ? parseFloat(image.dec) : undefined,
+        radius: 2.0,
+      }));
+      
+      const submitResponse = await axios.post("http://nova.astrometry.net/api/url_upload", submitData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
 
       if (submitResponse.data.status !== "success") {
