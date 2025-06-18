@@ -38,14 +38,14 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
           
           <div className="flex flex-wrap gap-2">
             <Select
-              value={filters.objectType}
-              onValueChange={(value) => onFiltersChange({ ...filters, objectType: value })}
+              value={filters.objectType || "all"}
+              onValueChange={(value) => onFiltersChange({ ...filters, objectType: value === "all" ? "" : value })}
             >
               <SelectTrigger className="w-[140px] astro-input">
                 <SelectValue placeholder="All Objects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Objects</SelectItem>
+                <SelectItem value="all">All Objects</SelectItem>
                 <SelectItem value="Deep Sky">Deep Sky</SelectItem>
                 <SelectItem value="Planetary">Planetary</SelectItem>
                 <SelectItem value="Solar">Solar</SelectItem>
@@ -57,11 +57,11 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
             </Select>
             
             <Select
-              value={filters.plateSolved?.toString() || ""}
+              value={filters.plateSolved?.toString() || "all"}
               onValueChange={(value) => 
                 onFiltersChange({ 
                   ...filters, 
-                  plateSolved: value === "" ? undefined : value === "true" 
+                  plateSolved: value === "all" ? undefined : value === "true" 
                 })
               }
             >
@@ -69,7 +69,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="true">Plate Solved</SelectItem>
                 <SelectItem value="false">Not Solved</SelectItem>
               </SelectContent>

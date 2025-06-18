@@ -25,13 +25,13 @@
   --radius: 0.5rem;
 
   /* Custom astrophotography colors */
-  --astro-dark: hsl(237, 63%, 14%);
-  --astro-blue: hsl(217, 86%, 17%);
-  --astro-purple: hsl(264, 31%, 35%);
-  --stellar-red: hsl(346, 78%, 60%);
-  --star-orange: hsl(37, 92%, 50%);
-  --nebula-gray: hsl(238, 40%, 26%);
-  --space-gray: hsl(236, 32%, 40%);
+  --astro-dark: 237 63% 14%;
+  --astro-blue: 217 86% 17%;
+  --astro-purple: 264 31% 35%;
+  --stellar-red: 346 78% 60%;
+  --star-orange: 37 92% 50%;
+  --nebula-gray: 238 40% 26%;
+  --space-gray: 236 32% 40%;
 }
 
 .dark {
@@ -96,11 +96,11 @@
   }
 
   .astro-button-primary {
-    @apply bg-stellar-red hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors;
+    @apply bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors;
   }
 
   .astro-button-secondary {
-    @apply bg-astro-purple hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors;
+    @apply bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors;
   }
 
   .astro-input {
@@ -108,7 +108,7 @@
   }
 
   .astro-tag {
-    @apply bg-astro-purple text-white text-xs px-2 py-1 rounded cursor-pointer hover:bg-purple-600 transition-colors;
+    @apply bg-purple-600 text-white text-xs px-2 py-1 rounded cursor-pointer hover:bg-purple-700 transition-colors;
   }
 }
 

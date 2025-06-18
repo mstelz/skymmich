@@ -51,6 +51,13 @@ export default {
           "4": "var(--chart-4)",
           "5": "var(--chart-5)",
         },
+        "astro-dark": "hsl(var(--astro-dark))",
+        "astro-blue": "hsl(var(--astro-blue))",
+        "astro-purple": "hsl(var(--astro-purple))",
+        "stellar-red": "hsl(var(--stellar-red))",
+        "star-orange": "hsl(var(--star-orange))",
+        "nebula-gray": "hsl(var(--nebula-gray))",
+        "space-gray": "hsl(var(--space-gray))",
         sidebar: {
           DEFAULT: "var(--sidebar-background)",
           foreground: "var(--sidebar-foreground)",

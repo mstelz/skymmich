@@ -37,6 +37,136 @@ export class MemStorage implements IStorage {
   private currentEquipmentId = 1;
   private currentJobId = 1;
 
+  constructor() {
+    this.initializeDemoData();
+  }
+
+  private initializeDemoData() {
+    // Demo astrophotography images
+    const demoImages: AstroImage[] = [
+      {
+        id: 1,
+        immichId: "demo-1",
+        title: "Andromeda Galaxy (M31)",
+        filename: "M31_andromeda.jpg",
+        thumbnailUrl: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400",
+        fullUrl: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200",
+        captureDate: new Date("2024-01-15T22:30:00Z"),
+        focalLength: 600,
+        aperture: "f/6.3",
+        iso: 800,
+        exposureTime: "300s",
+        frameCount: 45,
+        totalIntegration: 3.75,
+        telescope: "William Optics RedCat 51",
+        camera: "ZWO ASI2600MC Pro",
+        mount: "Sky-Watcher EQ6-R Pro",
+        filters: "L-eXtreme",
+        plateSolved: true,
+        ra: "00h 42m 44s",
+        dec: "+41° 16' 09\"",
+        pixelScale: 2.15,
+        fieldOfView: "3.2° x 2.1°",
+        rotation: 45.2,
+        astrometryJobId: null,
+        tags: ["galaxy", "messier", "autumn", "wide-field"],
+        objectType: "Galaxy",
+        description: "The Andromeda Galaxy captured during excellent seeing conditions.",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 2,
+        immichId: "demo-2",
+        title: "Orion Nebula (M42)",
+        filename: "M42_orion.jpg",
+        thumbnailUrl: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=400",
+        fullUrl: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=1200",
+        captureDate: new Date("2024-02-10T21:15:00Z"),
+        focalLength: 1000,
+        aperture: "f/8",
+        iso: 1600,
+        exposureTime: "180s",
+        frameCount: 60,
+        totalIntegration: 3.0,
+        telescope: "Celestron EdgeHD 8",
+        camera: "Canon EOS Ra",
+        mount: "Celestron CGX",
+        filters: "Optolong L-Pro",
+        plateSolved: true,
+        ra: "05h 35m 17s",
+        dec: "-05° 23' 13\"",
+        pixelScale: 1.85,
+        fieldOfView: "1.8° x 1.2°",
+        rotation: -12.5,
+        astrometryJobId: null,
+        tags: ["nebula", "messier", "winter", "emission"],
+        objectType: "Nebula",
+        description: "The Great Orion Nebula showcasing stellar formation regions.",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 3,
+        immichId: "demo-3",
+        title: "Horsehead Nebula (B33)",
+        filename: "B33_horsehead.jpg",
+        thumbnailUrl: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400",
+        fullUrl: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200",
+        captureDate: new Date("2024-01-28T23:45:00Z"),
+        focalLength: 1200,
+        aperture: "f/7",
+        iso: 3200,
+        exposureTime: "240s",
+        frameCount: 80,
+        totalIntegration: 5.33,
+        telescope: "Takahashi FSQ-106ED",
+        camera: "QHY268C",
+        mount: "10Micron GM1000 HPS",
+        filters: "Ha, OIII, SII",
+        plateSolved: false,
+        ra: null,
+        dec: null,
+        pixelScale: null,
+        fieldOfView: null,
+        rotation: null,
+        astrometryJobId: null,
+        tags: ["nebula", "dark-nebula", "winter", "narrowband"],
+        objectType: "Nebula",
+        description: "The iconic Horsehead Nebula captured in narrowband filters.",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+
+    // Demo equipment
+    const demoEquipment: Equipment[] = [
+      {
+        id: 1,
+        name: "William Optics RedCat 51",
+        type: "telescope",
+        specifications: { aperture: "51mm", focalLength: "250mm", focalRatio: "f/4.9" },
+        imageUrl: null,
+        description: "Compact apochromatic refractor ideal for wide-field imaging"
+      },
+      {
+        id: 2,
+        name: "ZWO ASI2600MC Pro",
+        type: "camera",
+        specifications: { sensor: "APS-C", resolution: "26MP", cooling: "TEC" },
+        imageUrl: null,
+        description: "High-performance cooled color CMOS camera"
+      }
+    ];
+
+    // Add demo data to maps
+    demoImages.forEach(image => this.astroImages.set(image.id, image));
+    demoEquipment.forEach(eq => this.equipment.set(eq.id, eq));
+    
+    this.currentAstroImageId = 4;
+    this.currentEquipmentId = 3;
+  }
+
   async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean }): Promise<AstroImage[]> {
     let images = Array.from(this.astroImages.values());
     
@@ -71,36 +201,11 @@ export class MemStorage implements IStorage {
     const id = this.currentAstroImageId++;
     const now = new Date();
     const astroImage: AstroImage = {
+      ...image,
       id,
-      immichId: image.immichId || null,
-      title: image.title,
-      filename: image.filename,
-      thumbnailUrl: image.thumbnailUrl || null,
-      fullUrl: image.fullUrl || null,
-      captureDate: image.captureDate || null,
-      focalLength: image.focalLength || null,
-      aperture: image.aperture || null,
-      iso: image.iso || null,
-      exposureTime: image.exposureTime || null,
-      frameCount: image.frameCount || null,
-      totalIntegration: image.totalIntegration || null,
-      telescope: image.telescope || null,
-      camera: image.camera || null,
-      mount: image.mount || null,
-      filters: image.filters || null,
-      plateSolved: image.plateSolved || false,
-      ra: image.ra || null,
-      dec: image.dec || null,
-      pixelScale: image.pixelScale || null,
-      fieldOfView: image.fieldOfView || null,
-      rotation: image.rotation || null,
-      astrometryJobId: image.astrometryJobId || null,
-      tags: image.tags || null,
-      objectType: image.objectType || null,
-      description: image.description || null,
       createdAt: now,
       updatedAt: now,
-    };
+    } as AstroImage;
     this.astroImages.set(id, astroImage);
     return astroImage;
   }
@@ -128,14 +233,7 @@ export class MemStorage implements IStorage {
 
   async createEquipment(equipment: InsertEquipment): Promise<Equipment> {
     const id = this.currentEquipmentId++;
-    const equipmentItem: Equipment = {
-      id,
-      name: equipment.name,
-      type: equipment.type,
-      specifications: equipment.specifications ?? null,
-      imageUrl: equipment.imageUrl ?? null,
-      description: equipment.description ?? null,
-    };
+    const equipmentItem: Equipment = { ...equipment, id } as Equipment;
     this.equipment.set(id, equipmentItem);
     return equipmentItem;
   }
@@ -156,14 +254,11 @@ export class MemStorage implements IStorage {
   async createPlateSolvingJob(job: InsertPlateSolvingJob): Promise<PlateSolvingJob> {
     const id = this.currentJobId++;
     const plateSolvingJob: PlateSolvingJob = {
+      ...job,
       id,
-      imageId: job.imageId || null,
-      astrometryJobId: job.astrometryJobId || null,
-      status: job.status || "pending",
       submittedAt: new Date(),
       completedAt: null,
-      result: job.result || null,
-    };
+    } as PlateSolvingJob;
     this.plateSolvingJobs.set(id, plateSolvingJob);
     return plateSolvingJob;
   }
