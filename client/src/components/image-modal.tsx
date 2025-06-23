@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { X, Crosshair, Loader } from "lucide-react";
 import type { AstroImage } from "@shared/schema";
+import { RemoteImage } from "./remote-image";
 
 interface ImageModalProps {
   image: AstroImage;
@@ -53,14 +54,14 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
         <div className="bg-card rounded-xl p-4">
           <div className="relative mb-4">
             {image.fullUrl ? (
-              <img
+              <RemoteImage
                 src={image.fullUrl}
                 alt={image.title}
                 className={`w-full h-auto rounded-lg cursor-zoom-in transition-transform ${
                   isZoomed ? "scale-150" : "scale-100"
                 }`}
-                onClick={() => setIsZoomed(!isZoomed)}
-              />
+                onClick={() => setIsZoomed(!isZoomed)}/>
+             
             ) : (
               <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
                 <span className="text-muted-foreground">Image not available</span>

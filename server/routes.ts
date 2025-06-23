@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAstroImageSchema, insertPlateSolvingJobSchema } from "@shared/schema";
 import axios from "axios";
+import FormData from "form-data";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -42,6 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const immichUrl = process.env.IMMICH_URL || process.env.IMMICH_API_URL || "";
       const immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
+      // this should allow a comma-separated list of album IDs
+      const immichAlbumId = process.env.IMMICH_ALBUM_IDS || "";
+
       
       if (!immichUrl || !immichApiKey) {
         return res.status(400).json({ 
@@ -50,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch assets from Immich API
-      const response = await axios.get(`${immichUrl}/api/assets`, {
+      const response = await axios.get(`${immichUrl}/api/albums/${immichAlbumId}`, {
         headers: {
           'X-API-Key': immichApiKey,
         },
@@ -59,7 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      const assets = response.data;
+      const assets = response.data.assets;
+      console.log(`Found ${assets.length} assets in Immich. Assets:`, assets);
       let syncedCount = 0;
 
       for (const asset of assets) {
@@ -116,13 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const imageId = parseInt(req.params.id);
       const image = await storage.getAstroImage(imageId);
-      
       if (!image) {
         return res.status(404).json({ message: "Image not found" });
       }
-
       if (!image.fullUrl) {
-        return res.status(400).json({ message: "Image URL not available" });
+        return res.status(400).json({ message: "Image does not have a fullUrl" });
       }
 
       const astrometryApiKey = process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "";
@@ -149,31 +152,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const sessionKey = loginResponse.data.session;
 
-      // Submit image URL for solving
-      const submitData = new URLSearchParams();
-      submitData.append('request-json', JSON.stringify({
-        session: sessionKey,
-        url: image.fullUrl,
-        scale_units: "arcminperpix",
-        scale_type: "ul",
-        scale_lower: 0.5,
-        scale_upper: 60,
-        center_ra: image.ra ? parseFloat(image.ra) : undefined,
-        center_dec: image.dec ? parseFloat(image.dec) : undefined,
-        radius: 2.0,
-      }));
-      
-      const submitResponse = await axios.post("http://nova.astrometry.net/api/url_upload", submitData, {
+      // Download image from Immich
+      const immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
+      const imageResponse = await axios.get(image.fullUrl, {
+        responseType: "arraybuffer",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+          'X-API-Key': immichApiKey,
+        },
+      });
+      const imageBuffer = Buffer.from(imageResponse.data);
+
+      // Submit image to Astrometry.net via file upload
+      const form = new FormData();
+      form.append('request-json', JSON.stringify({ session: sessionKey, apikey: astrometryApiKey }));
+      form.append('file', imageBuffer, {
+        filename: image.filename || `image_${imageId}.jpg`,
+        contentType: imageResponse.headers['content-type'] || 'image/jpeg',
       });
 
-      if (submitResponse.data.status !== "success") {
+      const uploadResponse = await axios.post(
+        'http://nova.astrometry.net/api/upload',
+        form,
+        {
+          headers: form.getHeaders(),
+        }
+      );
+
+      console.log("Astrometry.net upload response:", uploadResponse, uploadResponse.data);
+
+      if (uploadResponse.data.status !== "success") {
         throw new Error("Failed to submit image to Astrometry.net");
       }
 
-      const subId = submitResponse.data.subid;
+      const subId = uploadResponse.data.subid;
 
       // Create plate solving job record
       const job = await storage.createPlateSolvingJob({
@@ -183,17 +194,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result: null,
       });
 
-      res.json({ 
+      res.json({
         message: "Image submitted for plate solving",
         jobId: job.id,
-        astrometryJobId: subId 
+        astrometryJobId: subId
       });
-
     } catch (error: any) {
       console.error("Plate solving error:", error.response?.data || error.message);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to submit image for plate solving",
-        error: error.response?.data?.message || error.message 
+        error: error.response?.data?.message || error.message
       });
     }
   });
@@ -312,6 +322,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(popularTags);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch tags" });
+    }
+  });
+
+  // Proxy Immich image requests
+  app.get("/api/assets/:assetId/:type", async (req, res) => {
+    try {
+      const { assetId, type } = req.params;
+      const immichUrl = process.env.IMMICH_URL || process.env.IMMICH_API_URL || "";
+      const immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
+      if (!immichUrl || !immichApiKey) {
+        return res.status(500).json({ message: "Immich configuration missing" });
+      }
+      const url = `${immichUrl}/api/assets/${assetId}/${type}`;
+      const response = await axios.get(url, {
+        headers: { "X-API-Key": immichApiKey },
+        responseType: "stream",
+      });
+      res.set(response.headers);
+      response.data.pipe(res);
+    } catch (error: any) {
+      if (error.response) {
+        res.status(error.response.status).json({ message: error.response.statusText });
+      } else {
+        res.status(500).json({ message: error.message });
+      }
     }
   });
 

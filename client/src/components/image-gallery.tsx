@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Share, Plus, Settings } from "lucide-react";
 import type { AstroImage, Equipment } from "@shared/schema";
+import { RemoteImage } from "./remote-image";
 
 interface ImageGalleryProps {
   images: AstroImage[];
@@ -34,6 +35,9 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
     if (image.totalIntegration) parts.push(`${image.totalIntegration}h total`);
     return parts.join(' • ');
   };
+
+  // TODO: Replace with your actual API token retrieval logic
+  const apiToken = localStorage.getItem("apiToken") || "";
 
   if (isLoading) {
     return (
@@ -74,7 +78,7 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
           >
             <div className="relative">
               {image.thumbnailUrl ? (
-                <img
+                <RemoteImage
                   src={image.thumbnailUrl}
                   alt={image.title}
                   className="w-full h-48 object-cover transition-transform duration-300"
