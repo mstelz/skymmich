@@ -11,6 +11,7 @@ import {
   CloudUpload,
   Activity
 } from "lucide-react";
+import type { PlateSolvingJob } from "@shared/schema";
 
 interface SidebarProps {
   stats?: {
@@ -24,13 +25,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
-  const { data: plateSolvingJobs = [] } = useQuery({
+  const { data: plateSolvingJobs = [] } = useQuery<PlateSolvingJob[]>({
     queryKey: ["/api/plate-solving/jobs"],
     refetchInterval: 5000, // Poll every 5 seconds
   });
 
-  const recentJobs = plateSolvingJobs.slice(0, 4);
-  const processingJobs = plateSolvingJobs.filter(job => job.status === "processing");
+  const recentJobs = (plateSolvingJobs as PlateSolvingJob[]).slice(0, 4);
+  const processingJobs = (plateSolvingJobs as PlateSolvingJob[]).filter((job: PlateSolvingJob) => job.status === "processing");
 
   return (
     <aside className="lg:w-80 space-y-6">
@@ -77,7 +78,7 @@ export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           {recentJobs.length > 0 ? (
-            recentJobs.map((job) => (
+            recentJobs.map((job: PlateSolvingJob) => (
               <div key={job.id} className="flex items-center space-x-3 text-sm">
                 <div className={`w-2 h-2 rounded-full ${
                   job.status === "success" ? "bg-green-400" :

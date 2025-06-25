@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Astrorep">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    
+    <!-- Dublin Core -->
+    <rdf:Description rdf:about=""
+      xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <dc:title>pacman-nebula.png</dc:title>
+      <dc:description>Astronomical image plate solved by Astrometry.net</dc:description>
+      <dc:subject>
+        <rdf:Bag>
+          <rdf:li>IC 1590</rdf:li>
+          <rdf:li>NGC 281</rdf:li>
+        </rdf:Bag>
+      </dc:subject>
+    </rdf:Description>
+
+    <!-- Custom Astronomical Metadata -->
+    <rdf:Description rdf:about=""
+      xmlns:astro="http://ns.astrometry.net/1.0/">
+      <astro:plateSolved>true</astro:plateSolved>
+      <astro:astrometryJobId>13481845</astro:astrometryJobId>
+      <astro:plateSolvedAt>2025-06-25T03:33:19.634Z</astro:plateSolvedAt>
+      <astro:imageId>f0ca4a67-40b4-4bde-abc8-3f1d874cb315</astro:imageId>
+      
+      <!-- Calibration Data -->
+      <astro:calibration>
+        <rdf:Description>
+          <astro:ra>13.215905712113587</astro:ra>
+          <astro:dec>56.60347110367162</astro:dec>
+          <astro:pixelScale>2.9498396428139584</astro:pixelScale>
+          <astro:radius>1.3437971008730774</astro:radius>
+          <astro:orientation>49.47755384237428</astro:orientation>
+          <astro:parity>1</astro:parity>
+          <astro:widthArcsec>8064.861583453362</astro:widthArcsec>
+          <astro:heightArcsec>5345.109432778892</astro:heightArcsec>
+        </rdf:Description>
+      </astro:calibration>
+
+      <!-- Annotations -->
+      <astro:annotations>
+        <rdf:Bag>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ic</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>IC 11</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1336.7030727188708</astro:pixelX>
+              <astro:pixelY>907.9540743069281</astro:pixelY>
+              
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ngc</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>NGC 281</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1336.7030727188708</astro:pixelX>
+              <astro:pixelY>907.9540743069281</astro:pixelY>
+              <astro:radius>355.95154021171817</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ic</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>IC 1590</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1333.6466556407402</astro:pixelX>
+              <astro:pixelY>871.7789934089717</astro:pixelY>
+              <astro:radius>64.07127741996383</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+        </rdf:Bag>
+      </astro:annotations>
+    </rdf:Description>
+
+    <!-- IPTC Keywords (for compatibility with photo management software) -->
+    <rdf:Description rdf:about=""
+      xmlns:iptc="http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/">
+      <iptc:Keywords>
+        <rdf:Bag>
+          <rdf:li>IC 1590</rdf:li>
+        <rdf:li>NGC 281</rdf:li>
+        </rdf:Bag>
+      </iptc:Keywords>
+    </rdf:Description>
+
+  </rdf:RDF>
+</x:xmpmeta>

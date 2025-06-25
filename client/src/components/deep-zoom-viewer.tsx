@@ -45,7 +45,6 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
     el.title = `${annotation.names && annotation.names[0] ? annotation.names[0] : annotation.type || "?"}
     ${annotation.pixelx !== null ? `, ${annotation.pixelx}` : ''}
     ${annotation.pixely !== null ? `, ${annotation.pixely}` : ''}`;
-    console.log('Created overlay element:', el, 'with style:', el.style.cssText);
     return el;
   };
 
@@ -83,16 +82,13 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
       });
     }
     osdViewer.current.addHandler("open", () => {
-      console.log('OSD image opened');
       setViewerReady(true);
       const tiledImage = osdViewer.current!.world.getItemAt(0);
       if (tiledImage) {
         const size = tiledImage.getContentSize();
-        console.log('OSD image dimensions:', size);
         
         // Wait a bit for the image to be fully rendered
         setTimeout(() => {
-          console.log('Adding overlays after image load');
           addOverlays();
         }, 500);
       }
@@ -117,12 +113,6 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
     
     // Debug: check viewport state
     const viewport = osdViewer.current.viewport;
-    console.log('Viewport state:', {
-      zoom: viewport.getZoom(),
-      center: viewport.getCenter(),
-      bounds: viewport.getBounds(),
-      homeBounds: viewport.getHomeBounds()
-    });
     
     // Get displayed image width and original image width
     const tiledImage = osdViewer.current.world.getItemAt(0);

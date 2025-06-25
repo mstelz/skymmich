@@ -5,7 +5,7 @@ import { SearchFilters } from "@/components/search-filters";
 import { ImageGallery } from "@/components/image-gallery";
 import { Sidebar } from "@/components/sidebar";
 import { ImageModal } from "@/components/image-modal";
-import type { AstroImage } from "@shared/schema";
+import type { AstroImage, Equipment } from "@shared/schema";
 
 export default function Home() {
   const [selectedImage, setSelectedImage] = useState<AstroImage | null>(null);
@@ -16,22 +16,25 @@ export default function Home() {
     search: "",
   });
 
-  const { data: images = [], isLoading: imagesLoading, refetch: refetchImages } = useQuery({
+  type Stats = { totalImages: number; plateSolved: number; totalHours: number; uniqueTargets: number; };
+  type Tag = { tag: string; count: number };
+
+  const { data: images = [], isLoading: imagesLoading, refetch: refetchImages } = useQuery<AstroImage[]>({
     queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved],
     enabled: true,
   });
 
-  const { data: stats, refetch: refetchStats } = useQuery({
+  const { data: stats, refetch: refetchStats } = useQuery<Stats>({
     queryKey: ["/api/stats"],
     enabled: true,
   });
 
-  const { data: equipment = [] } = useQuery({
+  const { data: equipment = [] } = useQuery<Equipment[]>({
     queryKey: ["/api/equipment"],
     enabled: true,
   });
 
-  const { data: tags = [] } = useQuery({
+  const { data: tags = [] } = useQuery<Tag[]>({
     queryKey: ["/api/tags"],
     enabled: true,
   });

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import FormData from 'form-data';
 import { storage } from './storage';
+import { xmpSidecarService } from './xmp-sidecar';
 
 export interface AstrometryCalibration {
   ra: number;
@@ -240,6 +241,16 @@ export class AstrometryService {
           astrometryJobId: job.astrometryJobId,
           tags: allTags,
         });
+
+        // Write XMP sidecar file
+        try {
+          if (job.astrometryJobId) {
+            await xmpSidecarService.writeSidecar(image, result, job.astrometryJobId);
+          }
+        } catch (error) {
+          console.error(`Failed to write XMP sidecar for image ${image.id}:`, error);
+          // Don't fail the entire operation if sidecar writing fails
+        }
       }
     }
   }

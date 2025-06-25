@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Astrorep">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    
+    <!-- Dublin Core -->
+    <rdf:Description rdf:about=""
+      xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <dc:title>north-america-nebula.png</dc:title>
+      <dc:description>Astronomical image plate solved by Astrometry.net</dc:description>
+      <dc:subject>
+        <rdf:Bag>
+          <rdf:li>The star ξ Cyg</rdf:li>
+          <rdf:li>62 Cyg</rdf:li>
+          <rdf:li>The star 57 Cyg</rdf:li>
+          <rdf:li>NGC 6989</rdf:li>
+          <rdf:li>NGC 6997</rdf:li>
+          <rdf:li>NGC 7000</rdf:li>
+          <rdf:li>North America Nebula</rdf:li>
+        </rdf:Bag>
+      </dc:subject>
+    </rdf:Description>
+
+    <!-- Custom Astronomical Metadata -->
+    <rdf:Description rdf:about=""
+      xmlns:astro="http://ns.astrometry.net/1.0/">
+      <astro:plateSolved>true</astro:plateSolved>
+      <astro:astrometryJobId>13482070</astro:astrometryJobId>
+      <astro:plateSolvedAt>2025-06-25T03:33:19.633Z</astro:plateSolvedAt>
+      <astro:imageId>2adfbd44-add4-4245-a245-50ed62fc6421</astro:imageId>
+      
+      <!-- Calibration Data -->
+      <astro:calibration>
+        <rdf:Description>
+          <astro:ra>314.86863970817916</astro:ra>
+          <astro:dec>44.22753117220769</astro:dec>
+          <astro:pixelScale>2.9498821028695335</astro:pixelScale>
+          <astro:radius>2.126858191404199</astro:radius>
+          <astro:orientation>80.64132906383367</astro:orientation>
+          <astro:parity>1</astro:parity>
+          <astro:widthArcsec>12716.941745470558</astro:widthArcsec>
+          <astro:heightArcsec>8531.059041498691</astro:heightArcsec>
+        </rdf:Description>
+      </astro:calibration>
+
+      <!-- Annotations -->
+      <astro:annotations>
+        <rdf:Bag>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ngc</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>NGC 6996</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>758.4941217597946</astro:pixelX>
+              <astro:pixelY>567.6027280740477</astro:pixelY>
+              
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>bright</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>ξ Cyg / 62 Cyg</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>2309.79136627698</astro:pixelX>
+              <astro:pixelY>2687.1886614693526</astro:pixelY>
+              
+              
+              
+              <astro:magnitude>3.7200000286102295</astro:magnitude>
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>bright</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>57 Cyg</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>2174.422832758608</astro:pixelX>
+              <astro:pixelY>72.693971085145</astro:pixelY>
+              
+              
+              
+              <astro:magnitude>4.800000190734863</astro:magnitude>
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ngc</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>NGC 6989</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1118.1403574382357</astro:pixelX>
+              <astro:pixelY>105.60084305267151</astro:pixelY>
+              <astro:radius>54.91745120244439</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ngc</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>NGC 6997</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1767.7792968293327</astro:pixelX>
+              <astro:pixelY>761.3286944294607</astro:pixelY>
+              <astro:radius>70.17229724324605</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ngc</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>NGC 7000</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1800.094394905564</astro:pixelX>
+              <astro:pixelY>1345.161777331894</astro:pixelY>
+              <astro:radius>1220.3877560049116</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+        </rdf:Bag>
+      </astro:annotations>
+    </rdf:Description>
+
+    <!-- IPTC Keywords (for compatibility with photo management software) -->
+    <rdf:Description rdf:about=""
+      xmlns:iptc="http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/">
+      <iptc:Keywords>
+        <rdf:Bag>
+          <rdf:li>The star ξ Cyg</rdf:li>
+        <rdf:li>62 Cyg</rdf:li>
+        <rdf:li>The star 57 Cyg</rdf:li>
+        <rdf:li>NGC 6989</rdf:li>
+        <rdf:li>NGC 6997</rdf:li>
+        <rdf:li>NGC 7000</rdf:li>
+        <rdf:li>North America Nebula</rdf:li>
+        </rdf:Bag>
+      </iptc:Keywords>
+    </rdf:Description>
+
+  </rdf:RDF>
+</x:xmpmeta>
