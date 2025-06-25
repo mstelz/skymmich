@@ -178,8 +178,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
-      console.log("Astrometry.net upload response:", uploadResponse, uploadResponse.data);
-
       if (uploadResponse.data.status !== "success") {
         throw new Error("Failed to submit image to Astrometry.net");
       }
@@ -189,7 +187,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create plate solving job record
       const job = await storage.createPlateSolvingJob({
         imageId,
-        astrometryJobId: subId.toString(),
+        astrometrySubmissionId: subId.toString(),
+        astrometryJobId: null,
         status: "processing",
         result: null,
       });
@@ -197,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         message: "Image submitted for plate solving",
         jobId: job.id,
-        astrometryJobId: subId
+        astrometrySubmissionId: subId
       });
     } catch (error: any) {
       console.error("Plate solving error:", error.response?.data || error.message);
@@ -219,6 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update plate solving job status
+  // Note: This endpoint is mainly for debugging. The worker process automatically checks and updates job status.
   app.post("/api/plate-solving/update/:jobId", async (req, res) => {
     try {
       const jobId = parseInt(req.params.jobId);
@@ -230,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check status with Astrometry.net
       const statusResponse = await axios.get(
-        `http://nova.astrometry.net/api/submissions/${job.astrometryJobId}`
+        `http://nova.astrometry.net/api/submissions/${job.astrometrySubmissionId}`
       );
 
       const astrometryStatus = statusResponse.data;
@@ -239,6 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
         status = "success";
+        console.log("Job calibrations:", astrometryStatus.job_calibrations);
         const calibration = astrometryStatus.job_calibrations[0];
         
         // Get calibration details
@@ -247,7 +248,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         result = calibrationResponse.data;
-        
+        console.log("CalibrationResult:", result);
+
         // Update the original image with plate solving results
         if (job.imageId) {
           await storage.updateAstroImage(job.imageId, {
@@ -276,6 +278,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Failed to update plate solving status",
         error: error.response?.data?.message || error.message 
+      });
+    }
+  });
+
+  // Get image annotations from stored plate solving data
+  app.get("/api/images/:id/annotations", async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.id);
+      const image = await storage.getAstroImage(imageId);
+      
+      if (!image) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      // Find the plate solving job for this image
+      const jobs = await storage.getPlateSolvingJobs();
+      const job = jobs.find(j => j.imageId === imageId && j.status === 'success');
+      
+      if (!image.plateSolved || !job) {
+        return res.status(400).json({ message: "Image has not been plate solved" });
+      }
+
+      if (!job || !job.result) {
+        return res.status(400).json({ message: "No successful plate solving data found" });
+      }
+
+      const result = job.result as any;
+      const annotations = result.annotations || [];
+      const calibration = {
+        ra: result.ra,
+        dec: result.dec,
+        pixscale: result.pixscale,
+        radius: result.radius,
+        orientation: result.orientation,
+      };
+
+      res.json({
+        annotations: annotations,
+        calibration: calibration,
+        imageDimensions: {
+          width: result.width || null,
+          height: result.height || null,
+        }
+      });
+
+    } catch (error) {
+      const err = error as any;
+      console.error("Annotation fetch error:", err.response?.data || err.message);
+      res.status(500).json({ 
+        message: "Failed to fetch image annotations",
+        error: err.response?.data?.message || err.message 
       });
     }
   });

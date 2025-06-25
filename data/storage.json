@@ -1,0 +1,37 @@
+{
+  "astroImages": [
+ 
+  ],
+  "equipment": [
+    {
+      "id": 1,
+      "name": "William Optics RedCat 51",
+      "type": "telescope",
+      "specifications": {
+        "aperture": "51mm",
+        "focalLength": "250mm",
+        "focalRatio": "f/4.9"
+      },
+      "imageUrl": null,
+      "description": "Compact apochromatic refractor ideal for wide-field imaging"
+    },
+    {
+      "id": 2,
+      "name": "ZWO ASI2600MC Pro",
+      "type": "camera",
+      "specifications": {
+        "sensor": "APS-C",
+        "resolution": "26MP",
+        "cooling": "TEC"
+      },
+      "imageUrl": null,
+      "description": "High-performance cooled color CMOS camera"
+    }
+  ],
+  "plateSolvingJobs": [
+
+  ],
+  "nextImageId": 4,
+  "nextEquipmentId": 3,
+  "nextJobId": 7
+}

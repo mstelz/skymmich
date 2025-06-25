@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { X, Crosshair, Loader } from "lucide-react";
+import { X, Crosshair, Loader, Eye } from "lucide-react";
 import type { AstroImage } from "@shared/schema";
-import { RemoteImage } from "./remote-image";
+import { DeepZoomViewer } from "./deep-zoom-viewer";
 
 interface ImageModalProps {
   image: AstroImage;
@@ -14,7 +14,7 @@ interface ImageModalProps {
 }
 
 export function ImageModal({ image, onClose }: ImageModalProps) {
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [showAnnotations, setShowAnnotations] = useState(false);
   const queryClient = useQueryClient();
 
   const plateSolveMutation = useMutation({
@@ -25,9 +25,59 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
     },
   });
 
-  const handlePlateSolve = () => {
-    plateSolveMutation.mutate(image.id);
-  };
+  const { data: annotationsData } = useQuery({
+    queryKey: ["/api/images", image.id, "annotations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/images/${image.id}/annotations`);
+      return response.json();
+    },
+    enabled: !!(showAnnotations && image.plateSolved),
+  });
+
+  // HTML overlays for Astrometry.net annotations
+  const annotationOverlays = showAnnotations && annotationsData?.annotations ? (
+    <>
+      {annotationsData.annotations.map((annotation: any, idx: number) => {
+        if (annotation.pixelx == null || annotation.pixely == null) return null;
+        return (
+          <div
+            key={idx}
+            style={{
+              position: "absolute",
+              left: annotation.pixelx,
+              top: annotation.pixely,
+              transform: "translate(-50%, -50%)",
+              pointerEvents: "auto",
+              zIndex: 20,
+            }}
+          >
+            <div style={{
+              background: "rgba(0,0,0,0.7)",
+              color: "#fff",
+              borderRadius: 6,
+              padding: "2px 6px",
+              fontSize: 14,
+              border: "1px solid #fff",
+              whiteSpace: "nowrap",
+              minWidth: 20,
+              textAlign: "center",
+            }}>
+              {annotation.names && annotation.names[0] ? annotation.names[0] : annotation.type || "?"}
+            </div>
+            <div style={{
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: "rgba(255,0,0,0.5)",
+              border: "2px solid #fff",
+              margin: "0 auto",
+              marginTop: 2,
+            }} />
+          </div>
+        );
+      })}
+    </>
+  ) : null;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -53,15 +103,27 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
 
         <div className="bg-card rounded-xl p-4">
           <div className="relative mb-4">
-            {image.fullUrl ? (
-              <RemoteImage
-                src={image.fullUrl}
-                alt={image.title}
-                className={`w-full h-auto rounded-lg cursor-zoom-in transition-transform ${
-                  isZoomed ? "scale-150" : "scale-100"
-                }`}
-                onClick={() => setIsZoomed(!isZoomed)}/>
-             
+            {image.immichId ? (
+              <div className="relative">
+                <DeepZoomViewer
+                  imageUrl={`/api/assets/${image.immichId}/original`}
+                  annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
+                />
+                {/* Annotation Toggle Button */}
+                {image.plateSolved && (
+                  <div className="absolute bottom-4 right-4 z-10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAnnotations(!showAnnotations)}
+                      className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      {showAnnotations ? "Hide" : "Show"} Annotations
+                    </Button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
                 <span className="text-muted-foreground">Image not available</span>
@@ -91,7 +153,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                 <h4 className="font-semibold text-foreground">Plate Solution</h4>
                 {!image.plateSolved && (
                   <Button
-                    onClick={handlePlateSolve}
+                    onClick={() => plateSolveMutation.mutate(image.id)}
                     disabled={plateSolveMutation.isPending}
                     size="sm"
                     className="astro-button-secondary"

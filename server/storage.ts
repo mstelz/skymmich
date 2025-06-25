@@ -1,302 +1,270 @@
-import { astrophotographyImages, equipment, plateSolvingJobs, type AstroImage, type InsertAstroImage, type Equipment, type InsertEquipment, type PlateSolvingJob, type InsertPlateSolvingJob } from "@shared/schema";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "@shared/schema";
 
-export interface IStorage {
-  // Astrophotography images
-  getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean }): Promise<AstroImage[]>;
-  getAstroImage(id: number): Promise<AstroImage | undefined>;
-  getAstroImageByImmichId(immichId: string): Promise<AstroImage | undefined>;
-  createAstroImage(image: InsertAstroImage): Promise<AstroImage>;
-  updateAstroImage(id: number, updates: Partial<InsertAstroImage>): Promise<AstroImage | undefined>;
-  deleteAstroImage(id: number): Promise<boolean>;
-  
-  // Equipment
-  getEquipment(): Promise<Equipment[]>;
-  createEquipment(equipment: InsertEquipment): Promise<Equipment>;
-  
-  // Plate solving
-  getPlateSolvingJobs(): Promise<PlateSolvingJob[]>;
-  getPlateSolvingJob(id: number): Promise<PlateSolvingJob | undefined>;
-  getPlateSolvingJobByAstrometryId(astrometryJobId: string): Promise<PlateSolvingJob | undefined>;
-  createPlateSolvingJob(job: InsertPlateSolvingJob): Promise<PlateSolvingJob>;
-  updatePlateSolvingJob(id: number, updates: Partial<InsertPlateSolvingJob>): Promise<PlateSolvingJob | undefined>;
-  
-  // Stats
-  getStats(): Promise<{
-    totalImages: number;
-    plateSolved: number;
-    totalHours: number;
-    uniqueTargets: number;
-  }>;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+interface StorageData {
+  astroImages: AstroImage[];
+  equipment: Equipment[];
+  plateSolvingJobs: PlateSolvingJob[];
+  nextImageId: number;
+  nextEquipmentId: number;
+  nextJobId: number;
 }
 
-export class MemStorage implements IStorage {
-  private astroImages: Map<number, AstroImage> = new Map();
-  private equipment: Map<number, Equipment> = new Map();
-  private plateSolvingJobs: Map<number, PlateSolvingJob> = new Map();
-  private currentAstroImageId = 1;
-  private currentEquipmentId = 1;
-  private currentJobId = 1;
+class FileStorage {
+  private filePath: string;
 
   constructor() {
-    this.initializeDemoData();
+    this.filePath = join(__dirname, "../data/storage.json");
   }
 
-  private initializeDemoData() {
-    // Demo astrophotography images
-    const demoImages: AstroImage[] = [
-      {
-        id: 1,
-        immichId: "demo-1",
-        title: "Andromeda Galaxy (M31)",
-        filename: "M31_andromeda.jpg",
-        thumbnailUrl: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400",
-        fullUrl: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200",
-        captureDate: new Date("2024-01-15T22:30:00Z"),
-        focalLength: 600,
-        aperture: "f/6.3",
-        iso: 800,
-        exposureTime: "300s",
-        frameCount: 45,
-        totalIntegration: 3.75,
-        telescope: "William Optics RedCat 51",
-        camera: "ZWO ASI2600MC Pro",
-        mount: "Sky-Watcher EQ6-R Pro",
-        filters: "L-eXtreme",
-        plateSolved: true,
-        ra: "00h 42m 44s",
-        dec: "+41° 16' 09\"",
-        pixelScale: 2.15,
-        fieldOfView: "3.2° x 2.1°",
-        rotation: 45.2,
-        astrometryJobId: null,
-        tags: ["galaxy", "messier", "autumn", "wide-field"],
-        objectType: "Galaxy",
-        description: "The Andromeda Galaxy captured during excellent seeing conditions.",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 2,
-        immichId: "demo-2",
-        title: "Orion Nebula (M42)",
-        filename: "M42_orion.jpg",
-        thumbnailUrl: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=400",
-        fullUrl: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=1200",
-        captureDate: new Date("2024-02-10T21:15:00Z"),
-        focalLength: 1000,
-        aperture: "f/8",
-        iso: 1600,
-        exposureTime: "180s",
-        frameCount: 60,
-        totalIntegration: 3.0,
-        telescope: "Celestron EdgeHD 8",
-        camera: "Canon EOS Ra",
-        mount: "Celestron CGX",
-        filters: "Optolong L-Pro",
-        plateSolved: true,
-        ra: "05h 35m 17s",
-        dec: "-05° 23' 13\"",
-        pixelScale: 1.85,
-        fieldOfView: "1.8° x 1.2°",
-        rotation: -12.5,
-        astrometryJobId: null,
-        tags: ["nebula", "messier", "winter", "emission"],
-        objectType: "Nebula",
-        description: "The Great Orion Nebula showcasing stellar formation regions.",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 3,
-        immichId: "demo-3",
-        title: "Horsehead Nebula (B33)",
-        filename: "B33_horsehead.jpg",
-        thumbnailUrl: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400",
-        fullUrl: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200",
-        captureDate: new Date("2024-01-28T23:45:00Z"),
-        focalLength: 1200,
-        aperture: "f/7",
-        iso: 3200,
-        exposureTime: "240s",
-        frameCount: 80,
-        totalIntegration: 5.33,
-        telescope: "Takahashi FSQ-106ED",
-        camera: "QHY268C",
-        mount: "10Micron GM1000 HPS",
-        filters: "Ha, OIII, SII",
-        plateSolved: false,
-        ra: null,
-        dec: null,
-        pixelScale: null,
-        fieldOfView: null,
-        rotation: null,
-        astrometryJobId: null,
-        tags: ["nebula", "dark-nebula", "winter", "narrowband"],
-        objectType: "Nebula",
-        description: "The iconic Horsehead Nebula captured in narrowband filters.",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
+  private loadData(): StorageData {
+    if (!existsSync(this.filePath)) {
+      return {
+        astroImages: [],
+        equipment: [],
+        plateSolvingJobs: [],
+        nextImageId: 1,
+        nextEquipmentId: 1,
+        nextJobId: 1
+      };
+    }
 
-    // Demo equipment
-    const demoEquipment: Equipment[] = [
-      {
-        id: 1,
-        name: "William Optics RedCat 51",
-        type: "telescope",
-        specifications: { aperture: "51mm", focalLength: "250mm", focalRatio: "f/4.9" },
-        imageUrl: null,
-        description: "Compact apochromatic refractor ideal for wide-field imaging"
-      },
-      {
-        id: 2,
-        name: "ZWO ASI2600MC Pro",
-        type: "camera",
-        specifications: { sensor: "APS-C", resolution: "26MP", cooling: "TEC" },
-        imageUrl: null,
-        description: "High-performance cooled color CMOS camera"
-      }
-    ];
-
-    // Add demo data to maps
-    demoImages.forEach(image => this.astroImages.set(image.id, image));
-    demoEquipment.forEach(eq => this.equipment.set(eq.id, eq));
-    
-    this.currentAstroImageId = 4;
-    this.currentEquipmentId = 3;
+    try {
+      const fileContent = readFileSync(this.filePath, "utf-8");
+      const data = JSON.parse(fileContent);
+      
+      // Ensure all required fields exist
+      return {
+        astroImages: data.astroImages || [],
+        equipment: data.equipment || [],
+        plateSolvingJobs: data.plateSolvingJobs || [],
+        nextImageId: data.nextImageId || 1,
+        nextEquipmentId: data.nextEquipmentId || 1,
+        nextJobId: data.nextJobId || 1
+      };
+    } catch (error) {
+      console.error("Error loading storage data:", error);
+      return {
+        astroImages: [],
+        equipment: [],
+        plateSolvingJobs: [],
+        nextImageId: 1,
+        nextEquipmentId: 1,
+        nextJobId: 1
+      };
+    }
   }
 
+  private saveData(data: StorageData): void {
+    try {
+      writeFileSync(this.filePath, JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error("Error saving storage data:", error);
+    }
+  }
+
+  // Astrophotography images
   async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean }): Promise<AstroImage[]> {
-    let images = Array.from(this.astroImages.values());
-    
+    const data = this.loadData();
+    let images = [...data.astroImages];
+
     if (filters?.objectType) {
       images = images.filter(img => img.objectType === filters.objectType);
     }
-    
+
+    if (filters?.plateSolved !== undefined) {
+      images = images.filter(img => img.plateSolved === filters.plateSolved);
+    }
+
     if (filters?.tags && filters.tags.length > 0) {
       images = images.filter(img => 
         img.tags && filters.tags!.some(tag => img.tags!.includes(tag))
       );
     }
-    
-    if (filters?.plateSolved !== undefined) {
-      images = images.filter(img => img.plateSolved === filters.plateSolved);
-    }
-    
-    return images.sort((a, b) => 
-      new Date(b.captureDate || 0).getTime() - new Date(a.captureDate || 0).getTime()
-    );
+
+    return images.sort((a, b) => new Date(a.captureDate || 0).getTime() - new Date(b.captureDate || 0).getTime());
   }
 
   async getAstroImage(id: number): Promise<AstroImage | undefined> {
-    return this.astroImages.get(id);
+    const data = this.loadData();
+    return data.astroImages.find(img => img.id === id);
   }
 
   async getAstroImageByImmichId(immichId: string): Promise<AstroImage | undefined> {
-    return Array.from(this.astroImages.values()).find(img => img.immichId === immichId);
+    const data = this.loadData();
+    return data.astroImages.find(img => img.immichId === immichId);
   }
 
   async createAstroImage(image: InsertAstroImage): Promise<AstroImage> {
-    const id = this.currentAstroImageId++;
-    const now = new Date();
-    const astroImage: AstroImage = {
+    const data = this.loadData();
+    const newImage: AstroImage = {
       ...image,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    } as AstroImage;
-    this.astroImages.set(id, astroImage);
-    return astroImage;
+      id: data.nextImageId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      immichId: image.immichId || null,
+      thumbnailUrl: image.thumbnailUrl || null,
+      fullUrl: image.fullUrl || null,
+      captureDate: image.captureDate || null,
+      focalLength: image.focalLength || null,
+      aperture: image.aperture || null,
+      iso: image.iso || null,
+      exposureTime: image.exposureTime || null,
+      frameCount: image.frameCount || null,
+      totalIntegration: image.totalIntegration || null,
+      telescope: image.telescope || null,
+      camera: image.camera || null,
+      mount: image.mount || null,
+      filters: image.filters || null,
+      plateSolved: image.plateSolved || false,
+      ra: image.ra || null,
+      dec: image.dec || null,
+      pixelScale: image.pixelScale || null,
+      fieldOfView: image.fieldOfView || null,
+      rotation: image.rotation || null,
+      astrometryJobId: image.astrometryJobId || null,
+      tags: image.tags || [],
+      objectType: image.objectType || null,
+      description: image.description || null
+    };
+
+    data.astroImages.push(newImage);
+    this.saveData(data);
+    return newImage;
   }
 
   async updateAstroImage(id: number, updates: Partial<InsertAstroImage>): Promise<AstroImage | undefined> {
-    const existing = this.astroImages.get(id);
-    if (!existing) return undefined;
-    
-    const updated: AstroImage = {
-      ...existing,
+    const data = this.loadData();
+    const index = data.astroImages.findIndex(img => img.id === id);
+    if (index === -1) return undefined;
+
+    data.astroImages[index] = {
+      ...data.astroImages[index],
       ...updates,
-      updatedAt: new Date(),
+      updatedAt: new Date()
     };
-    this.astroImages.set(id, updated);
-    return updated;
+
+    this.saveData(data);
+    return data.astroImages[index];
   }
 
   async deleteAstroImage(id: number): Promise<boolean> {
-    return this.astroImages.delete(id);
+    const data = this.loadData();
+    const index = data.astroImages.findIndex(img => img.id === id);
+    if (index === -1) return false;
+
+    data.astroImages.splice(index, 1);
+    this.saveData(data);
+    return true;
   }
 
+  // Equipment
   async getEquipment(): Promise<Equipment[]> {
-    return Array.from(this.equipment.values());
+    const data = this.loadData();
+    return [...data.equipment];
   }
 
-  async createEquipment(equipment: InsertEquipment): Promise<Equipment> {
-    const id = this.currentEquipmentId++;
-    const equipmentItem: Equipment = { ...equipment, id } as Equipment;
-    this.equipment.set(id, equipmentItem);
-    return equipmentItem;
+  async createEquipment(equipmentData: InsertEquipment): Promise<Equipment> {
+    const data = this.loadData();
+    const newEquipment: Equipment = {
+      ...equipmentData,
+      id: data.nextEquipmentId++,
+      description: equipmentData.description || null,
+      specifications: equipmentData.specifications || null,
+      imageUrl: equipmentData.imageUrl || null
+    };
+
+    data.equipment.push(newEquipment);
+    this.saveData(data);
+    return newEquipment;
   }
 
+  // Plate solving
   async getPlateSolvingJobs(): Promise<PlateSolvingJob[]> {
-    return Array.from(this.plateSolvingJobs.values())
-      .sort((a, b) => new Date(b.submittedAt!).getTime() - new Date(a.submittedAt!).getTime());
+    const data = this.loadData();
+    return [...data.plateSolvingJobs].sort((a, b) => 
+      new Date(a.submittedAt || 0).getTime() - new Date(b.submittedAt || 0).getTime()
+    );
   }
 
   async getPlateSolvingJob(id: number): Promise<PlateSolvingJob | undefined> {
-    return this.plateSolvingJobs.get(id);
+    const data = this.loadData();
+    return data.plateSolvingJobs.find(job => job.id === id);
   }
 
   async getPlateSolvingJobByAstrometryId(astrometryJobId: string): Promise<PlateSolvingJob | undefined> {
-    return Array.from(this.plateSolvingJobs.values()).find(job => job.astrometryJobId === astrometryJobId);
+    const data = this.loadData();
+    return data.plateSolvingJobs.find(job => job.astrometryJobId === astrometryJobId);
   }
 
   async createPlateSolvingJob(job: InsertPlateSolvingJob): Promise<PlateSolvingJob> {
-    const id = this.currentJobId++;
-    const plateSolvingJob: PlateSolvingJob = {
+    const data = this.loadData();
+    const newJob: PlateSolvingJob = {
       ...job,
-      id,
+      id: data.nextJobId++,
       submittedAt: new Date(),
       completedAt: null,
-    } as PlateSolvingJob;
-    this.plateSolvingJobs.set(id, plateSolvingJob);
-    return plateSolvingJob;
+      astrometrySubmissionId: job.astrometrySubmissionId || null,
+      astrometryJobId: job.astrometryJobId || null,
+      imageId: job.imageId || null,
+      status: job.status || 'pending',
+      result: job.result || null
+    };
+
+    data.plateSolvingJobs.push(newJob);
+    this.saveData(data);
+    return newJob;
   }
 
   async updatePlateSolvingJob(id: number, updates: Partial<InsertPlateSolvingJob>): Promise<PlateSolvingJob | undefined> {
-    const existing = this.plateSolvingJobs.get(id);
-    if (!existing) return undefined;
+    const data = this.loadData();
+    const index = data.plateSolvingJobs.findIndex(job => job.id === id);
+    if (index === -1) return undefined;
+
+    const updateData: any = { ...updates };
     
-    const updated: PlateSolvingJob = {
-      ...existing,
-      ...updates,
-      ...(updates.status && updates.status !== 'pending' && updates.status !== 'processing' 
-        ? { completedAt: new Date() } 
-        : {}),
+    // Set completedAt if status is changing to completed
+    if (updates.status && updates.status !== 'pending' && updates.status !== 'processing') {
+      updateData.completedAt = new Date();
+    }
+
+    data.plateSolvingJobs[index] = {
+      ...data.plateSolvingJobs[index],
+      ...updateData
     };
-    this.plateSolvingJobs.set(id, updated);
-    return updated;
+
+    this.saveData(data);
+    return data.plateSolvingJobs[index];
   }
 
+  // Stats
   async getStats(): Promise<{
     totalImages: number;
     plateSolved: number;
     totalHours: number;
     uniqueTargets: number;
   }> {
-    const images = Array.from(this.astroImages.values());
+    const data = this.loadData();
+    const images = data.astroImages;
+    
     const totalImages = images.length;
     const plateSolved = images.filter(img => img.plateSolved).length;
     const totalHours = images.reduce((sum, img) => sum + (img.totalIntegration || 0), 0);
-    const uniqueTargets = new Set(images.map(img => img.title)).size;
+    const uniqueTargets = new Set(images.map(img => img.objectType).filter(Boolean)).size;
     
     return {
       totalImages,
       plateSolved,
-      totalHours: Math.round(totalHours * 10) / 10,
-      uniqueTargets,
+      totalHours,
+      uniqueTargets
     };
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new FileStorage();

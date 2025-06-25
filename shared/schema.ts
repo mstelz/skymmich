@@ -56,7 +56,8 @@ export const equipment = pgTable("equipment", {
 export const plateSolvingJobs = pgTable("plate_solving_jobs", {
   id: serial("id").primaryKey(),
   imageId: integer("image_id").references(() => astrophotographyImages.id),
-  astrometryJobId: text("astrometry_job_id").unique(),
+  astrometrySubmissionId: text("astrometry_submission_id"),
+  astrometryJobId: text("astrometry_job_id"),
   status: text("status").notNull().default("pending"), // pending, processing, success, failed
   submittedAt: timestamp("submitted_at").defaultNow(),
   completedAt: timestamp("completed_at"),
