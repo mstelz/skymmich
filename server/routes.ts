@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAstroImageSchema, insertPlateSolvingJobSchema } from "@shared/schema";
 import axios from "axios";
-import FormData from "form-data";
+import { astrometryService } from './astrometry';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -124,84 +124,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!image) {
         return res.status(404).json({ message: "Image not found" });
       }
-      if (!image.fullUrl) {
-        return res.status(400).json({ message: "Image does not have a fullUrl" });
-      }
 
-      const astrometryApiKey = process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "";
-      
-      if (!astrometryApiKey) {
-        return res.status(400).json({ 
-          message: "Astrometry.net API key not configured. Please set ASTROMETRY_API_KEY environment variable." 
-        });
-      }
-
-      // Submit to Astrometry.net
-      const loginData = new URLSearchParams();
-      loginData.append('request-json', JSON.stringify({ apikey: astrometryApiKey }));
-      
-      const loginResponse = await axios.post("http://nova.astrometry.net/api/login", loginData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
-
-      if (loginResponse.data.status !== "success") {
-        throw new Error("Failed to authenticate with Astrometry.net");
-      }
-
-      const sessionKey = loginResponse.data.session;
-
-      // Download image from Immich
-      const immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
-      const imageResponse = await axios.get(image.fullUrl, {
-        responseType: "arraybuffer",
-        headers: {
-          'X-API-Key': immichApiKey,
-        },
-      });
-      const imageBuffer = Buffer.from(imageResponse.data);
-
-      // Submit image to Astrometry.net via file upload
-      const form = new FormData();
-      form.append('request-json', JSON.stringify({ session: sessionKey, apikey: astrometryApiKey }));
-      form.append('file', imageBuffer, {
-        filename: image.filename || `image_${imageId}.jpg`,
-        contentType: imageResponse.headers['content-type'] || 'image/jpeg',
-      });
-
-      const uploadResponse = await axios.post(
-        'http://nova.astrometry.net/api/upload',
-        form,
-        {
-          headers: form.getHeaders(),
-        }
-      );
-
-      if (uploadResponse.data.status !== "success") {
-        throw new Error("Failed to submit image to Astrometry.net");
-      }
-
-      const subId = uploadResponse.data.subid;
-
-      // Create plate solving job record
-      const job = await storage.createPlateSolvingJob({
-        imageId,
-        astrometrySubmissionId: subId.toString(),
-        astrometryJobId: null,
-        status: "processing",
-        result: null,
-      });
+      // Use the shared service to complete the full plate solving workflow
+      // This will submit, poll for completion, and update the job/image with all results
+      const result = await astrometryService.completePlateSolvingWorkflow(image, 300000); // 5 minute timeout
 
       res.json({
-        message: "Image submitted for plate solving",
-        jobId: job.id,
-        astrometrySubmissionId: subId
+        message: "Image plate solving completed successfully",
+        result: {
+          calibration: result.calibration,
+          annotations: result.annotations,
+          machineTags: result.machineTags
+        }
       });
     } catch (error: any) {
       console.error("Plate solving error:", error.response?.data || error.message);
       res.status(500).json({
-        message: "Failed to submit image for plate solving",
+        message: "Failed to complete plate solving",
         error: error.response?.data?.message || error.message
       });
     }
@@ -222,54 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/plate-solving/update/:jobId", async (req, res) => {
     try {
       const jobId = parseInt(req.params.jobId);
-      const job = await storage.getPlateSolvingJob(jobId);
-      
-      if (!job) {
-        return res.status(404).json({ message: "Job not found" });
-      }
-
-      // Check status with Astrometry.net
-      const statusResponse = await axios.get(
-        `http://nova.astrometry.net/api/submissions/${job.astrometrySubmissionId}`
-      );
-
-      const astrometryStatus = statusResponse.data;
-      let status = "processing";
-      let result = null;
-
-      if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
-        status = "success";
-        console.log("Job calibrations:", astrometryStatus.job_calibrations);
-        const calibration = astrometryStatus.job_calibrations[0];
-        
-        // Get calibration details
-        const calibrationResponse = await axios.get(
-          `http://nova.astrometry.net/api/jobs/${calibration}/calibration/`
-        );
-        
-        result = calibrationResponse.data;
-        console.log("CalibrationResult:", result);
-
-        // Update the original image with plate solving results
-        if (job.imageId) {
-          await storage.updateAstroImage(job.imageId, {
-            plateSolved: true,
-            ra: result.ra ? result.ra.toString() : null,
-            dec: result.dec ? result.dec.toString() : null,
-            pixelScale: result.pixscale || null,
-            fieldOfView: result.radius ? `${(result.radius * 2).toFixed(1)}'` : null,
-            rotation: result.orientation || null,
-          });
-        }
-      } else if (astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
-        const jobStatus = astrometryStatus.jobs[0];
-        if (jobStatus === null) {
-          status = "failed";
-        }
-      }
-
-      // Update job status
-      await storage.updatePlateSolvingJob(jobId, { status, result });
+      const { status, result } = await astrometryService.checkJobStatus(jobId);
 
       res.json({ status, result });
 
