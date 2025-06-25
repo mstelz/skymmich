@@ -4,7 +4,7 @@ import { Header } from "@/components/header";
 import { SearchFilters } from "@/components/search-filters";
 import { ImageGallery } from "@/components/image-gallery";
 import { Sidebar } from "@/components/sidebar";
-import { ImageModal } from "@/components/image-modal";
+import { ImageOverlay } from "@/components/image-overlay";
 import type { AstroImage, Equipment } from "@shared/schema";
 
 export default function Home() {
@@ -98,7 +98,7 @@ export default function Home() {
       </div>
 
       {selectedImage && (
-        <ImageModal
+        <ImageOverlay
           image={selectedImage}
           onClose={() => setSelectedImage(null)}
         />

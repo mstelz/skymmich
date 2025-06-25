@@ -95,9 +95,6 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                 }
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 
