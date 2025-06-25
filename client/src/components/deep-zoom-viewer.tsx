@@ -15,38 +15,25 @@ interface DeepZoomViewerProps {
   onZoom?: (zoom: number) => void;
 }
 
+if (typeof window !== 'undefined') {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .osd-debug-overlay, .openseadragon-overlay {
+      z-index: 999999 !important;
+      pointer-events: auto !important;
+      opacity: 1 !important;
+      display: block !important;
+      background-clip: padding-box !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdViewer = useRef<OpenSeadragon.Viewer | null>(null);
   const overlayElements = useRef<HTMLDivElement[]>([]);
   const [viewerReady, setViewerReady] = useState(false);
-
-  // Helper to create overlay HTML element
-  const createOverlayElement = (annotation: Annotation, index: number) => {
-    const el = document.createElement('div');
-    el.className = 'annotation-overlay';
-    el.style.cssText = `
-      background: rgba(255, 0, 0, 0.7);
-      border: 2px solid red;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      position: absolute;
-      pointer-events: none;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: white;
-      font-weight: bold;
-    `;
-    el.textContent = (index + 1).toString();
-    el.title = `${annotation.names && annotation.names[0] ? annotation.names[0] : annotation.type || "?"}
-    ${annotation.pixelx !== null ? `, ${annotation.pixelx}` : ''}
-    ${annotation.pixely !== null ? `, ${annotation.pixely}` : ''}`;
-    return el;
-  };
 
   // Set up OpenSeadragon viewer
   useEffect(() => {
@@ -76,22 +63,25 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
       preserveImageSizeOnResize: true,
       blendTime: 0.1,
     });
-    if (onZoom) {
-      osdViewer.current.addHandler("zoom", (event: OpenSeadragon.ZoomEvent) => {
+    
+    // Add zoom handler
+    osdViewer.current.addHandler("zoom", (event: OpenSeadragon.ZoomEvent) => {
+      if (onZoom) {
         onZoom(event.zoom);
-      });
-    }
+      }
+    });
+    
     osdViewer.current.addHandler("open", () => {
       setViewerReady(true);
+      // Log image content size
       const tiledImage = osdViewer.current!.world.getItemAt(0);
       if (tiledImage) {
         const size = tiledImage.getContentSize();
-        
-        // Wait a bit for the image to be fully rendered
-        setTimeout(() => {
-          addOverlays();
-        }, 500);
+        console.log('OpenSeadragon image content size:', size);
       }
+      setTimeout(() => {
+        addOverlays();
+      }, 500);
     });
     return () => {
       if (osdViewer.current) {
@@ -111,78 +101,92 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
     });
     overlayElements.current = [];
     
-    // Debug: check viewport state
-    const viewport = osdViewer.current.viewport;
-    
-    // Get displayed image width and original image width
-    const tiledImage = osdViewer.current.world.getItemAt(0);
-    let displayScale = 1;
-    let displayedImageWidth = 1;
-    if (tiledImage && viewerRef.current) {
-      const originalImageWidth = tiledImage.getContentSize().x;
-      displayedImageWidth = viewerRef.current.getBoundingClientRect().width;
-      displayScale = displayedImageWidth / originalImageWidth;
-    }
-
+    // Add annotation overlays
     annotations.forEach((annotation, idx) => {
       if (annotation.pixelx == null || annotation.pixely == null) return;
-      // Convert image coordinates to viewport coordinates
-      const viewportPoint = osdViewer.current!.viewport.imageToViewportCoordinates(
-        annotation.pixelx,
-        annotation.pixely
-      );
-      let circleDiv: HTMLDivElement | null = null;
-      if (annotation.radius != null) {
-        // Use pixel units for the circle size
-        const circlePx = annotation.radius * 2 * displayScale;
-        circleDiv = document.createElement('div');
-        circleDiv.style.position = 'absolute';
-        circleDiv.style.width = `${circlePx}px`;
-        circleDiv.style.height = `${circlePx}px`;
-        circleDiv.style.left = '50%';
-        circleDiv.style.top = '50%';
-        circleDiv.style.transform = 'translate(-50%, -50%)';
+      if (annotation.radius && annotation.radius > 0) {
+        // Render circle overlay
+        const rect = osdViewer.current.viewport.imageToViewportRectangle(
+          annotation.pixelx - annotation.radius,
+          annotation.pixely - annotation.radius,
+          annotation.radius * 2,
+          annotation.radius * 2
+        );
+        const circleDiv = document.createElement('div');
+        circleDiv.style.width = '100%';
+        circleDiv.style.height = '100%';
         circleDiv.style.border = '2px solid #00FF00';
         circleDiv.style.borderRadius = '50%';
         circleDiv.style.boxSizing = 'border-box';
         circleDiv.style.pointerEvents = 'none';
-        circleDiv.style.zIndex = '3000';
         circleDiv.style.background = 'transparent';
+        circleDiv.style.position = 'absolute';
+        if (annotation.names && annotation.names[0]) {
+          const labelDiv = document.createElement('div');
+          labelDiv.style.position = 'absolute';
+          labelDiv.style.left = '50%';
+          labelDiv.style.top = '0';
+          labelDiv.style.transform = 'translate(-50%, -120%)';
+          labelDiv.style.color = '#00FF00';
+          labelDiv.style.fontSize = '14px';
+          labelDiv.style.fontFamily = 'Arial, sans-serif';
+          labelDiv.style.fontWeight = 'bold';
+          labelDiv.style.textShadow = '0 0 2px #000';
+          labelDiv.style.whiteSpace = 'nowrap';
+          labelDiv.textContent = annotation.names[0];
+          circleDiv.appendChild(labelDiv);
+        }
+        overlayElements.current.push(circleDiv);
+        osdViewer.current.addOverlay({
+          element: circleDiv,
+          location: rect,
+        });
+      } else {
+        // Render dot overlay (8px diameter)
+        const dotSize = 8;
+        const rect = osdViewer.current.viewport.imageToViewportRectangle(
+          annotation.pixelx - dotSize / 2,
+          annotation.pixely - dotSize / 2,
+          dotSize,
+          dotSize
+        );
+        const dotDiv = document.createElement('div');
+        dotDiv.style.width = '100%';
+        dotDiv.style.height = '100%';
+        dotDiv.style.background = '#00FF00';
+        dotDiv.style.borderRadius = '50%';
+        dotDiv.style.boxSizing = 'border-box';
+        dotDiv.style.pointerEvents = 'none';
+        dotDiv.style.position = 'absolute';
+        if (annotation.names && annotation.names[0]) {
+          const labelDiv = document.createElement('div');
+          labelDiv.style.position = 'absolute';
+          labelDiv.style.left = '50%';
+          labelDiv.style.top = '0';
+          labelDiv.style.transform = 'translate(-50%, -120%)';
+          labelDiv.style.color = '#00FF00';
+          labelDiv.style.fontSize = '14px';
+          labelDiv.style.fontFamily = 'Arial, sans-serif';
+          labelDiv.style.fontWeight = 'bold';
+          labelDiv.style.textShadow = '0 0 2px #000';
+          labelDiv.style.whiteSpace = 'nowrap';
+          labelDiv.textContent = annotation.names[0];
+          dotDiv.appendChild(labelDiv);
+        }
+        overlayElements.current.push(dotDiv);
+        osdViewer.current.addOverlay({
+          element: dotDiv,
+          location: rect,
+        });
       }
-      // Create label div (above the circle)
-      const labelDiv = document.createElement('div');
-      labelDiv.style.position = 'absolute';
-      labelDiv.style.left = '50%';
-      labelDiv.style.top = '0';
-      labelDiv.style.transform = 'translate(-50%, -120%)';
-      labelDiv.style.color = '#00FF00';
-      labelDiv.style.fontSize = '20px';
-      labelDiv.style.fontFamily = 'Arial, sans-serif';
-      labelDiv.style.fontWeight = 'bold';
-      labelDiv.style.textShadow = '0 0 2px #000';
-      labelDiv.style.background = 'rgba(0,0,0,0.3)'; // for debugging
-      labelDiv.textContent = annotation.names && annotation.names[0] ? annotation.names[0] : annotation.type || '?';
-      // Wrap both in a container
-      const wrapper = document.createElement('div');
-      wrapper.style.position = 'absolute';
-      wrapper.style.pointerEvents = 'none';
-      wrapper.style.zIndex = '3000';
-      if (circleDiv) wrapper.appendChild(circleDiv);
-      wrapper.appendChild(labelDiv);
-      overlayElements.current.push(wrapper);
-      osdViewer.current!.addOverlay({
-        element: wrapper,
-        location: viewportPoint,
-        placement: OpenSeadragon.Placement.CENTER,
-      });
     });
+    osdViewer.current.forceRedraw();
   }, [annotations]);
 
   // Add/remove overlays when annotations change
   useEffect(() => {
     if (!osdViewer.current || !viewerReady) return;
     addOverlays();
-    // Cleanup overlays on unmount/change
     return () => {
       if (osdViewer.current) {
         overlayElements.current.forEach(el => {
