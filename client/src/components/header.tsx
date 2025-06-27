@@ -21,9 +21,6 @@ export function Header({ onSync }: HeaderProps) {
               <Telescope className="text-primary text-2xl" />
               <h1 className="text-xl font-bold text-foreground">AstroViewer</h1>
             </Link>
-            <Badge variant="secondary" className="bg-muted text-muted-foreground">
-              Connected to Immich
-            </Badge>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Header } from "@/components/header";
 import { 
   Settings, 
   Database, 
@@ -25,6 +26,7 @@ interface AdminSettings {
     apiKey: string;
     syncAlbums: string[];
     autoSync: boolean;
+    syncFrequency: string;
   };
   astrometry: {
     apiKey: string;
@@ -42,6 +44,7 @@ export default function AdminPage() {
       apiKey: localStorage.getItem('immichApiKey') || '',
       syncAlbums: JSON.parse(localStorage.getItem('immichSyncAlbums') || '[]'),
       autoSync: localStorage.getItem('immichAutoSync') === 'true',
+      syncFrequency: localStorage.getItem('immichSyncFrequency') || '0 */4 * * *',
     },
     astrometry: {
       apiKey: localStorage.getItem('astrometryApiKey') || '',
@@ -57,11 +60,27 @@ export default function AdminPage() {
   const [astrometryTestStatus, setAstrometryTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [astrometryTestMessage, setAstrometryTestMessage] = useState('');
 
+  const handleSync = async () => {
+    try {
+      const response = await fetch("/api/sync-immich", { 
+        method: "POST",
+        credentials: "include"
+      });
+      
+      if (response.ok) {
+        console.log("Sync completed");
+      }
+    } catch (error) {
+      console.error("Sync failed:", error);
+    }
+  };
+
   const saveSettings = () => {
     localStorage.setItem('immichHost', settings.immich.host);
     localStorage.setItem('immichApiKey', settings.immich.apiKey);
     localStorage.setItem('immichSyncAlbums', JSON.stringify(settings.immich.syncAlbums));
     localStorage.setItem('immichAutoSync', settings.immich.autoSync.toString());
+    localStorage.setItem('immichSyncFrequency', settings.immich.syncFrequency);
     localStorage.setItem('astrometryApiKey', settings.astrometry.apiKey);
     localStorage.setItem('astrometryEnabled', settings.astrometry.enabled.toString());
     localStorage.setItem('debugMode', settings.app.debugMode.toString());
@@ -132,6 +151,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header onSync={handleSync} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center space-x-4 mb-8">
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
@@ -189,6 +209,33 @@ export default function AdminPage() {
                 />
                 <Label htmlFor="auto-sync">Enable automatic sync</Label>
               </div>
+
+              {settings.immich.autoSync && (
+                <div className="space-y-2">
+                  <Label htmlFor="sync-frequency">Sync Schedule (Cron Expression)</Label>
+                  <Input
+                    id="sync-frequency"
+                    placeholder="0 */4 * * *"
+                    value={settings.immich.syncFrequency}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      immich: { ...prev.immich, syncFrequency: e.target.value }
+                    }))}
+                  />
+                  <div className="text-sm text-muted-foreground">
+                    <p>Example: <code className="bg-muted px-1 rounded">0 */4 * * *</code> (every 4 hours) • 
+                      <a 
+                        href="https://crontab.guru/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline ml-1"
+                      >
+                        Learn syntax →
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end items-center space-x-3">
                 {immichTestStatus === 'error' && (

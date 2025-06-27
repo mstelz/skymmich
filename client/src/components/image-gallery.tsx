@@ -15,9 +15,9 @@ interface ImageGalleryProps {
 export function ImageGallery({ images, equipment, onImageClick, isLoading }: ImageGalleryProps) {
   const getStatusBadge = (image: AstroImage) => {
     if (image.plateSolved) {
-      return <Badge className="status-plate-solved">Plate Solved</Badge>;
+      return <Badge className="status-plate-solved text-xs px-1.5 py-0.5 text-[10px]">Plate Solved</Badge>;
     }
-    return <Badge className="status-no-data">No Plate Data</Badge>;
+    return <Badge className="status-no-data text-xs px-1.5 py-0.5 text-[10px]">No Plate Data</Badge>;
   };
 
   const formatExposureData = (image: AstroImage) => {
@@ -91,15 +91,15 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
               </div>
             </div>
             <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground mb-2">
-                {formatDate(image.captureDate)}
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-xs text-muted-foreground">
+                  {formatDate(image.captureDate)}
+                </div>
+                {getStatusBadge(image)}
               </div>
               <div className="text-xs text-muted-foreground space-y-1 font-mono mb-3">
                 <div>{formatExposureData(image) || "No exposure data"}</div>
                 <div>{formatIntegrationData(image) || "No integration data"}</div>
-              </div>
-              <div className="flex justify-end">
-                {getStatusBadge(image)}
               </div>
             </CardContent>
           </Card>
