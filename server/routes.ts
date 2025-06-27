@@ -116,6 +116,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test Immich connection
+  app.post("/api/test-immich-connection", async (req, res) => {
+    try {
+      const { host, apiKey } = req.body;
+      
+      if (!host || !apiKey) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Host and API key are required" 
+        });
+      }
+
+      // Test the connection by trying to get albums (same endpoint as working sync)
+      const response = await axios.get(`${host}/api/albums`, {
+        headers: {
+          'X-API-Key': apiKey,
+          'Accept': 'application/json',
+        },
+        params: {
+          take: 1, // Just get 1 album to test the connection
+        },
+        timeout: 10000, // 10 second timeout
+        validateStatus: (status) => true, // Don't throw on any status code
+      });
+
+      // Check if response is JSON
+      const contentType = response.headers['content-type'] || '';
+      if (!contentType.includes('application/json')) {
+        console.error('Immich returned non-JSON response:', {
+          status: response.status,
+          contentType,
+          data: response.data?.toString().substring(0, 200) // First 200 chars for debugging
+        });
+        return res.status(500).json({ 
+          success: false,
+          message: `Server returned non-JSON response (${contentType}). Please check the host URL.`
+        });
+      }
+
+      if (response.status === 200) {
+        res.json({ 
+          success: true,
+          message: "Connection successful!" 
+        });
+      } else {
+        res.json({ 
+          success: false,
+          message: `Connection failed with status: ${response.status}` 
+        });
+      }
+
+    } catch (error: any) {
+      console.error("Immich connection test error:", error.response?.data || error.message);
+      
+      // Provide more specific error messages
+      let errorMessage = "Connection failed";
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = "Cannot connect to Immich server. Please check the host URL.";
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage = "Host not found. Please check the host URL.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Authentication failed. Please check your API key.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "API endpoint not found. Please check the host URL.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      res.status(500).json({ 
+        success: false,
+        message: errorMessage
+      });
+    }
+  });
+
+  // Test Astrometry connection
+  app.post("/api/test-astrometry-connection", async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ 
+          success: false,
+          message: "API key is required" 
+        });
+      }
+
+      // Use the existing astrometry service to test the connection
+      // Temporarily set the API key and test login
+      const originalApiKey = astrometryService['astrometryApiKey'];
+      astrometryService['astrometryApiKey'] = apiKey;
+      
+      try {
+        await astrometryService['login']();
+        res.json({ 
+          success: true,
+          message: "Astrometry.net connection successful!" 
+        });
+      } catch (loginError: any) {
+        console.error("Astrometry login failed:", loginError.message);
+        res.json({ 
+          success: false,
+          message: `Astrometry.net connection failed: ${loginError.message}` 
+        });
+      } finally {
+        // Restore the original API key
+        astrometryService['astrometryApiKey'] = originalApiKey;
+      }
+
+    } catch (error: any) {
+      console.error("Astrometry connection test error:", error.message);
+      
+      // Provide more specific error messages
+      let errorMessage = "Connection failed";
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = "Cannot connect to Astrometry.net server.";
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage = "Astrometry.net server not found.";
+      } else if (error.code === 'ETIMEDOUT') {
+        errorMessage = "Connection to Astrometry.net timed out.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      res.status(500).json({ 
+        success: false,
+        message: errorMessage
+      });
+    }
+  });
+
   // Submit image for plate solving
   app.post("/api/images/:id/plate-solve", async (req, res) => {
     try {

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Telescope, Upload, UserCircle } from "lucide-react";
+import { Telescope, Upload, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 interface HeaderProps {
@@ -52,9 +52,11 @@ export function Header({ onSync }: HeaderProps) {
               <Upload className="mr-2 h-4 w-4" />
               Sync Immich
             </Button>
-            <Button variant="ghost" size="icon">
-              <UserCircle className="h-5 w-5" />
-            </Button>
+            <Link href="/admin">
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

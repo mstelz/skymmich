@@ -5,8 +5,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx --env-file=.env server/index.ts",
+    "dev:watch": "NODE_ENV=development nodemon --watch server --ext ts,js --exec \"tsx --env-file=.env server/index.ts\"",
     "dev:worker": "NODE_ENV=development tsx --env-file=.env server/worker.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:worker\"",
+    "dev:all": "concurrently \"npm run dev:watch\" \"npm run dev:worker\"",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild server/worker.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "start:worker": "NODE_ENV=production node dist/worker.js",
@@ -104,6 +105,7 @@
     "concurrently": "^9.2.0",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
+    "nodemon": "^3.1.10",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
