@@ -13,6 +13,7 @@ interface DeepZoomViewerProps {
   imageUrl: string;
   annotations?: Annotation[];
   onZoom?: (zoom: number) => void;
+  fullHeight?: boolean;
 }
 
 if (typeof window !== 'undefined') {
@@ -29,11 +30,20 @@ if (typeof window !== 'undefined') {
   document.head.appendChild(style);
 }
 
-export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomViewerProps) {
+export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight = false }: DeepZoomViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdViewer = useRef<OpenSeadragon.Viewer | null>(null);
   const overlayElements = useRef<HTMLDivElement[]>([]);
   const [viewerReady, setViewerReady] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(1);
+  
+  // Store the home position and zoom for full height mode
+  const homePositionRef = useRef<{ center: any; zoom: number } | null>(null);
+  
+  // Variables for home position calculation
+  let homeZoomLevel = 1;
+  let homeCenter: any = null;
+  let storedHomeZoom = 1;
 
   // Set up OpenSeadragon viewer
   useEffect(() => {
@@ -50,18 +60,21 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
         type: "image",
         url: imageUrl,
       },
-      showNavigator: true,
+      showNavigator: false,
       showFullPageControl: false,
-      showHomeControl: true,
-      showZoomControl: true,
+      showHomeControl: false,
+      showZoomControl: false,
       showRotationControl: false,
-      minZoomLevel: 1,
-      defaultZoomLevel: 1,
+      minZoomLevel: fullHeight ? 0.1 : 0.5,
+      defaultZoomLevel: fullHeight ? 0.5 : 1,
       maxZoomLevel: 20,
       visibilityRatio: 1.0,
       constrainDuringPan: true,
       preserveImageSizeOnResize: true,
       blendTime: 0.1,
+      navigatorPosition: "TOP_RIGHT",
+      navigatorHeight: "100px",
+      navigatorWidth: "100px",
     });
     
     // Add zoom handler
@@ -69,6 +82,7 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
       if (onZoom) {
         onZoom(event.zoom);
       }
+      setCurrentZoom(event.zoom);
     });
     
     osdViewer.current.addHandler("open", () => {
@@ -78,6 +92,64 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
       if (tiledImage) {
         const size = tiledImage.getContentSize();
         console.log('OpenSeadragon image content size:', size);
+        
+        // If in full height mode, fit the image to the viewport
+        if (fullHeight) {
+          setTimeout(() => {
+            if (osdViewer.current) {
+              const tiledImage = osdViewer.current.world.getItemAt(0);
+              if (tiledImage) {
+                const bounds = tiledImage.getBounds();
+                osdViewer.current.viewport.fitBounds(bounds, true);
+                
+                // Calculate the home zoom level for full frame view
+                const imageSize = tiledImage.getContentSize();
+                const viewportSize = osdViewer.current.viewport.getContainerSize();
+                const homeZoomX = viewportSize.x / imageSize.x;
+                const homeZoomY = viewportSize.y / imageSize.y;
+                const homeZoom = Math.min(homeZoomX, homeZoomY);
+                
+                // Update the home zoom level
+                homeZoomLevel = homeZoom;
+                
+                // Store the home position and zoom
+                homeCenter = osdViewer.current.viewport.getCenter();
+                storedHomeZoom = osdViewer.current.viewport.getZoom();
+                
+                // Store in ref for the custom button
+                homePositionRef.current = {
+                  center: homeCenter,
+                  zoom: storedHomeZoom
+                };
+                
+                // Try to establish this as the home position by calling goHome
+                // This should set the current view as the home position
+                setTimeout(() => {
+                  if (osdViewer.current) {
+                    osdViewer.current.viewport.goHome();
+                  }
+                }, 100);
+              }
+            }
+          }, 300);
+        } else {
+          // For non-expanded mode, also fit the image to the frame
+          setTimeout(() => {
+            if (osdViewer.current) {
+              const tiledImage = osdViewer.current.world.getItemAt(0);
+              if (tiledImage) {
+                const bounds = tiledImage.getBounds();
+                osdViewer.current.viewport.fitBounds(bounds, true);
+                
+                // Store the home position using the actual zoom after fitBounds
+                homePositionRef.current = {
+                  center: osdViewer.current.viewport.getCenter(),
+                  zoom: osdViewer.current.viewport.getZoom()
+                };
+              }
+            }
+          }, 300);
+        }
       }
       setTimeout(() => {
         addOverlays();
@@ -89,7 +161,7 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
         osdViewer.current = null;
       }
     };
-  }, [imageUrl, onZoom]);
+  }, [imageUrl, onZoom, fullHeight]);
 
   // Function to add overlays
   const addOverlays = useCallback(() => {
@@ -197,9 +269,90 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom }: DeepZoomV
     };
   }, [annotations, viewerReady, addOverlays]);
 
+  // Handle fullHeight changes
+  useEffect(() => {
+    if (!osdViewer.current || !viewerReady) return;
+    
+    if (fullHeight) {
+      setTimeout(() => {
+        if (osdViewer.current) {
+          const tiledImage = osdViewer.current.world.getItemAt(0);
+          if (tiledImage) {
+            const bounds = tiledImage.getBounds();
+            osdViewer.current.viewport.fitBounds(bounds, true);
+            
+            // Recalculate the home zoom level for full frame view
+            const imageSize = tiledImage.getContentSize();
+            const viewportSize = osdViewer.current.viewport.getContainerSize();
+            const homeZoomX = viewportSize.x / imageSize.x;
+            const homeZoomY = viewportSize.y / imageSize.y;
+            const homeZoom = Math.min(homeZoomX, homeZoomY);
+            
+            // Update the home zoom level
+            homeZoomLevel = homeZoom;
+            
+            // Store the home position and zoom
+            homeCenter = osdViewer.current.viewport.getCenter();
+            storedHomeZoom = osdViewer.current.viewport.getZoom();
+            
+            // Store in ref for the custom button
+            homePositionRef.current = {
+              center: homeCenter,
+              zoom: storedHomeZoom
+            };
+          }
+        }
+      }, 300);
+    } else {
+      // For non-expanded mode, also fit the image to the frame
+      setTimeout(() => {
+        if (osdViewer.current) {
+          const tiledImage = osdViewer.current.world.getItemAt(0);
+          if (tiledImage) {
+            const bounds = tiledImage.getBounds();
+            osdViewer.current.viewport.fitBounds(bounds, true);
+            
+            // Store the home position using the actual zoom after fitBounds
+            homePositionRef.current = {
+              center: osdViewer.current.viewport.getCenter(),
+              zoom: osdViewer.current.viewport.getZoom()
+            };
+          }
+        }
+      }, 300);
+    }
+  }, [fullHeight, viewerReady]);
+
   return (
-    <div style={{ position: "relative", width: "100%", height: "70vh" }}>
+    <div style={{ position: "relative", width: "100%", height: fullHeight ? "100vh" : "90vh" }}>
       <div ref={viewerRef} style={{ width: "100%", height: "100%" }} />
+      
+      {/* Zoom percentage display */}
+      <div
+        onClick={() => {
+          if (osdViewer.current && homePositionRef.current) {
+            // Use stored home position for both modes
+            osdViewer.current.viewport.panTo(homePositionRef.current.center);
+            osdViewer.current.viewport.zoomTo(homePositionRef.current.zoom);
+          }
+        }}
+        style={{
+          position: "absolute",
+          top: "10px",
+          left: "10px",
+          zIndex: 1000,
+          background: "rgba(0, 0, 0, 0.7)",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          padding: "8px 12px",
+          fontSize: "12px",
+          fontFamily: "monospace",
+          cursor: "pointer",
+        }}
+      >
+        {Math.round(currentZoom * 100)}%
+      </div>
     </div>
   );
 } 

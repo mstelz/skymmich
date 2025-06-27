@@ -116,18 +116,6 @@
   ],
   "equipment": [
     {
-      "id": 1,
-      "name": "William Optics RedCat 51",
-      "type": "telescope",
-      "specifications": {
-        "aperture": "51mm",
-        "focalLength": "250mm",
-        "focalRatio": "f/4.9"
-      },
-      "imageUrl": null,
-      "description": "Compact apochromatic refractor ideal for wide-field imaging"
-    },
-    {
       "id": 2,
       "name": "ZWO ASI2600MC Pro",
       "type": "camera",
@@ -149,22 +137,33 @@
         "type": "refractor"
       },
       "imageUrl": null,
-      "description": "",
+      "description": "Compact apochromatic refractor ideal for wide-field imaging, with WIFD focusing",
       "id": 3,
       "createdAt": "2025-06-27T03:19:09.598Z",
-      "updatedAt": "2025-06-27T03:25:53.006Z"
+      "updatedAt": "2025-06-27T14:13:15.814Z"
+    },
+    {
+      "name": "Cannon 4000D",
+      "type": "camera",
+      "specifications": {},
+      "description": null,
+      "id": 4,
+      "imageUrl": null,
+      "createdAt": "2025-06-27T15:39:39.709Z",
+      "updatedAt": "2025-06-27T15:39:39.709Z"
+    },
+    {
+      "name": "Star Tracker GTI",
+      "type": "mount",
+      "specifications": {},
+      "description": null,
+      "id": 5,
+      "imageUrl": null,
+      "createdAt": "2025-06-27T15:40:17.610Z",
+      "updatedAt": "2025-06-27T15:40:17.610Z"
     }
   ],
   "imageEquipment": [
-    {
-      "id": 2,
-      "imageId": 4,
-      "equipmentId": 1,
-      "settings": {
-        "focalLength": "600"
-      },
-      "createdAt": "2025-06-27T02:56:00.443Z"
-    },
     {
       "id": 3,
       "imageId": 4,
@@ -174,14 +173,28 @@
       "createdAt": "2025-06-27T02:56:35.745Z"
     },
     {
-      "id": 4,
-      "imageId": 5,
-      "equipmentId": 1,
-      "settings": {
-        "focalLength": "500"
-      },
-      "notes": "Test equipment addition",
-      "createdAt": "2025-06-27T03:00:00.618Z"
+      "id": 5,
+      "imageId": 6,
+      "equipmentId": 3,
+      "settings": null,
+      "notes": null,
+      "createdAt": "2025-06-27T15:38:48.021Z"
+    },
+    {
+      "id": 6,
+      "imageId": 6,
+      "equipmentId": 4,
+      "settings": null,
+      "notes": null,
+      "createdAt": "2025-06-27T15:39:39.719Z"
+    },
+    {
+      "id": 7,
+      "imageId": 6,
+      "equipmentId": 5,
+      "settings": null,
+      "notes": null,
+      "createdAt": "2025-06-27T15:40:17.622Z"
     }
   ],
   "plateSolvingJobs": [
@@ -548,7 +561,7 @@
     }
   ],
   "nextImageId": 7,
-  "nextEquipmentId": 4,
-  "nextImageEquipmentId": 5,
+  "nextEquipmentId": 6,
+  "nextImageEquipmentId": 8,
   "nextJobId": 13
 }

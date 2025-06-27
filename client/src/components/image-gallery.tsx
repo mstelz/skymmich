@@ -76,7 +76,7 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
       {/* Image Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
         {images.map((image) => (
-          <Card key={image.id} className="group cursor-pointer overflow-hidden">
+          <Card key={image.id} className="group cursor-pointer overflow-hidden" onClick={() => onImageClick(image)}>
             <div className="relative aspect-[4/3]">
               <RemoteImage
                 src={image.thumbnailUrl || image.fullUrl || ""}
