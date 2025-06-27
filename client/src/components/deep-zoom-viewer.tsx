@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import OpenSeadragon from "openseadragon";
+import OpenSeadragon, { Placement } from "openseadragon";
 
 interface Annotation {
   pixelx: number;
@@ -14,6 +14,8 @@ interface DeepZoomViewerProps {
   annotations?: Annotation[];
   onZoom?: (zoom: number) => void;
   fullHeight?: boolean;
+  height?: string | number;
+  disableZoom?: boolean;
 }
 
 if (typeof window !== 'undefined') {
@@ -30,7 +32,7 @@ if (typeof window !== 'undefined') {
   document.head.appendChild(style);
 }
 
-export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight = false }: DeepZoomViewerProps) {
+export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight = false, height, disableZoom = false }: DeepZoomViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const osdViewer = useRef<OpenSeadragon.Viewer | null>(null);
   const overlayElements = useRef<HTMLDivElement[]>([]);
@@ -75,6 +77,10 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
       navigatorPosition: "TOP_RIGHT",
       navigatorHeight: "100px",
       navigatorWidth: "100px",
+      gestureSettingsMouse: disableZoom ? { scrollToZoom: false, clickToZoom: false, dblClickToZoom: false, pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
+      gestureSettingsTouch: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
+      gestureSettingsPen: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
+      gestureSettingsUnknown: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
     });
     
     // Add zoom handler
@@ -161,7 +167,7 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
         osdViewer.current = null;
       }
     };
-  }, [imageUrl, onZoom, fullHeight]);
+  }, [imageUrl, onZoom, fullHeight, disableZoom]);
 
   // Function to add overlays
   const addOverlays = useCallback(() => {
@@ -172,27 +178,40 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
       try { osdViewer.current!.removeOverlay(el); } catch {}
     });
     overlayElements.current = [];
-    
-    // Add annotation overlays
+
+    // Get image bounds in viewport coordinates
+    const tiledImage = osdViewer.current.world.getItemAt(0);
+    if (!tiledImage) return;
+    const imageRect = tiledImage.getBounds();
+
+    // Create a container div for overlays
+    const overlayContainer = document.createElement('div');
+    overlayContainer.style.position = 'absolute';
+    overlayContainer.style.overflow = 'hidden';
+    overlayContainer.style.width = '100%';
+    overlayContainer.style.height = '100%';
+    overlayContainer.style.pointerEvents = 'none';
+    overlayContainer.style.top = '0';
+    overlayContainer.style.left = '0';
+    overlayContainer.style.zIndex = '10';
+
+    // Add annotation overlays to the container
     annotations.forEach((annotation, idx) => {
       if (annotation.pixelx == null || annotation.pixely == null) return;
+      let overlayDiv;
       if (annotation.radius && annotation.radius > 0) {
         // Render circle overlay
-        const rect = osdViewer.current.viewport.imageToViewportRectangle(
-          annotation.pixelx - annotation.radius,
-          annotation.pixely - annotation.radius,
-          annotation.radius * 2,
-          annotation.radius * 2
-        );
-        const circleDiv = document.createElement('div');
-        circleDiv.style.width = '100%';
-        circleDiv.style.height = '100%';
-        circleDiv.style.border = '2px solid #00FF00';
-        circleDiv.style.borderRadius = '50%';
-        circleDiv.style.boxSizing = 'border-box';
-        circleDiv.style.pointerEvents = 'none';
-        circleDiv.style.background = 'transparent';
-        circleDiv.style.position = 'absolute';
+        overlayDiv = document.createElement('div');
+        overlayDiv.style.position = 'absolute';
+        overlayDiv.style.left = `${((annotation.pixelx - annotation.radius) / tiledImage.getContentSize().x) * 100}%`;
+        overlayDiv.style.top = `${((annotation.pixely - annotation.radius) / tiledImage.getContentSize().y) * 100}%`;
+        overlayDiv.style.width = `${(annotation.radius * 2 / tiledImage.getContentSize().x) * 100}%`;
+        overlayDiv.style.height = `${(annotation.radius * 2 / tiledImage.getContentSize().y) * 100}%`;
+        overlayDiv.style.border = '2px solid #00FF00';
+        overlayDiv.style.borderRadius = '50%';
+        overlayDiv.style.boxSizing = 'border-box';
+        overlayDiv.style.pointerEvents = 'none';
+        overlayDiv.style.background = 'transparent';
         if (annotation.names && annotation.names[0]) {
           const labelDiv = document.createElement('div');
           labelDiv.style.position = 'absolute';
@@ -206,30 +225,21 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
           labelDiv.style.textShadow = '0 0 2px #000';
           labelDiv.style.whiteSpace = 'nowrap';
           labelDiv.textContent = annotation.names[0];
-          circleDiv.appendChild(labelDiv);
+          overlayDiv.appendChild(labelDiv);
         }
-        overlayElements.current.push(circleDiv);
-        osdViewer.current.addOverlay({
-          element: circleDiv,
-          location: rect,
-        });
       } else {
         // Render dot overlay (8px diameter)
         const dotSize = 8;
-        const rect = osdViewer.current.viewport.imageToViewportRectangle(
-          annotation.pixelx - dotSize / 2,
-          annotation.pixely - dotSize / 2,
-          dotSize,
-          dotSize
-        );
-        const dotDiv = document.createElement('div');
-        dotDiv.style.width = '100%';
-        dotDiv.style.height = '100%';
-        dotDiv.style.background = '#00FF00';
-        dotDiv.style.borderRadius = '50%';
-        dotDiv.style.boxSizing = 'border-box';
-        dotDiv.style.pointerEvents = 'none';
-        dotDiv.style.position = 'absolute';
+        overlayDiv = document.createElement('div');
+        overlayDiv.style.position = 'absolute';
+        overlayDiv.style.left = `${((annotation.pixelx - dotSize / 2) / tiledImage.getContentSize().x) * 100}%`;
+        overlayDiv.style.top = `${((annotation.pixely - dotSize / 2) / tiledImage.getContentSize().y) * 100}%`;
+        overlayDiv.style.width = `${(dotSize / tiledImage.getContentSize().x) * 100}%`;
+        overlayDiv.style.height = `${(dotSize / tiledImage.getContentSize().y) * 100}%`;
+        overlayDiv.style.background = '#00FF00';
+        overlayDiv.style.borderRadius = '50%';
+        overlayDiv.style.boxSizing = 'border-box';
+        overlayDiv.style.pointerEvents = 'none';
         if (annotation.names && annotation.names[0]) {
           const labelDiv = document.createElement('div');
           labelDiv.style.position = 'absolute';
@@ -243,17 +253,20 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
           labelDiv.style.textShadow = '0 0 2px #000';
           labelDiv.style.whiteSpace = 'nowrap';
           labelDiv.textContent = annotation.names[0];
-          dotDiv.appendChild(labelDiv);
+          overlayDiv.appendChild(labelDiv);
         }
-        overlayElements.current.push(dotDiv);
-        osdViewer.current.addOverlay({
-          element: dotDiv,
-          location: rect,
-        });
       }
+      overlayContainer.appendChild(overlayDiv);
     });
+
+    // Add the overlay container as an OpenSeadragon overlay
+    osdViewer.current.addOverlay({
+      element: overlayContainer,
+      location: imageRect,
+    });
+    overlayElements.current.push(overlayContainer);
     osdViewer.current.forceRedraw();
-  }, [annotations]);
+  }, [annotations, disableZoom]);
 
   // Add/remove overlays when annotations change
   useEffect(() => {
@@ -324,7 +337,7 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
   }, [fullHeight, viewerReady]);
 
   return (
-    <div style={{ position: "relative", width: "100%", height: fullHeight ? "100vh" : "90vh" }}>
+    <div style={{ position: "relative", width: "100%", height: height || (fullHeight ? "100vh" : "90vh") }}>
       <div ref={viewerRef} style={{ width: "100%", height: "100%" }} />
       
       {/* Zoom percentage display */}

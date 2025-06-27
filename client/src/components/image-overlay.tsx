@@ -7,6 +7,7 @@ import { EquipmentManager } from "./equipment-manager";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { AstroImage, Equipment } from "@shared/schema";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ImageOverlayProps {
   image: AstroImage;
@@ -22,6 +23,7 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
   const [showAnnotations, setShowAnnotations] = useState(false);
   const [showEquipmentManager, setShowEquipmentManager] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const isMobile = useIsMobile();
 
   // Fetch annotations only if plate solved and showAnnotations is true
   const { data: annotationsData, isLoading: annotationsLoading } = useQuery({
@@ -65,6 +67,256 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
     }
   };
 
+  if (isMobile) {
+    // MOBILE LAYOUT: image on top, details below
+    return (
+      <div className="fixed inset-0 z-50 bg-black overflow-y-auto">
+        {/* Top Navigation Bar */}
+        <div className="sticky top-0 z-60 bg-black/80 flex items-center justify-between px-4 py-2 border-b border-black/40">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="p-2 rounded-full hover:bg-black/60"
+          >
+            <X className="h-6 w-6 text-white" />
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsExpanded((v) => !v)}
+              aria-label={isExpanded ? 'Collapse' : 'Expand'}
+              className="p-2 rounded-full hover:bg-black/60"
+            >
+              {isExpanded ? <Minimize2 className="h-5 w-5 text-white" /> : <Maximize2 className="h-5 w-5 text-white" />}
+            </button>
+            {image.plateSolved && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnnotations((v) => !v)}
+                className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                disabled={annotationsLoading}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                {showAnnotations ? "Hide" : "Show"} Annotations
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="relative w-full max-w-md mx-auto bg-black rounded-b-xl overflow-hidden flex items-center justify-center mt-4" style={{ height: isExpanded ? '100vh' : 'min(50vh, 60vw)' }}>
+          {image.immichId ? (
+            <div className="relative w-full h-full">
+              <DeepZoomViewer
+                imageUrl={`/api/assets/${image.immichId}/original`}
+                annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
+                fullHeight={isExpanded}
+                height={isExpanded ? '100vh' : '100%'}
+                disableZoom={!isExpanded}
+              />
+            </div>
+          ) : (
+            <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+              <span className="text-muted-foreground">Image not available</span>
+            </div>
+          )}
+        </div>
+        {!isExpanded && (
+          <div className="flex flex-col gap-4 bg-card rounded-t-xl max-w-md mx-auto w-full p-4 mt-4">
+            {/* Title and Date */}
+            <div>
+              <h2 className="text-2xl font-bold mb-1 text-foreground">{image.title}</h2>
+              <p className="text-sm text-muted-foreground mb-2">
+                Captured on {image.captureDate ? new Date(image.captureDate).toLocaleDateString() : "Unknown date"}
+              </p>
+            </div>
+            {/* Equipment Section */}
+            <section className="bg-muted/30 rounded-xl p-4 mb-2 shadow border border-black/20">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Telescope className="h-4 w-4" />
+                  Equipment Used
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEquipmentManager(true)}
+                  className="text-gray-400 hover:text-foreground h-6 px-2"
+                >
+                  <Edit3 className="h-3 w-3 mr-1" />
+                  Edit
+                </Button>
+              </div>
+              {equipmentLoading ? (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Loader className="h-4 w-4 animate-spin" />
+                  Loading equipment...
+                </div>
+              ) : equipment.length > 0 ? (
+                <div className="space-y-3">
+                  {Object.entries(equipmentByType).map(([type, items]) => (
+                    <div key={type} className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700 capitalize">{type}</h4>
+                      {items.map((item) => (
+                        <div key={item.id} className="bg-muted/20 rounded-lg p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h5 className="text-sm font-medium text-foreground">{item.name}</h5>
+                              {item.description && (
+                                <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                              )}
+                              {item.settings && Object.keys(item.settings).length > 0 && (
+                                <div className="mt-2 text-xs text-gray-700">
+                                  <span className="font-medium">Settings:</span>
+                                  <div className="mt-1 space-y-1">
+                                    {Object.entries(item.settings).map(([key, value]) => (
+                                      <div key={key} className="flex justify-between">
+                                        <span className="text-gray-500">{key}:</span>
+                                        <span>{String(value)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {item.notes && (
+                                <p className="text-xs text-gray-500 mt-2 italic">"{item.notes}"</p>
+                              )}
+                            </div>
+                            {getEquipmentIcon(type)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-400">
+                  <p>No equipment information available.</p>
+                  <p className="text-xs mt-1">Click "Edit" to add equipment details.</p>
+                </div>
+              )}
+            </section>
+            {/* Technical Details */}
+            <section className="bg-muted/30 rounded-xl p-4 mb-2 shadow border border-black/20">
+              <h3 className="font-semibold mb-2 text-foreground">Technical Details</h3>
+              <div className="text-xs text-muted-foreground space-y-1 font-mono">
+                {image.telescope && <div>Telescope: {image.telescope}</div>}
+                {image.camera && <div>Camera: {image.camera}</div>}
+                {image.mount && <div>Mount: {image.mount}</div>}
+                {image.focalLength && <div>Focal Length: {image.focalLength}mm</div>}
+                {image.aperture && <div>Aperture: {image.aperture}</div>}
+                {image.exposureTime && <div>Exposure: {image.exposureTime}</div>}
+                {image.iso && <div>ISO/Gain: {image.iso}</div>}
+                {image.frameCount && <div>Frame Count: {image.frameCount}</div>}
+                {image.totalIntegration && <div>Total Integration: {image.totalIntegration}h</div>}
+                {image.filters && <div>Filters: {image.filters}</div>}
+              </div>
+            </section>
+            {/* Plate Solution */}
+            <section className="bg-muted/30 rounded-xl p-4 mb-2 shadow border border-black/20">
+              <h3 className="font-semibold mb-2 text-foreground">Plate Solution</h3>
+              {image.plateSolved ? (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  {image.ra && <div>RA: {image.ra}</div>}
+                  {image.dec && <div>Dec: {image.dec}</div>}
+                  {image.pixelScale && <div>Pixel Scale: {image.pixelScale}"/pixel</div>}
+                  {image.fieldOfView && <div>Field of View: {image.fieldOfView}</div>}
+                  {image.rotation && <div>Rotation: {image.rotation}°</div>}
+                  <div className="text-green-400 flex items-center">
+                    <Badge className="status-plate-solved">✓ Verified by Astrometry.net</Badge>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-gray-400">
+                  <p>No plate solving data available.</p>
+                </div>
+              )}
+            </section>
+            {/* Tags */}
+            {image.tags && image.tags.length > 0 && (
+              <section className="bg-muted/30 rounded-xl p-4 mb-2 shadow border border-black/20">
+                <h3 className="font-semibold mb-2 text-foreground">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {image.tags.map((tag) => (
+                    <Badge key={tag} className="astro-tag">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {image.objectType && (
+                    <Badge className="astro-tag">{image.objectType}</Badge>
+                  )}
+                </div>
+              </section>
+            )}
+            {/* Description */}
+            {image.description && (
+              <section className="bg-muted/30 rounded-xl p-4 mb-2 shadow border border-black/20">
+                <h3 className="font-semibold mb-2 text-foreground">Description</h3>
+                <p className="text-muted-foreground text-sm">{image.description}</p>
+              </section>
+            )}
+          </div>
+        )}
+        {/* Equipment Manager Modal */}
+        {showEquipmentManager && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
+            <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <EquipmentManager
+                imageId={image.id}
+                onClose={() => setShowEquipmentManager(false)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isExpanded && !isMobile) {
+    // Desktop expanded mode: no top nav, buttons float over image
+    return (
+      <div className="fixed inset-0 z-50 bg-black">
+        <div className="w-screen h-screen flex items-center justify-center">
+          <div className="relative w-full h-full">
+            <DeepZoomViewer
+              imageUrl={`/api/assets/${image.immichId}/original`}
+              annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
+              fullHeight={true}
+              height="100vh"
+              disableZoom={false}
+            />
+            {/* Collapse Button (top right) */}
+            <div className="absolute top-4 right-4 z-50">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsExpanded(false)}
+                className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+              >
+                <Minimize2 className="mr-2 h-4 w-4" />
+                Collapse
+              </Button>
+            </div>
+            {/* Show/Hide Annotations Button (bottom right) */}
+            {image.plateSolved && (
+              <div className="absolute bottom-4 right-4 z-50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAnnotations((v) => !v)}
+                  className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                  disabled={annotationsLoading}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  {showAnnotations ? "Hide" : "Show"} Annotations
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default desktop/tablet layout (not expanded)
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Info panel */}
@@ -88,7 +340,6 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 Captured on {image.captureDate ? new Date(image.captureDate).toLocaleDateString() : "Unknown date"}
               </p>
             </div>
-
             {/* Equipment Section */}
             <section className="bg-black/30 rounded-xl p-4 mb-2 shadow border border-black/40">
               <div className="flex items-center justify-between mb-3">
@@ -155,7 +406,6 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 </div>
               )}
             </section>
-
             {/* Technical Details */}
             <section className="bg-black/30 rounded-xl p-4 mb-2 shadow border border-black/40">
               <h3 className="font-semibold mb-2 text-white">Technical Details</h3>
@@ -218,45 +468,23 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
           </div>
         </aside>
       )}
-
-      {/* Image panel */}
-      <main className={`flex items-center justify-center bg-black ${isExpanded ? 'w-full' : 'flex-1'}`}>
+      <main className={`flex items-center justify-center bg-black flex-1`}>
         {image.immichId ? (
           <div className="relative w-full h-full flex items-center justify-center">
-            {/* Expand/Collapse Button */}
-            <div className="absolute top-6 right-6 z-10">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="bg-black/50 text-white border-white/20 hover:bg-black/70"
-              >
-                {isExpanded ? (
-                  <>
-                    <Minimize2 className="mr-2 h-4 w-4" />
-                    Collapse
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="mr-2 h-4 w-4" />
-                    Expand
-                  </>
-                )}
-              </Button>
-            </div>
-
             <DeepZoomViewer
               imageUrl={`/api/assets/${image.immichId}/original`}
               annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
-              fullHeight={isExpanded}
+              fullHeight={false}
+              height="100%"
+              disableZoom={true}
             />
-            {/* Annotation Toggle Button */}
+            {/* Show/Hide Annotations Button (desktop/tablet, not expanded) */}
             {image.plateSolved && (
               <div className="absolute bottom-4 right-4 z-10">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowAnnotations(!showAnnotations)}
+                  onClick={() => setShowAnnotations((v) => !v)}
                   className="bg-black/50 text-white border-white/20 hover:bg-black/70"
                   disabled={annotationsLoading}
                 >
@@ -265,6 +493,18 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 </Button>
               </div>
             )}
+            {/* Expand Button (desktop/tablet, not expanded) */}
+            <div className="absolute top-4 right-4 z-10">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsExpanded(true)}
+                className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+              >
+                <Maximize2 className="mr-2 h-4 w-4" />
+                Expand
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
@@ -272,18 +512,6 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
           </div>
         )}
       </main>
-
-      {/* Equipment Manager Modal */}
-      {showEquipmentManager && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
-          <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <EquipmentManager
-              imageId={image.id}
-              onClose={() => setShowEquipmentManager(false)}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 } 
