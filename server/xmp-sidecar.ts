@@ -1,6 +1,7 @@
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { AstrometryCalibration, AstrometryAnnotation } from './astrometry';
+import type { Equipment } from '@shared/schema';
 
 export interface XmpSidecarData {
   calibration: AstrometryCalibration;
@@ -10,6 +11,7 @@ export interface XmpSidecarData {
   filename: string;
   astrometryJobId: string;
   plateSolvedAt: Date;
+  equipment?: Equipment[]; // Equipment used for this image
 }
 
 export class XmpSidecarService {
@@ -32,7 +34,8 @@ export class XmpSidecarService {
       imageId,
       filename,
       astrometryJobId,
-      plateSolvedAt
+      plateSolvedAt,
+      equipment = []
     } = data;
 
     // Convert annotations to a more structured format
@@ -46,6 +49,15 @@ export class XmpSidecarService {
       dec: ann.dec,
       magnitude: ann.vmag
     }));
+
+    // Group equipment by type for better organization
+    const equipmentByType = equipment.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = [];
+      }
+      acc[item.type].push(item);
+      return acc;
+    }, {} as Record<string, Equipment[]>);
 
     const xmpContent = `<?xml version="1.0" encoding="UTF-8"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Astrorep">
@@ -84,6 +96,22 @@ export class XmpSidecarService {
           ${calibration.height_arcsec ? `<astro:heightArcsec>${calibration.height_arcsec}</astro:heightArcsec>` : ''}
         </rdf:Description>
       </astro:calibration>
+
+      <!-- Equipment Used -->
+      ${Object.entries(equipmentByType).map(([type, items]) => `
+      <astro:equipment>
+        <rdf:Bag>
+          ${items.map(item => `
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>${this.escapeXml(type)}</astro:type>
+              <astro:name>${this.escapeXml(item.name)}</astro:name>
+              ${item.description ? `<astro:description>${this.escapeXml(item.description)}</astro:description>` : ''}
+              ${item.specifications ? `<astro:specifications>${this.escapeXml(JSON.stringify(item.specifications))}</astro:specifications>` : ''}
+            </rdf:Description>
+          </rdf:li>`).join('\n          ')}
+        </rdf:Bag>
+      </astro:equipment>`).join('\n      ')}
 
       <!-- Annotations -->
       <astro:annotations>
@@ -140,7 +168,7 @@ export class XmpSidecarService {
   /**
    * Write XMP sidecar file for an image
    */
-  async writeSidecar(image: any, plateSolvingResult: any, astrometryJobId: string): Promise<string> {
+  async writeSidecar(image: any, plateSolvingResult: any, astrometryJobId: string, equipment?: Equipment[]): Promise<string> {
     const data: XmpSidecarData = {
       calibration: plateSolvingResult.calibration,
       annotations: plateSolvingResult.annotations,
@@ -148,7 +176,8 @@ export class XmpSidecarService {
       imageId: image.immichId,
       filename: image.filename,
       astrometryJobId,
-      plateSolvedAt: new Date()
+      plateSolvedAt: new Date(),
+      equipment
     };
 
     const xmpContent = this.generateXmpContent(data);
@@ -175,7 +204,7 @@ export class XmpSidecarService {
    * Generate a human-readable summary of the astronomical data
    */
   generateSummary(data: XmpSidecarData): string {
-    const { calibration, annotations, machineTags } = data;
+    const { calibration, annotations, machineTags, equipment = [] } = data;
     
     let summary = `Astronomical Image Analysis Summary
 =====================================
@@ -187,6 +216,9 @@ Plate Solving Results:
 - Field of View: ${(calibration.radius * 2).toFixed(1)} arcmin
 - Rotation: ${calibration.orientation.toFixed(1)}°
 - Parity: ${calibration.parity}
+
+Equipment Used:
+${equipment.map(item => `- ${item.type.toUpperCase()}: ${item.name}${item.description ? ` (${item.description})` : ''}`).join('\n')}
 
 Identified Objects (${annotations.length}):
 ${annotations.map(ann => `- ${ann.type.toUpperCase()}: ${ann.names.join(', ')}`).join('\n')}

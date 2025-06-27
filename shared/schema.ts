@@ -19,7 +19,7 @@ export const astrophotographyImages = pgTable("astrophotography_images", {
   frameCount: integer("frame_count"),
   totalIntegration: real("total_integration_hours"),
   
-  // Equipment
+  // Equipment (legacy fields - will be replaced by image_equipment junction table)
   telescope: text("telescope"),
   camera: text("camera"),
   mount: text("mount"),
@@ -47,10 +47,23 @@ export const astrophotographyImages = pgTable("astrophotography_images", {
 export const equipment = pgTable("equipment", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(), // telescope, camera, mount, filter
+  type: text("type").notNull(), // telescope, camera, mount, filter, accessories
   specifications: json("specifications"),
   imageUrl: text("image_url"),
   description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Junction table to link images with equipment used
+export const imageEquipment = pgTable("image_equipment", {
+  id: serial("id").primaryKey(),
+  imageId: integer("image_id").references(() => astrophotographyImages.id, { onDelete: "cascade" }),
+  equipmentId: integer("equipment_id").references(() => equipment.id, { onDelete: "cascade" }),
+  // Additional metadata about how this equipment was used in this specific image
+  settings: json("settings"), // e.g., {"focalLength": 600, "aperture": "f/6.3"} for telescopes
+  notes: text("notes"), // Any specific notes about equipment usage
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const plateSolvingJobs = pgTable("plate_solving_jobs", {
@@ -72,6 +85,13 @@ export const insertAstroImageSchema = createInsertSchema(astrophotographyImages)
 
 export const insertEquipmentSchema = createInsertSchema(equipment).omit({
   id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertImageEquipmentSchema = createInsertSchema(imageEquipment).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertPlateSolvingJobSchema = createInsertSchema(plateSolvingJobs).omit({
@@ -84,5 +104,7 @@ export type AstroImage = typeof astrophotographyImages.$inferSelect;
 export type InsertAstroImage = z.infer<typeof insertAstroImageSchema>;
 export type Equipment = typeof equipment.$inferSelect;
 export type InsertEquipment = z.infer<typeof insertEquipmentSchema>;
+export type ImageEquipment = typeof imageEquipment.$inferSelect;
+export type InsertImageEquipment = z.infer<typeof insertImageEquipmentSchema>;
 export type PlateSolvingJob = typeof plateSolvingJobs.$inferSelect;
 export type InsertPlateSolvingJob = z.infer<typeof insertPlateSolvingJobSchema>;

@@ -36,6 +36,11 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
     return parts.join(' • ');
   };
 
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Unknown date";
+    return new Date(date).toLocaleDateString();
+  };
+
   // TODO: Replace with your actual API token retrieval logic
   const apiToken = localStorage.getItem("apiToken") || "";
 
@@ -71,63 +76,30 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
       {/* Image Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
         {images.map((image) => (
-          <Card
-            key={image.id}
-            className="astro-card image-hover group"
-            onClick={() => onImageClick(image)}
-          >
-            <div className="relative">
-              {image.thumbnailUrl ? (
-                <RemoteImage
-                  src={image.thumbnailUrl}
-                  alt={image.title}
-                  className="w-full h-48 object-cover transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-48 bg-muted flex items-center justify-center">
-                  <span className="text-muted-foreground">No Image</span>
-                </div>
-              )}
-            </div>
-            
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground mb-2">{image.title}</h3>
-              
-              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                <span>
-                  {image.captureDate 
-                    ? new Date(image.captureDate).toLocaleDateString()
-                    : "Unknown date"
-                  }
-                </span>
-                {getStatusBadge(image)}
+          <Card key={image.id} className="group cursor-pointer overflow-hidden">
+            <div className="relative aspect-[4/3]">
+              <RemoteImage
+                src={image.thumbnailUrl || image.fullUrl || ""}
+                alt={image.title || "Astronomy image"}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+              <div className="absolute top-3 left-3 right-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
+                <h3 className="text-sm font-medium text-white drop-shadow-lg line-clamp-2">
+                  {image.title || "Untitled"}
+                </h3>
               </div>
-              
+            </div>
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground mb-2">
+                {formatDate(image.captureDate)}
+              </div>
               <div className="text-xs text-muted-foreground space-y-1 font-mono mb-3">
                 <div>{formatExposureData(image) || "No exposure data"}</div>
                 <div>{formatIntegrationData(image) || "No integration data"}</div>
               </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-1">
-                  {image.tags?.slice(0, 2).map((tag) => (
-                    <Badge key={tag} className="astro-tag">
-                      {tag}
-                    </Badge>
-                  ))}
-                  {image.objectType && (
-                    <Badge className="astro-tag">{image.objectType}</Badge>
-                  )}
-                </div>
-                
-                <div className="flex space-x-2 text-muted-foreground">
-                  <Button variant="ghost" size="sm" className="hover:text-destructive">
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="hover:text-primary">
-                    <Share className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div className="flex justify-end">
+                {getStatusBadge(image)}
               </div>
             </CardContent>
           </Card>

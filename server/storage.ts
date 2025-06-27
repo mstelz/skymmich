@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "@shared/schema";
+import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "@shared/schema";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,9 +10,11 @@ const __dirname = dirname(__filename);
 interface StorageData {
   astroImages: AstroImage[];
   equipment: Equipment[];
+  imageEquipment: ImageEquipment[];
   plateSolvingJobs: PlateSolvingJob[];
   nextImageId: number;
   nextEquipmentId: number;
+  nextImageEquipmentId: number;
   nextJobId: number;
 }
 
@@ -28,9 +30,11 @@ class FileStorage {
       return {
         astroImages: [],
         equipment: [],
+        imageEquipment: [],
         plateSolvingJobs: [],
         nextImageId: 1,
         nextEquipmentId: 1,
+        nextImageEquipmentId: 1,
         nextJobId: 1
       };
     }
@@ -43,9 +47,11 @@ class FileStorage {
       return {
         astroImages: data.astroImages || [],
         equipment: data.equipment || [],
+        imageEquipment: data.imageEquipment || [],
         plateSolvingJobs: data.plateSolvingJobs || [],
         nextImageId: data.nextImageId || 1,
         nextEquipmentId: data.nextEquipmentId || 1,
+        nextImageEquipmentId: data.nextImageEquipmentId || 1,
         nextJobId: data.nextJobId || 1
       };
     } catch (error) {
@@ -53,9 +59,11 @@ class FileStorage {
       return {
         astroImages: [],
         equipment: [],
+        imageEquipment: [],
         plateSolvingJobs: [],
         nextImageId: 1,
         nextEquipmentId: 1,
+        nextImageEquipmentId: 1,
         nextJobId: 1
       };
     }
@@ -177,12 +185,108 @@ class FileStorage {
       id: data.nextEquipmentId++,
       description: equipmentData.description || null,
       specifications: equipmentData.specifications || null,
-      imageUrl: equipmentData.imageUrl || null
+      imageUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     data.equipment.push(newEquipment);
     this.saveData(data);
     return newEquipment;
+  }
+
+  async updateEquipment(id: number, updates: Partial<InsertEquipment>): Promise<Equipment | undefined> {
+    const data = this.loadData();
+    const index = data.equipment.findIndex(eq => eq.id === id);
+    if (index === -1) return undefined;
+
+    data.equipment[index] = {
+      ...data.equipment[index],
+      ...updates,
+      updatedAt: new Date()
+    };
+
+    this.saveData(data);
+    return data.equipment[index];
+  }
+
+  async deleteEquipment(id: number): Promise<boolean> {
+    const data = this.loadData();
+    const index = data.equipment.findIndex(eq => eq.id === id);
+    if (index === -1) return false;
+
+    // Remove all image-equipment relationships for this equipment
+    data.imageEquipment = data.imageEquipment.filter(ie => ie.equipmentId !== id);
+    
+    // Remove the equipment
+    data.equipment.splice(index, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Image Equipment relationships
+  async getImageEquipment(imageId: number): Promise<ImageEquipment[]> {
+    const data = this.loadData();
+    return data.imageEquipment.filter(ie => ie.imageId === imageId);
+  }
+
+  async getEquipmentForImage(imageId: number): Promise<Equipment[]> {
+    const data = this.loadData();
+    const imageEquipment = data.imageEquipment.filter(ie => ie.imageId === imageId);
+    const equipmentIds = imageEquipment.map(ie => ie.equipmentId);
+    return data.equipment.filter(eq => equipmentIds.includes(eq.id));
+  }
+
+  async addEquipmentToImage(imageId: number, equipmentId: number, settings?: any, notes?: string): Promise<ImageEquipment> {
+    console.log('storage.addEquipmentToImage called with:', { imageId, equipmentId, settings, notes });
+    
+    const data = this.loadData();
+    
+    // Check if relationship already exists
+    const existing = data.imageEquipment.find(ie => ie.imageId === imageId && ie.equipmentId === equipmentId);
+    if (existing) {
+      console.log('Relationship already exists:', existing);
+      return existing;
+    }
+
+    const newImageEquipment: ImageEquipment = {
+      id: data.nextImageEquipmentId++,
+      imageId,
+      equipmentId,
+      settings: settings || null,
+      notes: notes || null,
+      createdAt: new Date()
+    };
+
+    console.log('Creating new image equipment relationship:', newImageEquipment);
+    data.imageEquipment.push(newImageEquipment);
+    this.saveData(data);
+    console.log('Image equipment relationship saved successfully');
+    return newImageEquipment;
+  }
+
+  async removeEquipmentFromImage(imageId: number, equipmentId: number): Promise<boolean> {
+    const data = this.loadData();
+    const index = data.imageEquipment.findIndex(ie => ie.imageId === imageId && ie.equipmentId === equipmentId);
+    if (index === -1) return false;
+
+    data.imageEquipment.splice(index, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  async updateImageEquipment(imageId: number, equipmentId: number, updates: Partial<InsertImageEquipment>): Promise<ImageEquipment | undefined> {
+    const data = this.loadData();
+    const index = data.imageEquipment.findIndex(ie => ie.imageId === imageId && ie.equipmentId === equipmentId);
+    if (index === -1) return undefined;
+
+    data.imageEquipment[index] = {
+      ...data.imageEquipment[index],
+      ...updates
+    };
+
+    this.saveData(data);
+    return data.imageEquipment[index];
   }
 
   // Plate solving

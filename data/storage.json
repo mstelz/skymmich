@@ -138,6 +138,50 @@
       },
       "imageUrl": null,
       "description": "High-performance cooled color CMOS camera"
+    },
+    {
+      "name": "William Optics RedCat 61",
+      "type": "telescope",
+      "specifications": {
+        "aperture": "61mm",
+        "focal length": "300mm",
+        "focal ratio": "f/4.9",
+        "type": "refractor"
+      },
+      "imageUrl": null,
+      "description": "",
+      "id": 3,
+      "createdAt": "2025-06-27T03:19:09.598Z",
+      "updatedAt": "2025-06-27T03:25:53.006Z"
+    }
+  ],
+  "imageEquipment": [
+    {
+      "id": 2,
+      "imageId": 4,
+      "equipmentId": 1,
+      "settings": {
+        "focalLength": "600"
+      },
+      "createdAt": "2025-06-27T02:56:00.443Z"
+    },
+    {
+      "id": 3,
+      "imageId": 4,
+      "equipmentId": 2,
+      "settings": null,
+      "notes": null,
+      "createdAt": "2025-06-27T02:56:35.745Z"
+    },
+    {
+      "id": 4,
+      "imageId": 5,
+      "equipmentId": 1,
+      "settings": {
+        "focalLength": "500"
+      },
+      "notes": "Test equipment addition",
+      "createdAt": "2025-06-27T03:00:00.618Z"
     }
   ],
   "plateSolvingJobs": [
@@ -504,6 +548,7 @@
     }
   ],
   "nextImageId": 7,
-  "nextEquipmentId": 3,
+  "nextEquipmentId": 4,
+  "nextImageEquipmentId": 5,
   "nextJobId": 13
 }

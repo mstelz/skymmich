@@ -90,16 +90,16 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               {stats.totalImages} Images
             </div>
             <div className="flex items-center gap-1">
+              <CheckCircle className="h-4 w-4" />
+              {stats.plateSolved} Plate Solved
+            </div>
+            <div className="flex items-center gap-1">
               <Tags className="h-4 w-4" />
-              Active Tags
+              {stats.uniqueTargets} Unique Targets
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              Last sync: 2 min ago
-            </div>
-            <div className="flex items-center gap-1 text-green-400">
-              <CheckCircle className="h-4 w-4" />
-              Astrometry Online
+              {stats.totalHours.toFixed(1)}h Total Integration
             </div>
           </div>
         )}

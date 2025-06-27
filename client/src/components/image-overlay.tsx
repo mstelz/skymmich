@@ -1,19 +1,26 @@
 import { useState } from "react";
-import { X, Eye, Loader, Crosshair } from "lucide-react";
+import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeepZoomViewer } from "./deep-zoom-viewer";
+import { EquipmentManager } from "./equipment-manager";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { AstroImage } from "@shared/schema";
+import type { AstroImage, Equipment } from "@shared/schema";
 
 interface ImageOverlayProps {
   image: AstroImage;
   onClose: () => void;
 }
 
+interface EquipmentWithDetails extends Equipment {
+  settings?: any;
+  notes?: string;
+}
+
 export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
   const [showAnnotations, setShowAnnotations] = useState(false);
+  const [showEquipmentManager, setShowEquipmentManager] = useState(false);
 
   // Fetch annotations only if plate solved and showAnnotations is true
   const { data: annotationsData, isLoading: annotationsLoading } = useQuery({
@@ -24,6 +31,38 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
     },
     enabled: !!(showAnnotations && image.plateSolved),
   });
+
+  // Fetch equipment for this image
+  const { data: equipment = [], isLoading: equipmentLoading } = useQuery<EquipmentWithDetails[]>({
+    queryKey: ["/api/images", image.id, "equipment"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/images/${image.id}/equipment`);
+      return response.json();
+    },
+    enabled: !!image.id,
+  });
+
+  // Group equipment by type
+  const equipmentByType = equipment.reduce((acc, item) => {
+    if (!acc[item.type]) {
+      acc[item.type] = [];
+    }
+    acc[item.type].push(item);
+    return acc;
+  }, {} as Record<string, EquipmentWithDetails[]>);
+
+  const getEquipmentIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'telescope':
+        return <Telescope className="h-4 w-4" />;
+      case 'camera':
+        return <Camera className="h-4 w-4" />;
+      case 'mount':
+        return <Settings className="h-4 w-4" />;
+      default:
+        return <Settings className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -47,6 +86,74 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
               Captured on {image.captureDate ? new Date(image.captureDate).toLocaleDateString() : "Unknown date"}
             </p>
           </div>
+
+          {/* Equipment Section */}
+          <section className="bg-black/30 rounded-xl p-4 mb-2 shadow border border-black/40">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                <Telescope className="h-4 w-4" />
+                Equipment Used
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowEquipmentManager(true)}
+                className="text-gray-400 hover:text-white h-6 px-2"
+              >
+                <Edit3 className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            </div>
+            {equipmentLoading ? (
+              <div className="flex items-center gap-2 text-gray-400">
+                <Loader className="h-4 w-4 animate-spin" />
+                Loading equipment...
+              </div>
+            ) : equipment.length > 0 ? (
+              <div className="space-y-3">
+                {Object.entries(equipmentByType).map(([type, items]) => (
+                  <div key={type} className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-300 capitalize">{type}</h4>
+                    {items.map((item) => (
+                      <div key={item.id} className="bg-black/20 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h5 className="text-sm font-medium text-white">{item.name}</h5>
+                            {item.description && (
+                              <p className="text-xs text-gray-400 mt-1">{item.description}</p>
+                            )}
+                            {item.settings && Object.keys(item.settings).length > 0 && (
+                              <div className="mt-2 text-xs text-gray-300">
+                                <span className="font-medium">Settings:</span>
+                                <div className="mt-1 space-y-1">
+                                  {Object.entries(item.settings).map(([key, value]) => (
+                                    <div key={key} className="flex justify-between">
+                                      <span className="text-gray-400">{key}:</span>
+                                      <span>{String(value)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {item.notes && (
+                              <p className="text-xs text-gray-400 mt-2 italic">"{item.notes}"</p>
+                            )}
+                          </div>
+                          {getEquipmentIcon(type)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-400">
+                <p>No equipment information available.</p>
+                <p className="text-xs mt-1">Click "Edit" to add equipment details.</p>
+              </div>
+            )}
+          </section>
+
           {/* Technical Details */}
           <section className="bg-black/30 rounded-xl p-4 mb-2 shadow border border-black/40">
             <h3 className="font-semibold mb-2 text-white">Technical Details</h3>
@@ -139,6 +246,18 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
           </div>
         )}
       </main>
+
+      {/* Equipment Manager Modal */}
+      {showEquipmentManager && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
+          <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <EquipmentManager
+              imageId={image.id}
+              onClose={() => setShowEquipmentManager(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

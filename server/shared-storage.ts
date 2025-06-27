@@ -1,13 +1,15 @@
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "@shared/schema";
+import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "@shared/schema";
 
 interface StorageData {
   astroImages: AstroImage[];
   equipment: Equipment[];
+  imageEquipment: ImageEquipment[];
   plateSolvingJobs: PlateSolvingJob[];
   nextImageId: number;
   nextEquipmentId: number;
+  nextImageEquipmentId: number;
   nextJobId: number;
 }
 
@@ -43,6 +45,7 @@ export class SharedStorage {
         // Convert date strings to Date objects
         parsed.astroImages = parsed.astroImages.map((img: any) => reviveDates(img));
         parsed.equipment = parsed.equipment.map((eq: any) => reviveDates(eq));
+        parsed.imageEquipment = parsed.imageEquipment?.map((ie: any) => reviveDates(ie)) || [];
         parsed.plateSolvingJobs = parsed.plateSolvingJobs.map((job: any) => reviveDates(job));
         return parsed;
       }
@@ -154,7 +157,9 @@ export class SharedStorage {
           type: "telescope",
           specifications: { aperture: "51mm", focalLength: "250mm", focalRatio: "f/4.9" },
           imageUrl: null,
-          description: "Compact apochromatic refractor ideal for wide-field imaging"
+          description: "Compact apochromatic refractor ideal for wide-field imaging",
+          createdAt: new Date(),
+          updatedAt: new Date()
         },
         {
           id: 2,
@@ -162,12 +167,33 @@ export class SharedStorage {
           type: "camera",
           specifications: { sensor: "APS-C", resolution: "26MP", cooling: "TEC" },
           imageUrl: null,
-          description: "High-performance cooled color CMOS camera"
+          description: "High-performance cooled color CMOS camera",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ],
+      imageEquipment: [
+        {
+          id: 1,
+          imageId: 1,
+          equipmentId: 1,
+          settings: { focalLength: 250, aperture: "f/4.9" },
+          notes: "Used with 0.8x reducer for wider field",
+          createdAt: new Date()
+        },
+        {
+          id: 2,
+          imageId: 1,
+          equipmentId: 2,
+          settings: { gain: 100, offset: 50 },
+          notes: "Cooled to -10°C for optimal performance",
+          createdAt: new Date()
         }
       ],
       plateSolvingJobs: [],
       nextImageId: 4,
       nextEquipmentId: 3,
+      nextImageEquipmentId: 3,
       nextJobId: 1
     };
   }
@@ -268,10 +294,77 @@ export class SharedStorage {
 
   async createEquipment(equipment: InsertEquipment): Promise<Equipment> {
     const id = this.data.nextEquipmentId++;
-    const equipmentItem: Equipment = { ...equipment, id } as Equipment;
+    const now = new Date();
+    const equipmentItem: Equipment = { 
+      ...equipment, 
+      id,
+      createdAt: now,
+      updatedAt: now,
+    } as Equipment;
     this.data.equipment.push(equipmentItem);
     this.saveData();
     return equipmentItem;
+  }
+
+  // Image Equipment relationships
+  async getImageEquipment(imageId: number): Promise<ImageEquipment[]> {
+    return this.data.imageEquipment.filter(ie => ie.imageId === imageId);
+  }
+
+  async getEquipmentForImage(imageId: number): Promise<Equipment[]> {
+    const imageEquipment = this.data.imageEquipment.filter(ie => ie.imageId === imageId);
+    const equipmentIds = imageEquipment.map(ie => ie.equipmentId);
+    return this.data.equipment.filter(eq => equipmentIds.includes(eq.id));
+  }
+
+  async addEquipmentToImage(imageId: number, equipmentId: number, settings?: any, notes?: string): Promise<ImageEquipment> {
+    console.log('shared-storage.addEquipmentToImage called with:', { imageId, equipmentId, settings, notes });
+    
+    // Check if relationship already exists
+    const existing = this.data.imageEquipment.find(ie => ie.imageId === imageId && ie.equipmentId === equipmentId);
+    if (existing) {
+      console.log('Relationship already exists in shared storage:', existing);
+      return existing;
+    }
+
+    const id = this.data.nextImageEquipmentId++;
+    const now = new Date();
+    const imageEquipment: ImageEquipment = {
+      id,
+      imageId,
+      equipmentId,
+      settings: settings || null,
+      notes: notes || null,
+      createdAt: now,
+    } as ImageEquipment;
+
+    console.log('Creating new image equipment relationship in shared storage:', imageEquipment);
+    this.data.imageEquipment.push(imageEquipment);
+    this.saveData();
+    console.log('Image equipment relationship saved successfully in shared storage');
+    return imageEquipment;
+  }
+
+  async removeEquipmentFromImage(imageId: number, equipmentId: number): Promise<boolean> {
+    const index = this.data.imageEquipment.findIndex(ie => ie.imageId === imageId && ie.equipmentId === equipmentId);
+    if (index === -1) return false;
+
+    this.data.imageEquipment.splice(index, 1);
+    this.saveData();
+    return true;
+  }
+
+  async updateImageEquipment(imageId: number, equipmentId: number, updates: Partial<InsertImageEquipment>): Promise<ImageEquipment | undefined> {
+    const index = this.data.imageEquipment.findIndex(ie => ie.imageId === imageId && ie.equipmentId === equipmentId);
+    if (index === -1) return undefined;
+
+    this.data.imageEquipment[index] = {
+      ...this.data.imageEquipment[index],
+      ...updates,
+    };
+
+    this.saveData();
+    return this.data.imageEquipment[index];
   }
 
   // Plate solving

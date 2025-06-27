@@ -1,33 +1,46 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Telescope, Upload, UserCircle } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 interface HeaderProps {
   onSync: () => void;
 }
 
 export function Header({ onSync }: HeaderProps) {
+  const [location] = useLocation();
+
+  const isActive = (path: string) => location === path;
+
   return (
     <header className="bg-card border-b border-border sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <Telescope className="text-primary text-2xl" />
-            <h1 className="text-xl font-bold text-foreground">AstroViewer</h1>
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <Telescope className="text-primary text-2xl" />
+              <h1 className="text-xl font-bold text-foreground">AstroViewer</h1>
+            </Link>
             <Badge variant="secondary" className="bg-muted text-muted-foreground">
               Connected to Immich
             </Badge>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link 
+              href="/" 
+              className={`transition-colors ${isActive('/') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
               Gallery
-            </a>
+            </Link>
+            <Link 
+              href="/equipment" 
+              className={`transition-colors ${isActive('/equipment') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Equipment
+            </Link>
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
               Collections
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-              Equipment
             </a>
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
               Plate Solving

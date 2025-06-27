@@ -235,6 +235,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get equipment for a specific image
+  app.get("/api/images/:id/equipment", async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.id);
+      const image = await storage.getAstroImage(imageId);
+      
+      if (!image) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+
+      const equipment = await storage.getEquipmentForImage(imageId);
+      const imageEquipment = await storage.getImageEquipment(imageId);
+      
+      // Combine equipment with their relationship data
+      const equipmentWithDetails = equipment.map(eq => {
+        const relationship = imageEquipment.find(ie => ie.equipmentId === eq.id);
+        return {
+          ...eq,
+          settings: relationship?.settings || null,
+          notes: relationship?.notes || null
+        };
+      });
+
+      res.json(equipmentWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch image equipment" });
+    }
+  });
+
+  // Add equipment to an image
+  app.post("/api/images/:id/equipment", async (req, res) => {
+    try {
+      console.log('POST /api/images/:id/equipment called');
+      console.log('params:', req.params);
+      console.log('body:', req.body);
+      
+      const imageId = parseInt(req.params.id);
+      const { equipmentId, settings, notes } = req.body;
+
+      console.log('Parsed values:', { imageId, equipmentId, settings, notes });
+
+      const image = await storage.getAstroImage(imageId);
+      if (!image) {
+        console.log('Image not found for ID:', imageId);
+        return res.status(404).json({ message: "Image not found" });
+      }
+
+      const equipment = await storage.getEquipment();
+      const targetEquipment = equipment.find(eq => eq.id === equipmentId);
+      if (!targetEquipment) {
+        console.log('Equipment not found for ID:', equipmentId);
+        return res.status(404).json({ message: "Equipment not found" });
+      }
+
+      console.log('Adding equipment to image:', { imageId, equipmentId, settings, notes });
+      const imageEquipment = await storage.addEquipmentToImage(imageId, equipmentId, settings, notes);
+      console.log('Equipment added successfully:', imageEquipment);
+      res.json(imageEquipment);
+    } catch (error) {
+      console.error('Error adding equipment to image:', error);
+      res.status(500).json({ message: "Failed to add equipment to image" });
+    }
+  });
+
+  // Remove equipment from an image
+  app.delete("/api/images/:imageId/equipment/:equipmentId", async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.imageId);
+      const equipmentId = parseInt(req.params.equipmentId);
+
+      const success = await storage.removeEquipmentFromImage(imageId, equipmentId);
+      if (!success) {
+        return res.status(404).json({ message: "Equipment relationship not found" });
+      }
+
+      res.json({ message: "Equipment removed from image" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove equipment from image" });
+    }
+  });
+
+  // Update equipment settings for an image
+  app.put("/api/images/:imageId/equipment/:equipmentId", async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.imageId);
+      const equipmentId = parseInt(req.params.equipmentId);
+      const { settings, notes } = req.body;
+
+      const imageEquipment = await storage.updateImageEquipment(imageId, equipmentId, { settings, notes });
+      if (!imageEquipment) {
+        return res.status(404).json({ message: "Equipment relationship not found" });
+      }
+
+      res.json(imageEquipment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update equipment settings" });
+    }
+  });
+
   // Get stats
   app.get("/api/stats", async (req, res) => {
     try {
@@ -292,6 +391,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: error.message });
       }
+    }
+  });
+
+  // Create new equipment
+  app.post("/api/equipment", async (req, res) => {
+    try {
+      const { name, type, specifications, description } = req.body;
+      if (!name || !type) {
+        return res.status(400).json({ message: "Name and type are required" });
+      }
+      const equipment = await storage.createEquipment({
+        name,
+        type,
+        specifications: specifications || {},
+        description: description || "",
+      });
+      res.json(equipment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create equipment" });
+    }
+  });
+
+  // Update equipment
+  app.put("/api/equipment/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, type, specifications, description } = req.body;
+      
+      if (!name || !type) {
+        return res.status(400).json({ message: "Name and type are required" });
+      }
+
+      const equipment = await storage.updateEquipment(id, {
+        name,
+        type,
+        specifications: specifications || {},
+        description: description || "",
+      });
+
+      if (!equipment) {
+        return res.status(404).json({ message: "Equipment not found" });
+      }
+
+      res.json(equipment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update equipment" });
+    }
+  });
+
+  // Delete equipment
+  app.delete("/api/equipment/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteEquipment(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Equipment not found" });
+      }
+
+      res.json({ message: "Equipment deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete equipment" });
     }
   });
 

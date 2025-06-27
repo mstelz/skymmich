@@ -107,8 +107,12 @@
     @apply bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary;
   }
 
+  .input {
+    @apply bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary;
+  }
+
   .astro-tag {
-    @apply bg-purple-600 text-white text-xs px-2 py-1 rounded cursor-pointer hover:bg-purple-700 transition-colors;
+    @apply bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md cursor-pointer hover:bg-purple-700 transition-colors font-medium;
   }
 }
 
