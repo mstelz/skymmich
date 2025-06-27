@@ -34,7 +34,7 @@ export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
   const processingJobs = (plateSolvingJobs as PlateSolvingJob[]).filter((job: PlateSolvingJob) => job.status === "processing");
 
   return (
-    <aside className="lg:w-80 space-y-6">
+    <aside className="lg:w-80 space-y-6 overflow-hidden overflow-y-hidden">
       
       {/* Plate Solving Status */}
       <Card className="bg-card">

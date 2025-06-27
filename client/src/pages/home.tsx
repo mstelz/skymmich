@@ -63,7 +63,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden w-full">
       <Header onSync={handleSync} />
       <SearchFilters 
         filters={filters}
@@ -71,7 +71,7 @@ export default function Home() {
         stats={stats}
       />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full overflow-x-hidden">
         <div className="flex flex-col lg:flex-row gap-6">
           <main className="flex-1">
             <ImageGallery

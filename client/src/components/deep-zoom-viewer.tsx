@@ -78,10 +78,16 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
       navigatorHeight: "100px",
       navigatorWidth: "100px",
       gestureSettingsMouse: disableZoom ? { scrollToZoom: false, clickToZoom: false, dblClickToZoom: false, pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
-      gestureSettingsTouch: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
-      gestureSettingsPen: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
-      gestureSettingsUnknown: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false } : undefined,
+      gestureSettingsTouch: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false, dblClickToZoom: false } : undefined,
+      gestureSettingsPen: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false, dblClickToZoom: false } : undefined,
+      gestureSettingsUnknown: disableZoom ? { pinchToZoom: false, flickEnabled: false, dragToPan: false, dblClickToZoom: false } : undefined,
     });
+    
+    // Additional disabling of navigation and controls
+    if (disableZoom && osdViewer.current) {
+      osdViewer.current.setMouseNavEnabled(false);
+      osdViewer.current.setControlsEnabled(false);
+    }
     
     // Add zoom handler
     osdViewer.current.addHandler("zoom", (event: OpenSeadragon.ZoomEvent) => {
@@ -340,32 +346,34 @@ export function DeepZoomViewer({ imageUrl, annotations = [], onZoom, fullHeight 
     <div style={{ position: "relative", width: "100%", height: height || (fullHeight ? "100vh" : "90vh") }}>
       <div ref={viewerRef} style={{ width: "100%", height: "100%" }} />
       
-      {/* Zoom percentage display */}
-      <div
-        onClick={() => {
-          if (osdViewer.current && homePositionRef.current) {
-            // Use stored home position for both modes
-            osdViewer.current.viewport.panTo(homePositionRef.current.center);
-            osdViewer.current.viewport.zoomTo(homePositionRef.current.zoom);
-          }
-        }}
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          zIndex: 1000,
-          background: "rgba(0, 0, 0, 0.7)",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          padding: "8px 12px",
-          fontSize: "12px",
-          fontFamily: "monospace",
-          cursor: "pointer",
-        }}
-      >
-        {Math.round(currentZoom * 100)}%
-      </div>
+      {/* Zoom percentage display (only if zoom is enabled) */}
+      {!disableZoom && (
+        <div
+          onClick={() => {
+            if (osdViewer.current && homePositionRef.current) {
+              // Use stored home position for both modes
+              osdViewer.current.viewport.panTo(homePositionRef.current.center);
+              osdViewer.current.viewport.zoomTo(homePositionRef.current.zoom);
+            }
+          }}
+          style={{
+            position: "absolute",
+            top: "10px",
+            left: "10px",
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.7)",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            padding: "8px 12px",
+            fontSize: "12px",
+            fontFamily: "monospace",
+            cursor: "pointer",
+          }}
+        >
+          {Math.round(currentZoom * 100)}%
+        </div>
+      )}
     </div>
   );
 } 

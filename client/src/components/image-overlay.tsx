@@ -89,16 +89,14 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
               {isExpanded ? <Minimize2 className="h-5 w-5 text-white" /> : <Maximize2 className="h-5 w-5 text-white" />}
             </button>
             {image.plateSolved && (
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => setShowAnnotations((v) => !v)}
-                className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                aria-label={showAnnotations ? 'Hide Annotations' : 'Show Annotations'}
+                className="p-2 rounded-full hover:bg-black/60 text-white border border-white/20 bg-black/50 disabled:opacity-50"
                 disabled={annotationsLoading}
               >
-                <Eye className="mr-2 h-4 w-4" />
-                {showAnnotations ? "Hide" : "Show"} Annotations
-              </Button>
+                <Eye className="h-5 w-5" />
+              </button>
             )}
           </div>
         </div>
