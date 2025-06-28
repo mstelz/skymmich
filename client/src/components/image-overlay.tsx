@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2 } from "lucide-react";
+import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeepZoomViewer } from "./deep-zoom-viewer";
@@ -215,6 +215,12 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 <div className="text-xs text-muted-foreground space-y-1">
                   {image.ra && <div>RA: {image.ra}</div>}
                   {image.dec && <div>Dec: {image.dec}</div>}
+                  {image.constellation && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 text-yellow-400" />
+                      Constellation: {image.constellation}
+                    </div>
+                  )}
                   {image.pixelScale && <div>Pixel Scale: {image.pixelScale}"/pixel</div>}
                   {image.fieldOfView && <div>Field of View: {image.fieldOfView}</div>}
                   {image.rotation && <div>Rotation: {image.rotation}°</div>}
@@ -427,6 +433,12 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 <div className="text-xs text-gray-300 space-y-1">
                   {image.ra && <div>RA: {image.ra}</div>}
                   {image.dec && <div>Dec: {image.dec}</div>}
+                  {image.constellation && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 text-yellow-400" />
+                      Constellation: {image.constellation}
+                    </div>
+                  )}
                   {image.pixelScale && <div>Pixel Scale: {image.pixelScale}"/pixel</div>}
                   {image.fieldOfView && <div>Field of View: {image.fieldOfView}</div>}
                   {image.rotation && <div>Rotation: {image.rotation}°</div>}

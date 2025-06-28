@@ -13,6 +13,7 @@ export default function Home() {
     objectType: "",
     tags: [] as string[],
     plateSolved: undefined as boolean | undefined,
+    constellation: "",
     search: "",
   });
 
@@ -20,7 +21,7 @@ export default function Home() {
   type Tag = { tag: string; count: number };
 
   const { data: images = [], isLoading: imagesLoading, refetch: refetchImages } = useQuery<AstroImage[]>({
-    queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved],
+    queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved, filters.constellation],
     enabled: true,
   });
 

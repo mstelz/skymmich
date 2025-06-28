@@ -37,6 +37,7 @@ export const astrophotographyImages = pgTable("astrophotography_images", {
   // Tags and categories
   tags: text("tags").array(),
   objectType: text("object_type"), // Galaxy, Nebula, Planetary, etc.
+  constellation: text("constellation"), // Constellation name
   
   // Metadata
   description: text("description"),

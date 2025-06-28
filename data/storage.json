@@ -36,7 +36,8 @@
       "pixelScale": 6.967225379447514,
       "fieldOfView": "5.1'",
       "rotation": 238.43462169484792,
-      "astrometryJobId": "13508768"
+      "astrometryJobId": "13508768",
+      "constellation": "Cepheus"
     },
     {
       "immichId": "3e8c7359-932d-4108-9be0-e91010aa5276",
@@ -88,7 +89,8 @@
       "pixelScale": 6.754606525927693,
       "fieldOfView": "5.0'",
       "rotation": 38.585257665627864,
-      "astrometryJobId": "13508740"
+      "astrometryJobId": "13508740",
+      "constellation": "Taurus"
     },
     {
       "immichId": "4262c92b-c49b-473b-9414-86a6085a2aea",
@@ -125,7 +127,8 @@
       "pixelScale": 7.084010425830791,
       "fieldOfView": "5.1'",
       "rotation": 270.14146693808266,
-      "astrometryJobId": "13508736"
+      "astrometryJobId": "13508736",
+      "constellation": "Hercules"
     },
     {
       "immichId": "2adfbd44-add4-4245-a245-50ed62fc6421",
@@ -165,7 +168,8 @@
       "pixelScale": 5.923692597112931,
       "fieldOfView": "4.3'",
       "rotation": 80.64106313728763,
-      "astrometryJobId": "13508719"
+      "astrometryJobId": "13508719",
+      "constellation": "Cygnus"
     },
     {
       "immichId": "f0ca4a67-40b4-4bde-abc8-3f1d874cb315",
@@ -200,7 +204,8 @@
       "pixelScale": 3.711361994781496,
       "fieldOfView": "2.7'",
       "rotation": 49.58755751780086,
-      "astrometryJobId": "13508717"
+      "astrometryJobId": "13508717",
+      "constellation": "Cepheus"
     },
     {
       "immichId": "7d49f1f4-e77a-431f-be19-44a0918bff2a",
@@ -233,7 +238,8 @@
       "pixelScale": null,
       "fieldOfView": null,
       "rotation": null,
-      "astrometryJobId": null
+      "astrometryJobId": null,
+      "constellation": null
     }
   ],
   "equipment": [

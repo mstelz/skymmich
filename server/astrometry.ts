@@ -3,6 +3,7 @@ import FormData from 'form-data';
 import { storage } from './storage';
 import { xmpSidecarService } from './xmp-sidecar';
 import { configService } from './config';
+import { getConstellationFromCoordinates } from './constellation-utils';
 
 export interface AstrometryCalibration {
   ra: number;
@@ -296,6 +297,12 @@ export class AstrometryService {
         // Merge and deduplicate tags
         const allTags = Array.from(new Set([...existingTags, ...result.machineTags])).filter(Boolean);
         
+        // Determine constellation from RA/Dec coordinates
+        let constellation = null;
+        if (result.calibration.ra && result.calibration.dec) {
+          constellation = getConstellationFromCoordinates(result.calibration.ra, result.calibration.dec);
+        }
+        
         await storage.updateAstroImage(job.imageId, {
           plateSolved: true,
           ra: result.calibration.ra ? result.calibration.ra.toString() : null,
@@ -304,6 +311,7 @@ export class AstrometryService {
           fieldOfView: result.calibration.radius ? `${(result.calibration.radius * 2).toFixed(1)}'` : null,
           rotation: result.calibration.orientation || null,
           astrometryJobId: job.astrometryJobId,
+          constellation: constellation,
           tags: allTags,
         });
 

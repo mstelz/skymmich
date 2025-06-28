@@ -2,13 +2,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Images, Tags, Clock, CheckCircle } from "lucide-react";
+import { Search, Filter, Images, Tags, Clock, CheckCircle, Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SearchFiltersProps {
   filters: {
     objectType: string;
     tags: string[];
     plateSolved: boolean | undefined;
+    constellation: string;
     search: string;
   };
   onFiltersChange: (filters: any) => void;
@@ -21,6 +24,15 @@ interface SearchFiltersProps {
 }
 
 export function SearchFilters({ filters, onFiltersChange, stats }: SearchFiltersProps) {
+  // Fetch available constellations
+  const { data: constellations = [] } = useQuery({
+    queryKey: ["/api/constellations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/constellations");
+      return response.json();
+    },
+  });
+
   return (
     <div className="bg-card border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -53,6 +65,23 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
                 <SelectItem value="Galaxy">Galaxy</SelectItem>
                 <SelectItem value="Nebula">Nebula</SelectItem>
                 <SelectItem value="Milky Way">Milky Way</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select
+              value={filters.constellation || "all"}
+              onValueChange={(value) => onFiltersChange({ ...filters, constellation: value === "all" ? "" : value })}
+            >
+              <SelectTrigger className="w-[140px] astro-input">
+                <SelectValue placeholder="All Constellations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Constellations</SelectItem>
+                {constellations.map((constellation: string) => (
+                  <SelectItem key={constellation} value={constellation}>
+                    {constellation}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
@@ -99,7 +128,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {stats.totalHours.toFixed(1)}h Total Integration
+              {stats.totalHours.toFixed(2)}h Total Integration
             </div>
           </div>
         )}

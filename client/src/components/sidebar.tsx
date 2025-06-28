@@ -133,7 +133,7 @@ export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
                 <div className="text-muted-foreground">Plate Solved</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{stats.totalHours}</div>
+                <div className="text-2xl font-bold text-primary">{stats.totalHours.toFixed(2)}</div>
                 <div className="text-muted-foreground">Total Hours</div>
               </div>
               <div className="text-center">

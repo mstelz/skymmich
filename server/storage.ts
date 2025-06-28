@@ -50,6 +50,14 @@ class FileStorage {
       const data = JSON.parse(fileContent);
       
       // Ensure all required fields exist
+      // Parse createdAt and updatedAt as Date objects for astroImages
+      if (Array.isArray(data.astroImages)) {
+        data.astroImages = data.astroImages.map((img: any) => ({
+          ...img,
+          createdAt: img.createdAt ? new Date(img.createdAt) : null,
+          updatedAt: img.updatedAt ? new Date(img.updatedAt) : null,
+        }));
+      }
       return {
         astroImages: data.astroImages || [],
         equipment: data.equipment || [],
@@ -90,25 +98,35 @@ class FileStorage {
   }
 
   // Astrophotography images
-  async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean }): Promise<AstroImage[]> {
+  async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean; constellation?: string }): Promise<AstroImage[]> {
     const data = this.loadData();
     let images = [...data.astroImages];
 
-    if (filters?.objectType) {
-      images = images.filter(img => img.objectType === filters.objectType);
+    if (filters) {
+      if (filters.objectType) {
+        images = images.filter(img => img.objectType === filters.objectType);
+      }
+      
+      if (filters.tags && filters.tags.length > 0) {
+        images = images.filter(img => 
+          img.tags && filters.tags!.some(tag => img.tags!.includes(tag))
+        );
+      }
+      
+      if (filters.plateSolved !== undefined) {
+        images = images.filter(img => img.plateSolved === filters.plateSolved);
+      }
+      
+      if (filters.constellation && filters.constellation.trim() !== "") {
+        images = images.filter(img => img.constellation === filters.constellation);
+      }
     }
 
-    if (filters?.plateSolved !== undefined) {
-      images = images.filter(img => img.plateSolved === filters.plateSolved);
-    }
-
-    if (filters?.tags && filters.tags.length > 0) {
-      images = images.filter(img => 
-        img.tags && filters.tags!.some(tag => img.tags!.includes(tag))
-      );
-    }
-
-    return images.sort((a, b) => new Date(a.captureDate || 0).getTime() - new Date(b.captureDate || 0).getTime());
+    return images.sort((a, b) => {
+      const dateA = a.createdAt ? a.createdAt.getTime() : 0;
+      const dateB = b.createdAt ? b.createdAt.getTime() : 0;
+      return dateB - dateA;
+    });
   }
 
   async getAstroImage(id: number): Promise<AstroImage | undefined> {
@@ -151,6 +169,7 @@ class FileStorage {
       astrometryJobId: image.astrometryJobId || null,
       tags: image.tags || [],
       objectType: image.objectType || null,
+      constellation: image.constellation || null,
       description: image.description || null
     };
 
@@ -405,7 +424,25 @@ class FileStorage {
     // Count unique targets (objects with different names)
     const uniqueTargets = new Set(
       data.astroImages
-        .map(img => img.objectType)
+        .filter(img => img.plateSolved && img.tags && img.tags.length > 0)
+        .map(img => {
+          // Extract primary astronomical target from tags
+          const primaryTargets = img.tags.filter(tag => 
+            tag.startsWith('NGC ') || 
+            tag.startsWith('IC ') || 
+            tag.startsWith('M ') ||
+            tag.includes('Nebula') ||
+            tag.includes('Cluster')
+          );
+          
+          if (primaryTargets.length > 0) {
+            // Return the first primary target found
+            return primaryTargets[0];
+          }
+          
+          // Fallback to filename if no primary target found
+          return img.filename;
+        })
         .filter(Boolean)
     ).size;
     

@@ -29,7 +29,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const [url, objectType, tags, plateSolved, constellation] = queryKey as [string, string, string[], boolean | undefined, string];
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (objectType) params.append('objectType', objectType);
+    if (tags && tags.length > 0) {
+      tags.forEach(tag => params.append('tags', tag));
+    }
+    if (plateSolved !== undefined) params.append('plateSolved', plateSolved.toString());
+    if (constellation) params.append('constellation', constellation);
+    
+    const fullUrl = params.toString() ? `${url}?${params.toString()}` : url;
+    
+    const res = await fetch(fullUrl, {
       credentials: "include",
     });
 

@@ -12,16 +12,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all astrophotography images with optional filters
   app.get("/api/images", async (req, res) => {
     try {
-      const { objectType, tags, plateSolved } = req.query;
+      const { objectType, tags, plateSolved, constellation } = req.query;
       const filters: any = {};
       
       if (objectType) filters.objectType = objectType as string;
       if (tags) filters.tags = Array.isArray(tags) ? tags as string[] : [tags as string];
       if (plateSolved !== undefined) filters.plateSolved = plateSolved === 'true';
+      if (constellation) filters.constellation = constellation as string;
       
       const images = await storage.getAstroImages(filters);
       res.json(images);
     } catch (error) {
+      console.error("Failed to fetch images:", error);
       res.status(500).json({ message: "Failed to fetch images" });
     }
   });
@@ -559,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tagCounts: Record<string, number> = {};
       
       images.forEach(image => {
-        if (image.tags) {
+        if (Array.isArray(image.tags)) {
           image.tags.forEach(tag => {
             tagCounts[tag] = (tagCounts[tag] || 0) + 1;
           });
@@ -573,6 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(popularTags);
     } catch (error) {
+      console.error("Failed to fetch tags:", error);
       res.status(500).json({ message: "Failed to fetch tags" });
     }
   });
@@ -728,6 +731,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error: any) {
       res.status(500).json({ message: error.response?.data?.message || error.message });
+    }
+  });
+
+  // Get all available constellations
+  app.get("/api/constellations", async (req, res) => {
+    try {
+      const images = await storage.getAstroImages();
+      const constellations = Array.from(new Set(images
+        .filter(img => img.constellation && img.constellation.trim() !== "")
+        .map(img => img.constellation)
+        .filter(Boolean)
+      )).sort();
+      
+      res.json(constellations);
+    } catch (error) {
+      console.error("Failed to fetch constellations:", error);
+      res.status(500).json({ message: "Failed to fetch constellations" });
     }
   });
 

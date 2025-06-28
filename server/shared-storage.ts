@@ -83,6 +83,7 @@ export class SharedStorage {
           astrometryJobId: null,
           tags: ["galaxy", "messier", "autumn", "wide-field"],
           objectType: "Galaxy",
+          constellation: "Andromeda",
           description: "The Andromeda Galaxy captured during excellent seeing conditions.",
           createdAt: new Date(),
           updatedAt: new Date()
@@ -114,6 +115,7 @@ export class SharedStorage {
           astrometryJobId: null,
           tags: ["nebula", "messier", "winter", "emission"],
           objectType: "Nebula",
+          constellation: "Orion",
           description: "The Great Orion Nebula showcasing stellar formation regions.",
           createdAt: new Date(),
           updatedAt: new Date()
@@ -145,6 +147,7 @@ export class SharedStorage {
           astrometryJobId: null,
           tags: ["nebula", "dark-nebula", "winter", "narrowband"],
           objectType: "Nebula",
+          constellation: "Orion",
           description: "The iconic Horsehead Nebula captured in narrowband filters.",
           createdAt: new Date(),
           updatedAt: new Date()
