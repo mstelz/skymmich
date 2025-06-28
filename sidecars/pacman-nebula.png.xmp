@@ -19,23 +19,26 @@
     <rdf:Description rdf:about=""
       xmlns:astro="http://ns.astrometry.net/1.0/">
       <astro:plateSolved>true</astro:plateSolved>
-      <astro:astrometryJobId>13481845</astro:astrometryJobId>
-      <astro:plateSolvedAt>2025-06-25T03:33:19.634Z</astro:plateSolvedAt>
+      <astro:astrometryJobId>13508717</astro:astrometryJobId>
+      <astro:plateSolvedAt>2025-06-28T15:38:01.697Z</astro:plateSolvedAt>
       <astro:imageId>f0ca4a67-40b4-4bde-abc8-3f1d874cb315</astro:imageId>
       
       <!-- Calibration Data -->
       <astro:calibration>
         <rdf:Description>
-          <astro:ra>13.215905712113587</astro:ra>
-          <astro:dec>56.60347110367162</astro:dec>
-          <astro:pixelScale>2.9498396428139584</astro:pixelScale>
-          <astro:radius>1.3437971008730774</astro:radius>
-          <astro:orientation>49.47755384237428</astro:orientation>
+          <astro:ra>13.216022355939442</astro:ra>
+          <astro:dec>56.603445556676625</astro:dec>
+          <astro:pixelScale>3.711361994781496</astro:pixelScale>
+          <astro:radius>1.3437313660750223</astro:radius>
+          <astro:orientation>49.58755751780086</astro:orientation>
           <astro:parity>1</astro:parity>
-          <astro:widthArcsec>8064.861583453362</astro:widthArcsec>
-          <astro:heightArcsec>5345.109432778892</astro:heightArcsec>
+          <astro:widthArcsec>8064.789614660191</astro:widthArcsec>
+          <astro:heightArcsec>5344.361272485354</astro:heightArcsec>
         </rdf:Description>
       </astro:calibration>
+
+      <!-- Equipment Used -->
+      
 
       <!-- Annotations -->
       <astro:annotations>
@@ -49,8 +52,8 @@
                   <rdf:li>IC 11</rdf:li>
                 </rdf:Bag>
               </astro:names>
-              <astro:pixelX>1336.7030727188708</astro:pixelX>
-              <astro:pixelY>907.9540743069281</astro:pixelY>
+              <astro:pixelX>1062.549446179425</astro:pixelX>
+              <astro:pixelY>721.6288382265026</astro:pixelY>
               
               
               
@@ -66,9 +69,9 @@
                   <rdf:li>NGC 281</rdf:li>
                 </rdf:Bag>
               </astro:names>
-              <astro:pixelX>1336.7030727188708</astro:pixelX>
-              <astro:pixelY>907.9540743069281</astro:pixelY>
-              <astro:radius>355.95154021171817</astro:radius>
+              <astro:pixelX>1062.549446179425</astro:pixelX>
+              <astro:pixelY>721.6288382265026</astro:pixelY>
+              <astro:radius>282.9149960886613</astro:radius>
               
               
               
@@ -83,9 +86,9 @@
                   <rdf:li>IC 1590</rdf:li>
                 </rdf:Bag>
               </astro:names>
-              <astro:pixelX>1333.6466556407402</astro:pixelX>
-              <astro:pixelY>871.7789934089717</astro:pixelY>
-              <astro:radius>64.07127741996383</astro:radius>
+              <astro:pixelX>1060.1209536663885</astro:pixelX>
+              <astro:pixelY>692.8805490004685</astro:pixelY>
+              <astro:radius>50.92469944049945</astro:radius>
               
               
               

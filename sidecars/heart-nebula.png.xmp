@@ -5,17 +5,15 @@
     <!-- Dublin Core -->
     <rdf:Description rdf:about=""
       xmlns:dc="http://purl.org/dc/elements/1.1/">
-      <dc:title>north-america-nebula.png</dc:title>
+      <dc:title>heart-nebula.png</dc:title>
       <dc:description>Astronomical image plate solved by Astrometry.net</dc:description>
       <dc:subject>
         <rdf:Bag>
-          <rdf:li>The star ξ Cyg</rdf:li>
-          <rdf:li>62 Cyg</rdf:li>
-          <rdf:li>The star 57 Cyg</rdf:li>
-          <rdf:li>NGC 6989</rdf:li>
-          <rdf:li>NGC 6997</rdf:li>
-          <rdf:li>NGC 7000</rdf:li>
-          <rdf:li>North America Nebula</rdf:li>
+          <rdf:li>IC 1795</rdf:li>
+          <rdf:li>IC 1805</rdf:li>
+          <rdf:li>IC 1831</rdf:li>
+          <rdf:li>NGC 896</rdf:li>
+          <rdf:li>NGC 1027</rdf:li>
         </rdf:Bag>
       </dc:subject>
     </rdf:Description>
@@ -24,21 +22,21 @@
     <rdf:Description rdf:about=""
       xmlns:astro="http://ns.astrometry.net/1.0/">
       <astro:plateSolved>true</astro:plateSolved>
-      <astro:astrometryJobId>13508719</astro:astrometryJobId>
-      <astro:plateSolvedAt>2025-06-28T15:38:02.191Z</astro:plateSolvedAt>
-      <astro:imageId>2adfbd44-add4-4245-a245-50ed62fc6421</astro:imageId>
+      <astro:astrometryJobId>13508768</astro:astrometryJobId>
+      <astro:plateSolvedAt>2025-06-28T15:40:07.197Z</astro:plateSolvedAt>
+      <astro:imageId>1fc4fbd5-7182-4626-a392-9a1c0d73d703</astro:imageId>
       
       <!-- Calibration Data -->
       <astro:calibration>
         <rdf:Description>
-          <astro:ra>314.8686063591374</astro:ra>
-          <astro:dec>44.22749181437188</astro:dec>
-          <astro:pixelScale>5.923692597112931</astro:pixelScale>
-          <astro:radius>2.1269267738134308</astro:radius>
-          <astro:orientation>80.64106313728763</astro:orientation>
+          <astro:ra>38.163859391105255</astro:ra>
+          <astro:dec>61.466660559747666</astro:dec>
+          <astro:pixelScale>6.967225379447514</astro:pixelScale>
+          <astro:radius>2.536274463499968</astro:radius>
+          <astro:orientation>238.43462169484792</astro:orientation>
           <astro:parity>1</astro:parity>
-          <astro:widthArcsec>12718.168006001462</astro:widthArcsec>
-          <astro:heightArcsec>8530.11733984262</astro:heightArcsec>
+          <astro:widthArcsec>15258.223580990056</astro:widthArcsec>
+          <astro:heightArcsec>10032.80454640442</astro:heightArcsec>
         </rdf:Description>
       </astro:calibration>
 
@@ -51,66 +49,15 @@
           
           <rdf:li>
             <rdf:Description>
-              <astro:type>ngc</astro:type>
+              <astro:type>ic</astro:type>
               <astro:names>
                 <rdf:Bag>
-                  <rdf:li>NGC 6996</rdf:li>
+                  <rdf:li>IC 1824</rdf:li>
                 </rdf:Bag>
               </astro:names>
-              <astro:pixelX>378.05938877007554</astro:pixelX>
-              <astro:pixelY>282.8532003297307</astro:pixelY>
+              <astro:pixelX>1479.7661994512077</astro:pixelX>
+              <astro:pixelY>240.60300900257312</astro:pixelY>
               
-              
-              
-              
-            </rdf:Description>
-          </rdf:li>
-          
-          <rdf:li>
-            <rdf:Description>
-              <astro:type>bright</astro:type>
-              <astro:names>
-                <rdf:Bag>
-                  <rdf:li>ξ Cyg / 62 Cyg</rdf:li>
-                </rdf:Bag>
-              </astro:names>
-              <astro:pixelX>1150.5737655239388</astro:pixelX>
-              <astro:pixelY>1338.4065371570473</astro:pixelY>
-              
-              
-              
-              <astro:magnitude>3.7200000286102295</astro:magnitude>
-            </rdf:Description>
-          </rdf:li>
-          
-          <rdf:li>
-            <rdf:Description>
-              <astro:type>bright</astro:type>
-              <astro:names>
-                <rdf:Bag>
-                  <rdf:li>57 Cyg</rdf:li>
-                </rdf:Bag>
-              </astro:names>
-              <astro:pixelX>1083.1304044405351</astro:pixelX>
-              <astro:pixelY>36.33238142190112</astro:pixelY>
-              
-              
-              
-              <astro:magnitude>4.800000190734863</astro:magnitude>
-            </rdf:Description>
-          </rdf:li>
-          
-          <rdf:li>
-            <rdf:Description>
-              <astro:type>ngc</astro:type>
-              <astro:names>
-                <rdf:Bag>
-                  <rdf:li>NGC 6989</rdf:li>
-                </rdf:Bag>
-              </astro:names>
-              <astro:pixelX>557.135943709814</astro:pixelX>
-              <astro:pixelY>52.786556846536314</astro:pixelY>
-              <astro:radius>27.34780777048705</astro:radius>
               
               
               
@@ -122,12 +69,12 @@
               <astro:type>ngc</astro:type>
               <astro:names>
                 <rdf:Bag>
-                  <rdf:li>NGC 6997</rdf:li>
+                  <rdf:li>NGC 896</rdf:li>
                 </rdf:Bag>
               </astro:names>
-              <astro:pixelX>880.646970826237</astro:pixelX>
-              <astro:pixelY>379.29149879184945</astro:pixelY>
-              <astro:radius>34.94442028541109</astro:radius>
+              <astro:pixelX>1117.133906547595</astro:pixelX>
+              <astro:pixelY>1244.4676226242282</astro:pixelY>
+              <astro:radius>43.05874901444427</astro:radius>
               
               
               
@@ -139,12 +86,63 @@
               <astro:type>ngc</astro:type>
               <astro:names>
                 <rdf:Bag>
-                  <rdf:li>NGC 7000</rdf:li>
+                  <rdf:li>NGC 1027</rdf:li>
                 </rdf:Bag>
               </astro:names>
-              <astro:pixelX>896.7502057767774</astro:pixelX>
-              <astro:pixelY>670.0348915643623</astro:pixelY>
-              <astro:radius>607.7290374173967</astro:radius>
+              <astro:pixelX>1479.7661994512077</astro:pixelX>
+              <astro:pixelY>240.60300900257312</astro:pixelY>
+              <astro:radius>33.58582199841034</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ic</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>IC 1795</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1159.4343769855195</astro:pixelX>
+              <astro:pixelY>1194.0616677119956</astro:pixelY>
+              <astro:radius>51.67049804738271</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ic</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>IC 1805</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1092.4925240540833</astro:pixelX>
+              <astro:pixelY>716.0350838069593</astro:pixelY>
+              <astro:radius>258.3524863871615</astro:radius>
+              
+              
+              
+            </rdf:Description>
+          </rdf:li>
+          
+          <rdf:li>
+            <rdf:Description>
+              <astro:type>ic</astro:type>
+              <astro:names>
+                <rdf:Bag>
+                  <rdf:li>IC 1831</rdf:li>
+                </rdf:Bag>
+              </astro:names>
+              <astro:pixelX>1876.6317056198739</astro:pixelX>
+              <astro:pixelY>406.83641773508793</astro:pixelY>
+              <astro:radius>517.695313788263</astro:radius>
               
               
               
@@ -159,13 +157,11 @@
       xmlns:iptc="http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/">
       <iptc:Keywords>
         <rdf:Bag>
-          <rdf:li>The star ξ Cyg</rdf:li>
-        <rdf:li>62 Cyg</rdf:li>
-        <rdf:li>The star 57 Cyg</rdf:li>
-        <rdf:li>NGC 6989</rdf:li>
-        <rdf:li>NGC 6997</rdf:li>
-        <rdf:li>NGC 7000</rdf:li>
-        <rdf:li>North America Nebula</rdf:li>
+          <rdf:li>IC 1795</rdf:li>
+        <rdf:li>IC 1805</rdf:li>
+        <rdf:li>IC 1831</rdf:li>
+        <rdf:li>NGC 896</rdf:li>
+        <rdf:li>NGC 1027</rdf:li>
         </rdf:Bag>
       </iptc:Keywords>
     </rdf:Description>

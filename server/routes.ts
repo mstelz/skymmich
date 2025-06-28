@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { insertAstroImageSchema, insertPlateSolvingJobSchema } from "@shared/schema";
 import axios from "axios";
 import { astrometryService } from './astrometry';
+import { configService } from './config';
+import { cronManager } from './cron-manager';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -41,44 +43,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sync images from Immich
   app.post("/api/sync-immich", async (req, res) => {
     try {
-      const immichUrl = process.env.IMMICH_URL || process.env.IMMICH_API_URL || "";
-      const immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
-      // this should allow a comma-separated list of album IDs
-      const immichAlbumId = process.env.IMMICH_ALBUM_IDS || "";
-
+      const config = await configService.getImmichConfig();
       
-      if (!immichUrl || !immichApiKey) {
+      if (!config.host || !config.apiKey) {
         return res.status(400).json({ 
-          message: "Immich configuration missing. Please set IMMICH_URL and IMMICH_API_KEY environment variables." 
+          message: "Immich configuration missing. Please configure in admin settings or set environment variables." 
         });
       }
 
-      // Fetch assets from Immich API
-      const response = await axios.get(`${immichUrl}/api/albums/${immichAlbumId}`, {
-        headers: {
-          'X-API-Key': immichApiKey,
-        },
-        params: {
-          take: 100, // Limit to prevent overwhelming
-        }
+      // Sync by album logic
+      let albumsToSync: any[] = [];
+      const albumsResponse = await axios.get(`${config.host}/api/albums`, {
+        headers: { 'X-API-Key': config.apiKey }
       });
+      if (config.syncByAlbum) {
+        if (!Array.isArray(config.selectedAlbumIds) || config.selectedAlbumIds.length === 0) {
+          return res.status(400).json({ message: "Sync by album is enabled, but no albums are selected." });
+        }
+        albumsToSync = albumsResponse.data.filter((a: any) => config.selectedAlbumIds.includes(a.id));
+      } else {
+        albumsToSync = albumsResponse.data;
+      }
 
-      const assets = response.data.assets;
-      console.log(`Found ${assets.length} assets in Immich. Assets:`, assets);
+      let allAssets: any[] = [];
+      for (const album of albumsToSync) {
+        if (album.id && album.assetCount > 0) {
+          try {
+            console.log(`Fetching assets from album: ${album.albumName} (${album.assetCount} assets)`);
+            const albumResponse = await axios.get(`${config.host}/api/albums/${album.id}`, {
+              headers: { 'X-API-Key': config.apiKey }
+            });
+            if (albumResponse.data && albumResponse.data.assets && Array.isArray(albumResponse.data.assets)) {
+              allAssets.push(...albumResponse.data.assets);
+              console.log(`Added ${albumResponse.data.assets.length} assets from album ${album.albumName}`);
+            }
+          } catch (albumError: any) {
+            console.warn(`Failed to get assets from album ${album.albumName} (${album.id}):`, albumError.response?.data || albumError.message);
+          }
+        }
+      }
+      console.log(`Found ${allAssets.length} total assets in Immich`);
+
+      // Remove images from our app that no longer exist in Immich
+      const immichAssetIds = new Set(allAssets.map(asset => asset.id));
+      const allAppImages = await storage.getAstroImages();
+      let removedCount = 0;
+      for (const img of allAppImages) {
+        if (img.immichId && !immichAssetIds.has(img.immichId)) {
+          await storage.deleteAstroImage(img.id);
+          removedCount++;
+          console.log(`Removed image ${img.title || img.id} (immichId: ${img.immichId}) because it no longer exists in Immich`);
+        }
+      }
+      if (removedCount > 0) {
+        console.log(`Removed ${removedCount} images that no longer exist in Immich.`);
+      }
+
       let syncedCount = 0;
 
-      for (const asset of assets) {
+      for (const asset of allAssets) {
         // Check if image already exists
         const existing = await storage.getAstroImageByImmichId(asset.id);
-        if (existing) continue;
+        if (existing) {
+          console.log(`Asset ${asset.originalFileName} already exists, skipping`);
+          continue;
+        }
 
         // Extract EXIF data and create astrophotography image
         const astroImage = {
           immichId: asset.id,
           title: asset.originalFileName || asset.id,
           filename: asset.originalFileName || "",
-          thumbnailUrl: `${immichUrl}/api/assets/${asset.id}/thumbnail`,
-          fullUrl: `${immichUrl}/api/assets/${asset.id}/original`,
+          thumbnailUrl: `/api/assets/${asset.id}/thumbnail`,
+          fullUrl: `/api/assets/${asset.id}/thumbnail?size=preview`,
           captureDate: asset.fileCreatedAt ? new Date(asset.fileCreatedAt) : null,
           focalLength: asset.exifInfo?.focalLength || null,
           aperture: asset.exifInfo?.fNumber ? `f/${asset.exifInfo.fNumber}` : null,
@@ -95,16 +132,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           plateSolved: false,
           tags: ["astrophotography"],
           objectType: "Deep Sky", // Default classification
-          description: "",
+          description: asset.exifInfo?.description || "",
         };
 
         await storage.createAstroImage(astroImage);
         syncedCount++;
+        console.log(`Synced asset: ${asset.originalFileName}`);
       }
 
       res.json({ 
-        message: `Successfully synced ${syncedCount} new images from Immich`,
-        syncedCount 
+        message: `Successfully synced ${syncedCount} new images from Immich. Removed ${removedCount} images no longer in Immich.`,
+        syncedCount,
+        removedCount
       });
 
     } catch (error: any) {
@@ -112,6 +151,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Failed to sync with Immich", 
         error: error.response?.data?.message || error.message 
+      });
+    }
+  });
+
+  // Save admin settings
+  app.post("/api/admin/settings", async (req, res) => {
+    try {
+      const settings = req.body;
+      await configService.updateConfig(settings);
+      res.json({ success: true, message: "Settings saved successfully" });
+    } catch (error: any) {
+      console.error("Failed to save admin settings:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to save settings" 
+      });
+    }
+  });
+
+  // Get admin settings
+  app.get("/api/admin/settings", async (req, res) => {
+    try {
+      const config = await configService.getConfig();
+      res.json(config);
+    } catch (error: any) {
+      console.error("Failed to get admin settings:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to get settings" 
       });
     }
   });
@@ -205,39 +273,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Use the existing astrometry service to test the connection
-      // Temporarily set the API key and test login
-      const originalApiKey = astrometryService['astrometryApiKey'];
-      astrometryService['astrometryApiKey'] = apiKey;
+      // Test the connection by trying to login (same as working plate solve)
+      const loginData = new URLSearchParams();
+      loginData.append('request-json', JSON.stringify({ apikey: apiKey }));
       
-      try {
-        await astrometryService['login']();
+      const response = await axios.post("http://nova.astrometry.net/api/login", loginData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 10000, // 10 second timeout
+        validateStatus: (status) => true, // Don't throw on any status code
+      });
+
+      if (response.status === 200 && response.data.status === "success") {
         res.json({ 
           success: true,
-          message: "Astrometry.net connection successful!" 
+          message: "Connection successful!" 
         });
-      } catch (loginError: any) {
-        console.error("Astrometry login failed:", loginError.message);
+      } else {
         res.json({ 
           success: false,
-          message: `Astrometry.net connection failed: ${loginError.message}` 
+          message: `Connection failed: ${response.data.message || 'Unknown error'}` 
         });
-      } finally {
-        // Restore the original API key
-        astrometryService['astrometryApiKey'] = originalApiKey;
       }
 
     } catch (error: any) {
-      console.error("Astrometry connection test error:", error.message);
+      console.error("Astrometry connection test error:", error.response?.data || error.message);
       
-      // Provide more specific error messages
       let errorMessage = "Connection failed";
       if (error.code === 'ECONNREFUSED') {
         errorMessage = "Cannot connect to Astrometry.net server.";
       } else if (error.code === 'ENOTFOUND') {
         errorMessage = "Astrometry.net server not found.";
-      } else if (error.code === 'ETIMEDOUT') {
-        errorMessage = "Connection to Astrometry.net timed out.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -252,6 +319,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit image for plate solving
   app.post("/api/images/:id/plate-solve", async (req, res) => {
     try {
+      // Check if plate solving is enabled in admin settings
+      const astrometryConfig = await configService.getAstrometryConfig();
+      if (!astrometryConfig.enabled) {
+        return res.status(400).json({ 
+          message: "Plate solving is currently disabled. Please enable it in the admin settings." 
+        });
+      }
+
       const imageId = parseInt(req.params.id);
       const image = await storage.getAstroImage(imageId);
       if (!image) {
@@ -511,7 +586,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!immichUrl || !immichApiKey) {
         return res.status(500).json({ message: "Immich configuration missing" });
       }
-      const url = `${immichUrl}/api/assets/${assetId}/${type}`;
+      // Forward query parameters (e.g., ?size=preview)
+      const query = req.url.split('?')[1] ? '?' + req.url.split('?')[1] : '';
+      const url = `${immichUrl}/api/assets/${assetId}/${type}${query}`;
       const response = await axios.get(url, {
         headers: { "X-API-Key": immichApiKey },
         responseType: "stream",
@@ -586,6 +663,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Equipment deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete equipment" });
+    }
+  });
+
+  // Get notifications
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const notifications = await storage.getNotifications();
+      res.json(notifications);
+    } catch (error: any) {
+      console.error("Failed to get notifications:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to get notifications" 
+      });
+    }
+  });
+
+  // Acknowledge notification
+  app.post("/api/notifications/:id/acknowledge", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.acknowledgeNotification(id);
+      res.json({ success: true, message: "Notification acknowledged" });
+    } catch (error: any) {
+      console.error("Failed to acknowledge notification:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to acknowledge notification" 
+      });
+    }
+  });
+
+  // Get cron job status
+  app.get("/api/admin/cron-jobs", async (req, res) => {
+    try {
+      const jobs = cronManager.getAllJobs();
+      res.json(jobs);
+    } catch (error: any) {
+      console.error("Failed to get cron jobs:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to get cron jobs" 
+      });
+    }
+  });
+
+  // Fetch albums from Immich
+  app.post("/api/immich/albums", async (req, res) => {
+    try {
+      const { host, apiKey } = req.body;
+      if (!host || !apiKey) {
+        return res.status(400).json({ message: "Host and API key are required" });
+      }
+      const response = await axios.get(`${host}/api/albums`, {
+        headers: { 'X-API-Key': apiKey }
+      });
+      if (Array.isArray(response.data)) {
+        // Only return id and albumName for dropdown
+        const albums = response.data.map((a: any) => ({ id: a.id, albumName: a.albumName }));
+        res.json(albums);
+      } else {
+        res.status(500).json({ message: "Unexpected response from Immich" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.response?.data?.message || error.message });
     }
   });
 

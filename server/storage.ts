@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -12,10 +12,13 @@ interface StorageData {
   equipment: Equipment[];
   imageEquipment: ImageEquipment[];
   plateSolvingJobs: PlateSolvingJob[];
+  adminSettings: any;
+  notifications: any[];
   nextImageId: number;
   nextEquipmentId: number;
   nextImageEquipmentId: number;
   nextJobId: number;
+  nextNotificationId: number;
 }
 
 class FileStorage {
@@ -32,10 +35,13 @@ class FileStorage {
         equipment: [],
         imageEquipment: [],
         plateSolvingJobs: [],
+        adminSettings: {},
+        notifications: [],
         nextImageId: 1,
         nextEquipmentId: 1,
         nextImageEquipmentId: 1,
-        nextJobId: 1
+        nextJobId: 1,
+        nextNotificationId: 1
       };
     }
 
@@ -49,10 +55,13 @@ class FileStorage {
         equipment: data.equipment || [],
         imageEquipment: data.imageEquipment || [],
         plateSolvingJobs: data.plateSolvingJobs || [],
+        adminSettings: data.adminSettings || {},
+        notifications: data.notifications || [],
         nextImageId: data.nextImageId || 1,
         nextEquipmentId: data.nextEquipmentId || 1,
         nextImageEquipmentId: data.nextImageEquipmentId || 1,
-        nextJobId: data.nextJobId || 1
+        nextJobId: data.nextJobId || 1,
+        nextNotificationId: data.nextNotificationId || 1
       };
     } catch (error) {
       console.error("Error loading storage data:", error);
@@ -61,10 +70,13 @@ class FileStorage {
         equipment: [],
         imageEquipment: [],
         plateSolvingJobs: [],
+        adminSettings: {},
+        notifications: [],
         nextImageId: 1,
         nextEquipmentId: 1,
         nextImageEquipmentId: 1,
-        nextJobId: 1
+        nextJobId: 1,
+        nextNotificationId: 1
       };
     }
   }
@@ -166,6 +178,33 @@ class FileStorage {
     const data = this.loadData();
     const index = data.astroImages.findIndex(img => img.id === id);
     if (index === -1) return false;
+
+    const image = data.astroImages[index];
+
+    // Delete XMP sidecar file if it exists
+    if (image) {
+      const sidecarDir = join(__dirname, '../sidecars');
+      // Try by filename, then by immichId
+      const possibleNames = [];
+      if (image.filename) possibleNames.push(`${image.filename}.xmp`);
+      if (image.immichId) possibleNames.push(`${image.immichId}.xmp`);
+      for (const fname of possibleNames) {
+        const fpath = join(sidecarDir, fname);
+        if (existsSync(fpath)) {
+          try { unlinkSync(fpath); } catch (e) { /* ignore */ }
+        }
+      }
+    }
+
+    // Remove related plate solving jobs
+    if (image) {
+      data.plateSolvingJobs = data.plateSolvingJobs.filter(job => job.imageId !== image.id);
+    }
+
+    // Remove related imageEquipment records
+    if (image) {
+      data.imageEquipment = data.imageEquipment.filter(ie => ie.imageId !== image.id);
+    }
 
     data.astroImages.splice(index, 1);
     this.saveData(data);
@@ -355,12 +394,20 @@ class FileStorage {
     uniqueTargets: number;
   }> {
     const data = this.loadData();
-    const images = data.astroImages;
+    const totalImages = data.astroImages.length;
+    const plateSolved = data.astroImages.filter(img => img.plateSolved).length;
     
-    const totalImages = images.length;
-    const plateSolved = images.filter(img => img.plateSolved).length;
-    const totalHours = images.reduce((sum, img) => sum + (img.totalIntegration || 0), 0);
-    const uniqueTargets = new Set(images.map(img => img.objectType).filter(Boolean)).size;
+    // Calculate total integration time
+    const totalHours = data.astroImages.reduce((sum, img) => {
+      return sum + (img.totalIntegration || 0);
+    }, 0);
+    
+    // Count unique targets (objects with different names)
+    const uniqueTargets = new Set(
+      data.astroImages
+        .map(img => img.objectType)
+        .filter(Boolean)
+    ).size;
     
     return {
       totalImages,
@@ -368,6 +415,64 @@ class FileStorage {
       totalHours,
       uniqueTargets
     };
+  }
+
+  // Admin settings
+  async getAdminSettings(): Promise<any> {
+    const data = this.loadData();
+    return data.adminSettings;
+  }
+
+  async updateAdminSettings(settings: any): Promise<void> {
+    const data = this.loadData();
+    data.adminSettings = { ...data.adminSettings, ...settings };
+    this.saveData(data);
+  }
+
+  // Notifications
+  async getNotifications(): Promise<any[]> {
+    const data = this.loadData();
+    return data.notifications.filter(n => !n.acknowledged);
+  }
+
+  async createNotification(notification: {
+    type: 'error' | 'warning' | 'info' | 'success';
+    title: string;
+    message: string;
+    details?: any;
+    timestamp?: Date;
+  }): Promise<any> {
+    const data = this.loadData();
+    const newNotification = {
+      id: data.nextNotificationId++,
+      ...notification,
+      timestamp: notification.timestamp || new Date(),
+      acknowledged: false,
+    };
+    
+    data.notifications.push(newNotification);
+    this.saveData(data);
+    return newNotification;
+  }
+
+  async acknowledgeNotification(id: number): Promise<void> {
+    const data = this.loadData();
+    const notification = data.notifications.find(n => n.id === id);
+    if (notification) {
+      notification.acknowledged = true;
+      this.saveData(data);
+    }
+  }
+
+  async clearOldNotifications(daysOld: number = 30): Promise<void> {
+    const data = this.loadData();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+    
+    data.notifications = data.notifications.filter(n => 
+      n.timestamp > cutoffDate || !n.acknowledged
+    );
+    this.saveData(data);
   }
 }
 

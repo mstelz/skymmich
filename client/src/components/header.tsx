@@ -2,15 +2,51 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Telescope, Upload, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
   onSync: () => void;
 }
 
+interface Notification {
+  id: number;
+  type: 'error' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  details?: any;
+  timestamp: string;
+  acknowledged: boolean;
+}
+
 export function Header({ onSync }: HeaderProps) {
   const [location] = useLocation();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const isActive = (path: string) => location === path;
+
+  // Load notifications on component mount and refresh periodically
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const response = await fetch('/api/notifications');
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      }
+    };
+
+    loadNotifications();
+    
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const unacknowledgedCount = notifications.length;
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-40">
@@ -50,8 +86,23 @@ export function Header({ onSync }: HeaderProps) {
               Sync Immich
             </Button>
             <Link href="/admin">
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                title={unacknowledgedCount > 0 ? `${unacknowledgedCount} unacknowledged notification${unacknowledgedCount > 1 ? 's' : ''}` : 'Admin Settings'}
+              >
+                <span className="relative inline-block">
+                  <Settings className="h-7 w-7" />
+                  {unacknowledgedCount > 0 && (
+                    <span 
+                      className="absolute -top-1.5 -right-1.5 bg-red-600 text-white h-4 w-4 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white"
+                      style={{ minWidth: '1rem', minHeight: '1rem' }}
+                    >
+                      {unacknowledgedCount > 9 ? '9+' : unacknowledgedCount}
+                    </span>
+                  )}
+                </span>
               </Button>
             </Link>
           </div>

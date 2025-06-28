@@ -2,6 +2,7 @@ import axios from 'axios';
 import FormData from 'form-data';
 import { storage } from './storage';
 import { xmpSidecarService } from './xmp-sidecar';
+import { configService } from './config';
 
 export interface AstrometryCalibration {
   ra: number;
@@ -36,13 +37,37 @@ export interface PlateSolvingResult {
 export class AstrometryService {
   private astrometryApiKey: string;
   private immichApiKey: string;
+  private immichHost: string;
+  private useConfigService: boolean;
 
-  constructor() {
-    this.astrometryApiKey = process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "";
-    this.immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
+  constructor(useConfigService: boolean = true) {
+    this.useConfigService = useConfigService;
+    
+    // For worker processes, we might want to use env vars directly
+    if (!useConfigService) {
+      this.astrometryApiKey = process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "";
+      this.immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
+      this.immichHost = process.env.IMMICH_HOST || "";
+    } else {
+      // Initialize with empty values, will be loaded from config service when needed
+      this.astrometryApiKey = "";
+      this.immichApiKey = "";
+      this.immichHost = "";
+    }
+  }
+
+  private async ensureConfigLoaded() {
+    if (this.useConfigService && (!this.astrometryApiKey || !this.immichApiKey || !this.immichHost)) {
+      const config = await configService.getConfig();
+      this.astrometryApiKey = config.astrometry.apiKey;
+      this.immichApiKey = config.immich.apiKey;
+      this.immichHost = config.immich.host;
+    }
   }
 
   private async login(): Promise<string> {
+    await this.ensureConfigLoaded();
+    
     if (!this.astrometryApiKey) {
       throw new Error("Astrometry.net API key not configured");
     }
@@ -51,7 +76,10 @@ export class AstrometryService {
     loginData.append('request-json', JSON.stringify({ apikey: this.astrometryApiKey }));
     
     const loginResponse = await axios.post("http://nova.astrometry.net/api/login", loginData, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)'
+      }
     });
 
     if (loginResponse.data.status !== "success") {
@@ -62,16 +90,38 @@ export class AstrometryService {
   }
 
   async submitImageForPlateSolving(image: any): Promise<{ submissionId: string; jobId: number }> {
+    await this.ensureConfigLoaded();
+    
     if (!image.fullUrl) {
       throw new Error("Image does not have a fullUrl");
     }
 
+    if (!this.immichHost) {
+      throw new Error("Immich host not configured");
+    }
+
+    if (!this.immichApiKey) {
+      throw new Error("Immich API key not configured");
+    }
+
     const sessionKey = await this.login();
 
+    // Construct full URL to Immich server
+    let fullImageUrl: string;
+    if (image.fullUrl.startsWith('http')) {
+      fullImageUrl = image.fullUrl;
+    } else {
+      // Ensure the immichHost doesn't end with a slash and the fullUrl starts with one
+      const cleanHost = this.immichHost.endsWith('/') ? this.immichHost.slice(0, -1) : this.immichHost;
+      const cleanPath = image.fullUrl.startsWith('/') ? image.fullUrl : `/${image.fullUrl}`;
+      fullImageUrl = `${cleanHost}${cleanPath}`;
+    }
+
     // Download image from Immich
-    const imageResponse = await axios.get(image.fullUrl, {
+    const imageResponse = await axios.get(fullImageUrl, {
       responseType: "arraybuffer",
       headers: { 'X-API-Key': this.immichApiKey },
+      timeout: 30000, // 30 second timeout
     });
     const imageBuffer = Buffer.from(imageResponse.data);
 
@@ -86,7 +136,10 @@ export class AstrometryService {
     const uploadResponse = await axios.post(
       'http://nova.astrometry.net/api/upload',
       form,
-      { headers: form.getHeaders() }
+      { 
+        headers: form.getHeaders(),
+        timeout: 60000 // 60 second timeout
+      }
     );
 
     if (uploadResponse.data.status !== "success") {
@@ -114,7 +167,10 @@ export class AstrometryService {
     while (Date.now() - startTime < maxWaitTime) {
       try {
         const statusResponse = await axios.get(
-          `https://nova.astrometry.net/api/submissions/${submissionId}`
+          `https://nova.astrometry.net/api/submissions/${submissionId}`,
+          {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+          }
         );
 
         const astrometryStatus = statusResponse.data;
@@ -153,7 +209,10 @@ export class AstrometryService {
   async fetchCompleteResult(jobId: string): Promise<PlateSolvingResult> {
     // Get calibration details
     const calibrationResponse = await axios.get(
-      `https://nova.astrometry.net/api/jobs/${jobId}/calibration`
+      `https://nova.astrometry.net/api/jobs/${jobId}/calibration`,
+      {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+      }
     );
     const calibration: AstrometryCalibration = calibrationResponse.data;
 
@@ -161,7 +220,10 @@ export class AstrometryService {
     let annotations: AstrometryAnnotation[] = [];
     try {
       const annotationsResponse = await axios.get(
-        `https://nova.astrometry.net/api/jobs/${jobId}/annotations`
+        `https://nova.astrometry.net/api/jobs/${jobId}/annotations`,
+        {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+        }
       );
       
       let annotationsData = annotationsResponse.data;
@@ -188,7 +250,10 @@ export class AstrometryService {
     let machineTags: string[] = [];
     try {
       const tagsResponse = await axios.get(
-        `http://nova.astrometry.net/api/jobs/${jobId}/machine_tags/`
+        `http://nova.astrometry.net/api/jobs/${jobId}/machine_tags/`,
+        {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+        }
       );
       if (Array.isArray(tagsResponse.data)) {
         machineTags = tagsResponse.data;
@@ -281,7 +346,10 @@ export class AstrometryService {
 
     try {
       const statusResponse = await axios.get(
-        `https://nova.astrometry.net/api/submissions/${job.astrometrySubmissionId}`
+        `https://nova.astrometry.net/api/submissions/${job.astrometrySubmissionId}`,
+        {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+        }
       );
 
       const astrometryStatus = statusResponse.data;

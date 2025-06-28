@@ -107,7 +107,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
               {image.immichId ? (
                 <div className="relative w-full h-full">
                   <DeepZoomViewer
-                    imageUrl={`/api/assets/${image.immichId}/original`}
+                    imageUrl={image.fullUrl || ""}
                     annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
                   />
                   {/* Annotation Toggle Button */}
@@ -216,7 +216,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
               {image.immichId ? (
                 <div className="relative">
                   <DeepZoomViewer
-                    imageUrl={`/api/assets/${image.immichId}/original`}
+                    imageUrl={image.fullUrl || ""}
                     annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
                   />
                   {/* Annotation Toggle Button */}

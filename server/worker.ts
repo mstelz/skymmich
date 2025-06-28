@@ -1,10 +1,17 @@
 import { storage } from "./storage";
-import { astrometryService } from "./astrometry";
+import { AstrometryService } from "./astrometry";
+import { configService } from "./config";
 
 class PlateSolvingWorker {
   private isRunning = false;
   private checkInterval = 30000; // 30 seconds
   private maxConcurrent: number = parseInt(process.env.PLATE_SOLVE_MAX_CONCURRENT || "3", 10);
+  private astrometryService: AstrometryService;
+
+  constructor() {
+    // Create AstrometryService that uses config service (to access admin settings)
+    this.astrometryService = new AstrometryService(true);
+  }
 
   async start() {
     if (this.isRunning) {
@@ -28,6 +35,12 @@ class PlateSolvingWorker {
   }
 
   async createAndSubmitJobsForUnsolvedImages() {
+    // Check if plate solving is enabled in admin settings
+    const astrometryConfig = await configService.getAstrometryConfig();
+    if (!astrometryConfig.enabled) {
+      return; // Don't submit jobs if plate solving is disabled
+    }
+
     const images = await storage.getAstroImages();
     const jobs = await storage.getPlateSolvingJobs();
     const unsolvedImages = images.filter(img => !img.plateSolved);
@@ -48,7 +61,7 @@ class PlateSolvingWorker {
       if (!hasJob && image.fullUrl) {
         try {
           console.log(`Auto-submitting image ${image.id} (${image.title}) for plate solving`);
-          await astrometryService.submitImageForPlateSolving(image);
+          await this.astrometryService.submitImageForPlateSolving(image);
           submitted++;
         } catch (err) {
           console.error(`Failed to auto-submit image ${image.id}:`, err);
@@ -67,7 +80,7 @@ class PlateSolvingWorker {
 
     for (const job of processingJobs) {
       try {
-        await astrometryService.checkJobStatus(job.id);
+        await this.astrometryService.checkJobStatus(job.id);
       } catch (error) {
         console.error(`Failed to update job ${job.id}:`, error);
       }

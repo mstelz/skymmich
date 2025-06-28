@@ -104,7 +104,7 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
           {image.immichId ? (
             <div className="relative w-full h-full">
               <DeepZoomViewer
-                imageUrl={`/api/assets/${image.immichId}/original`}
+                imageUrl={image.fullUrl || ""}
                 annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
                 fullHeight={isExpanded}
                 height={isExpanded ? '100vh' : '100%'}
@@ -275,7 +275,7 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
         <div className="w-screen h-screen flex items-center justify-center">
           <div className="relative w-full h-full">
             <DeepZoomViewer
-              imageUrl={`/api/assets/${image.immichId}/original`}
+              imageUrl={image.fullUrl || ""}
               annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
               fullHeight={true}
               height="100vh"
@@ -470,7 +470,7 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
         {image.immichId ? (
           <div className="relative w-full h-full flex items-center justify-center">
             <DeepZoomViewer
-              imageUrl={`/api/assets/${image.immichId}/original`}
+              imageUrl={image.fullUrl || ""}
               annotations={showAnnotations && annotationsData?.annotations ? annotationsData.annotations : []}
               fullHeight={false}
               height="100%"

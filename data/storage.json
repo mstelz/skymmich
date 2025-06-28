@@ -1,11 +1,138 @@
 {
   "astroImages": [
     {
+      "immichId": "1fc4fbd5-7182-4626-a392-9a1c0d73d703",
+      "title": "heart-nebula.png",
+      "filename": "heart-nebula.png",
+      "thumbnailUrl": "/api/assets/1fc4fbd5-7182-4626-a392-9a1c0d73d703/thumbnail",
+      "fullUrl": "/api/assets/1fc4fbd5-7182-4626-a392-9a1c0d73d703/thumbnail?size=preview",
+      "captureDate": "2025-06-28T02:39:21.425Z",
+      "focalLength": null,
+      "aperture": null,
+      "iso": null,
+      "exposureTime": null,
+      "frameCount": 1,
+      "totalIntegration": null,
+      "telescope": null,
+      "camera": null,
+      "mount": null,
+      "filters": null,
+      "plateSolved": true,
+      "tags": [
+        "astrophotography",
+        "IC 1795",
+        "IC 1805",
+        "IC 1831",
+        "NGC 896",
+        "NGC 1027"
+      ],
+      "objectType": "Deep Sky",
+      "description": null,
+      "id": 55,
+      "createdAt": "2025-06-28T15:37:22.962Z",
+      "updatedAt": "2025-06-28T15:40:07.197Z",
+      "ra": "38.163859391105255",
+      "dec": "61.466660559747666",
+      "pixelScale": 6.967225379447514,
+      "fieldOfView": "5.1'",
+      "rotation": 238.43462169484792,
+      "astrometryJobId": "13508768"
+    },
+    {
+      "immichId": "3e8c7359-932d-4108-9be0-e91010aa5276",
+      "title": "m45.png",
+      "filename": "m45.png",
+      "thumbnailUrl": "/api/assets/3e8c7359-932d-4108-9be0-e91010aa5276/thumbnail",
+      "fullUrl": "/api/assets/3e8c7359-932d-4108-9be0-e91010aa5276/thumbnail?size=preview",
+      "captureDate": "2025-06-28T02:36:39.321Z",
+      "focalLength": null,
+      "aperture": null,
+      "iso": null,
+      "exposureTime": null,
+      "frameCount": 1,
+      "totalIntegration": null,
+      "telescope": null,
+      "camera": null,
+      "mount": null,
+      "filters": null,
+      "plateSolved": true,
+      "tags": [
+        "astrophotography",
+        "The star Alcyone (η Tau",
+        "25 Tau)",
+        "The star Celaeno (16 Tau)",
+        "The star Electra (17 Tau)",
+        "The star Taygeta (q Tau",
+        "19 Tau)",
+        "The star Asterope",
+        "Sterope I (21 Tau)",
+        "The star Merope (23 Tau)",
+        "The star Atlas (27 Tau)",
+        "The star Pleione (28 Tau)",
+        "The star Sterope II (22 Tau)",
+        "The star 18 Tau",
+        "IC 349",
+        "Barnard's Merope Nebula",
+        "NGC 1432",
+        "Maia Nebula",
+        "NGC 1435",
+        "Merope Nebula"
+      ],
+      "objectType": "Deep Sky",
+      "description": null,
+      "id": 56,
+      "createdAt": "2025-06-28T15:37:22.963Z",
+      "updatedAt": "2025-06-28T15:39:05.114Z",
+      "ra": "56.757057844944306",
+      "dec": "24.1150233819702",
+      "pixelScale": 6.754606525927693,
+      "fieldOfView": "5.0'",
+      "rotation": 38.585257665627864,
+      "astrometryJobId": "13508740"
+    },
+    {
+      "immichId": "4262c92b-c49b-473b-9414-86a6085a2aea",
+      "title": "m13-v2-uncropped.png",
+      "filename": "m13-v2-uncropped.png",
+      "thumbnailUrl": "/api/assets/4262c92b-c49b-473b-9414-86a6085a2aea/thumbnail",
+      "fullUrl": "/api/assets/4262c92b-c49b-473b-9414-86a6085a2aea/thumbnail?size=preview",
+      "captureDate": "2025-06-28T02:36:00.400Z",
+      "focalLength": null,
+      "aperture": null,
+      "iso": null,
+      "exposureTime": null,
+      "frameCount": 1,
+      "totalIntegration": null,
+      "telescope": null,
+      "camera": null,
+      "mount": null,
+      "filters": null,
+      "plateSolved": true,
+      "tags": [
+        "astrophotography",
+        "NGC 6205",
+        "Hercules Globular Cluster",
+        "M 13",
+        "NGC 6207"
+      ],
+      "objectType": "Deep Sky",
+      "description": "SIMPLE  =                    T / file does conform to FITS standard\nBITPIX  =                  -32 / number of bits per data pixel\nNAXIS   =                    3 / number of data axes\nNAXIS1  =                 5202 / length of data axis 1\nNAXIS2  =                 3464 / length of data axis 2\nNAXIS3  =                    3 / length of data axis 3\nEXTEND  =                    T / FITS dataset may contain extensions\nCOMMENT   FITS (Flexible Image Transport System) format is defined in 'Astronomy\nCOMMENT   and Astrophysics', volume 376, page 359; bibcode: 2001A&A...376..359H\nBZERO   =                    0 / offset data range to that of unsigned short\nBSCALE  =                    1 / default scaling factor\nDATE    = '2023-09-04T20:13:13' / UTC date that FITS file was created\nDATE-OBS= '2023-09-03T02:54:40' / YYYY-MM-DDThh:mm:ss observation start, UT\nINSTRUME= 'Canon EOS 1200D'    / instrument name\nOBSERVER= '        '           / observer name\nTELESCOP= '        '           / telescope used to acquire this image\nROWORDER= 'BOTTOM-UP'          / Order of the rows in image array\nXPIXSZ  =                 4.29 / X pixel size microns\nYPIXSZ  =                 4.29 / Y pixel size microns\nXBINNING=                    1 / Camera binning mode\nYBINNING=                    1 / Camera binning mode\nFOCALLEN=                   50 / Camera focal length\nCCD-TEMP=                    0 / CCD temp in C\nEXPTIME =                   29 / Exposure time [s]\nSTACKCNT=                  180 / Stack frames\nLIVETIME=                 5226 / Exposure time after deadtime correction\nEXPSTART=          2.46019e+06 / Exposure start time (standard Julian date)\nEXPEND  =          2.46019e+06 / Exposure end time (standard Julian date)\nISOSPEED=                  800 / ISO camera setting\nHISTORY mean stacking with winsorized sigma clipping rejection (low=3.000 high=3\nHISTORY .000), additive+scaling normalized input, normalized output, no image we\nHISTORY ighting, equalized RGB\nEND",
+      "id": 57,
+      "createdAt": "2025-06-28T15:37:22.964Z",
+      "updatedAt": "2025-06-28T15:39:04.665Z",
+      "ra": "250.43186079723833",
+      "dec": "36.46366251098118",
+      "pixelScale": 7.084010425830791,
+      "fieldOfView": "5.1'",
+      "rotation": 270.14146693808266,
+      "astrometryJobId": "13508736"
+    },
+    {
       "immichId": "2adfbd44-add4-4245-a245-50ed62fc6421",
       "title": "north-america-nebula.png",
       "filename": "north-america-nebula.png",
-      "thumbnailUrl": "http://192.168.1.100:2283/api/assets/2adfbd44-add4-4245-a245-50ed62fc6421/thumbnail",
-      "fullUrl": "http://192.168.1.100:2283/api/assets/2adfbd44-add4-4245-a245-50ed62fc6421/original",
+      "thumbnailUrl": "/api/assets/2adfbd44-add4-4245-a245-50ed62fc6421/thumbnail",
+      "fullUrl": "/api/assets/2adfbd44-add4-4245-a245-50ed62fc6421/thumbnail?size=preview",
       "captureDate": "2025-06-25T00:20:12.323Z",
       "focalLength": null,
       "aperture": null,
@@ -30,22 +157,22 @@
       ],
       "objectType": "Deep Sky",
       "description": null,
-      "id": 4,
-      "createdAt": "2025-06-25T00:55:59.140Z",
-      "updatedAt": "2025-06-25T02:24:53.714Z",
-      "ra": "314.86863970817916",
-      "dec": "44.22753117220769",
-      "pixelScale": 2.9498821028695335,
+      "id": 58,
+      "createdAt": "2025-06-28T15:37:22.964Z",
+      "updatedAt": "2025-06-28T15:38:02.190Z",
+      "ra": "314.8686063591374",
+      "dec": "44.22749181437188",
+      "pixelScale": 5.923692597112931,
       "fieldOfView": "4.3'",
-      "rotation": 80.64132906383367,
-      "astrometryJobId": "13482070"
+      "rotation": 80.64106313728763,
+      "astrometryJobId": "13508719"
     },
     {
       "immichId": "f0ca4a67-40b4-4bde-abc8-3f1d874cb315",
       "title": "pacman-nebula.png",
       "filename": "pacman-nebula.png",
-      "thumbnailUrl": "http://192.168.1.100:2283/api/assets/f0ca4a67-40b4-4bde-abc8-3f1d874cb315/thumbnail",
-      "fullUrl": "http://192.168.1.100:2283/api/assets/f0ca4a67-40b4-4bde-abc8-3f1d874cb315/original",
+      "thumbnailUrl": "/api/assets/f0ca4a67-40b4-4bde-abc8-3f1d874cb315/thumbnail",
+      "fullUrl": "/api/assets/f0ca4a67-40b4-4bde-abc8-3f1d874cb315/thumbnail?size=preview",
       "captureDate": "2025-06-25T00:19:22.742Z",
       "focalLength": null,
       "aperture": null,
@@ -65,53 +192,48 @@
       ],
       "objectType": "Deep Sky",
       "description": null,
-      "id": 5,
-      "createdAt": "2025-06-25T00:55:59.140Z",
-      "updatedAt": "2025-06-25T02:24:53.243Z",
-      "ra": "13.215905712113587",
-      "dec": "56.60347110367162",
-      "pixelScale": 2.9498396428139584,
+      "id": 59,
+      "createdAt": "2025-06-28T15:37:22.965Z",
+      "updatedAt": "2025-06-28T15:38:01.697Z",
+      "ra": "13.216022355939442",
+      "dec": "56.603445556676625",
+      "pixelScale": 3.711361994781496,
       "fieldOfView": "2.7'",
-      "rotation": 49.47755384237428,
-      "astrometryJobId": "13481845"
+      "rotation": 49.58755751780086,
+      "astrometryJobId": "13508717"
     },
     {
-      "immichId": "ea48ad3e-3c9c-4e1d-bed8-095813cc7dad",
-      "title": "heart-nebula-enhanced-stars-compressed.jpg",
-      "filename": "heart-nebula-enhanced-stars-compressed.jpg",
-      "thumbnailUrl": "http://192.168.1.100:2283/api/assets/ea48ad3e-3c9c-4e1d-bed8-095813cc7dad/thumbnail",
-      "fullUrl": "http://192.168.1.100:2283/api/assets/ea48ad3e-3c9c-4e1d-bed8-095813cc7dad/original",
-      "captureDate": "2025-06-22T19:28:31.417Z",
-      "focalLength": null,
-      "aperture": null,
-      "iso": null,
-      "exposureTime": null,
+      "immichId": "7d49f1f4-e77a-431f-be19-44a0918bff2a",
+      "title": "milkyway-stack.tif",
+      "filename": "milkyway-stack.tif",
+      "thumbnailUrl": "/api/assets/7d49f1f4-e77a-431f-be19-44a0918bff2a/thumbnail",
+      "fullUrl": "/api/assets/7d49f1f4-e77a-431f-be19-44a0918bff2a/thumbnail?size=preview",
+      "captureDate": "2023-07-26T01:42:55.000Z",
+      "focalLength": 18,
+      "aperture": "f/4",
+      "iso": 1600,
+      "exposureTime": "1180",
       "frameCount": 1,
-      "totalIntegration": null,
+      "totalIntegration": 0.3277777777777778,
       "telescope": null,
-      "camera": null,
+      "camera": "Canon EOS 1200D",
       "mount": null,
       "filters": null,
-      "plateSolved": true,
+      "plateSolved": false,
       "tags": [
-        "astrophotography",
-        "IC 1795",
-        "IC 1805",
-        "IC 1831",
-        "NGC 896",
-        "NGC 1027"
+        "astrophotography"
       ],
       "objectType": "Deep Sky",
       "description": null,
-      "id": 6,
-      "createdAt": "2025-06-25T00:55:59.141Z",
-      "updatedAt": "2025-06-25T02:24:54.255Z",
-      "ra": "38.16424585672913",
-      "dec": "61.46651678293582",
-      "pixelScale": 2.9519959119560766,
-      "fieldOfView": "5.1'",
-      "rotation": 237.32546183023737,
-      "astrometryJobId": "13482098"
+      "id": 60,
+      "createdAt": "2025-06-28T15:37:22.965Z",
+      "updatedAt": "2025-06-28T15:37:22.965Z",
+      "ra": null,
+      "dec": null,
+      "pixelScale": null,
+      "fieldOfView": null,
+      "rotation": null,
+      "astrometryJobId": null
     }
   ],
   "equipment": [
@@ -199,18 +321,28 @@
   ],
   "plateSolvingJobs": [
     {
-      "imageId": 5,
-      "astrometrySubmissionId": "12652466",
-      "astrometryJobId": "13481845",
+      "imageId": 60,
+      "astrometrySubmissionId": "12679346",
+      "astrometryJobId": "13508718",
+      "status": "processing",
+      "result": null,
+      "id": 134,
+      "submittedAt": "2025-06-28T15:37:29.098Z",
+      "completedAt": null
+    },
+    {
+      "imageId": 59,
+      "astrometrySubmissionId": "12679347",
+      "astrometryJobId": "13508717",
       "status": "success",
       "result": {
-        "ra": 13.215905712113587,
-        "dec": 56.60347110367162,
-        "width_arcsec": 8064.861583453362,
-        "height_arcsec": 5345.109432778892,
-        "radius": 1.3437971008730774,
-        "pixscale": 2.9498396428139584,
-        "orientation": 49.47755384237428,
+        "ra": 13.216022355939442,
+        "dec": 56.603445556676625,
+        "width_arcsec": 8064.789614660191,
+        "height_arcsec": 5344.361272485354,
+        "radius": 1.3437313660750223,
+        "pixscale": 3.711361994781496,
+        "orientation": 49.58755751780086,
         "parity": 1,
         "annotations": [
           {
@@ -218,8 +350,8 @@
             "names": [
               "IC 11"
             ],
-            "pixelx": 1336.7030727188708,
-            "pixely": 907.9540743069281,
+            "pixelx": 1062.549446179425,
+            "pixely": 721.6288382265026,
             "radius": 0,
             "ra": null,
             "dec": null,
@@ -231,9 +363,9 @@
             "names": [
               "NGC 281"
             ],
-            "pixelx": 1336.7030727188708,
-            "pixely": 907.9540743069281,
-            "radius": 355.95154021171817,
+            "pixelx": 1062.549446179425,
+            "pixely": 721.6288382265026,
+            "radius": 282.9149960886613,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -244,9 +376,9 @@
             "names": [
               "IC 1590"
             ],
-            "pixelx": 1333.6466556407402,
-            "pixely": 871.7789934089717,
-            "radius": 64.07127741996383,
+            "pixelx": 1060.1209536663885,
+            "pixely": 692.8805490004685,
+            "radius": 50.92469944049945,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -254,23 +386,23 @@
           }
         ]
       },
-      "id": 8,
-      "submittedAt": "2025-06-25T00:56:52.415Z",
-      "completedAt": "2025-06-25T02:24:53.242Z"
+      "id": 135,
+      "submittedAt": "2025-06-28T15:37:29.728Z",
+      "completedAt": "2025-06-28T15:38:01.696Z"
     },
     {
-      "imageId": 4,
-      "astrometrySubmissionId": "12652691",
-      "astrometryJobId": "13482070",
+      "imageId": 58,
+      "astrometrySubmissionId": "12679350",
+      "astrometryJobId": "13508719",
       "status": "success",
       "result": {
-        "ra": 314.86863970817916,
-        "dec": 44.22753117220769,
-        "width_arcsec": 12716.941745470558,
-        "height_arcsec": 8531.059041498691,
-        "radius": 2.126858191404199,
-        "pixscale": 2.9498821028695335,
-        "orientation": 80.64132906383367,
+        "ra": 314.8686063591374,
+        "dec": 44.22749181437188,
+        "width_arcsec": 12718.168006001462,
+        "height_arcsec": 8530.11733984262,
+        "radius": 2.1269267738134308,
+        "pixscale": 5.923692597112931,
+        "orientation": 80.64106313728763,
         "parity": 1,
         "annotations": [
           {
@@ -278,8 +410,8 @@
             "names": [
               "NGC 6996"
             ],
-            "pixelx": 758.4941217597946,
-            "pixely": 567.6027280740477,
+            "pixelx": 378.05938877007554,
+            "pixely": 282.8532003297307,
             "radius": 0,
             "ra": null,
             "dec": null,
@@ -291,8 +423,8 @@
             "names": [
               "ξ Cyg / 62 Cyg"
             ],
-            "pixelx": 2309.79136627698,
-            "pixely": 2687.1886614693526,
+            "pixelx": 1150.5737655239388,
+            "pixely": 1338.4065371570473,
             "radius": 0,
             "vmag": 3.7200000286102295,
             "ra": null,
@@ -305,8 +437,8 @@
             "names": [
               "57 Cyg"
             ],
-            "pixelx": 2174.422832758608,
-            "pixely": 72.693971085145,
+            "pixelx": 1083.1304044405351,
+            "pixely": 36.33238142190112,
             "radius": 0,
             "vmag": 4.800000190734863,
             "ra": null,
@@ -319,9 +451,9 @@
             "names": [
               "NGC 6989"
             ],
-            "pixelx": 1118.1403574382357,
-            "pixely": 105.60084305267151,
-            "radius": 54.91745120244439,
+            "pixelx": 557.135943709814,
+            "pixely": 52.786556846536314,
+            "radius": 27.34780777048705,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -332,9 +464,9 @@
             "names": [
               "NGC 6997"
             ],
-            "pixelx": 1767.7792968293327,
-            "pixely": 761.3286944294607,
-            "radius": 70.17229724324605,
+            "pixelx": 880.646970826237,
+            "pixely": 379.29149879184945,
+            "radius": 34.94442028541109,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -345,9 +477,9 @@
             "names": [
               "NGC 7000"
             ],
-            "pixelx": 1800.094394905564,
-            "pixely": 1345.161777331894,
-            "radius": 1220.3877560049116,
+            "pixelx": 896.7502057767774,
+            "pixely": 670.0348915643623,
+            "radius": 607.7290374173967,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -355,23 +487,437 @@
           }
         ]
       },
-      "id": 10,
-      "submittedAt": "2025-06-25T01:49:21.142Z",
-      "completedAt": "2025-06-25T02:24:53.712Z"
+      "id": 136,
+      "submittedAt": "2025-06-28T15:37:30.498Z",
+      "completedAt": "2025-06-28T15:38:02.190Z"
     },
     {
-      "imageId": 6,
-      "astrometrySubmissionId": "12652719",
-      "astrometryJobId": "13482098",
+      "imageId": 57,
+      "astrometrySubmissionId": "12679368",
+      "astrometryJobId": "13508736",
       "status": "success",
       "result": {
-        "ra": 38.16424585672913,
-        "dec": 61.46651678293582,
-        "width_arcsec": 15264.770860724871,
-        "height_arcsec": 10036.786100650661,
-        "radius": 2.5373380895429056,
-        "pixscale": 2.9519959119560766,
-        "orientation": 237.32546183023737,
+        "ra": 250.43186079723833,
+        "dec": 36.46366251098118,
+        "width_arcsec": 15315.63054064617,
+        "height_arcsec": 10200.97501319634,
+        "radius": 2.5558138081974286,
+        "pixscale": 7.084010425830791,
+        "orientation": 270.14146693808266,
+        "parity": 1,
+        "annotations": [
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 6199"
+            ],
+            "pixelx": 877.0911295248202,
+            "pixely": 951.3981737338432,
+            "radius": 0,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 4613"
+            ],
+            "pixelx": 916.1362869471088,
+            "pixely": 1188.7422097494787,
+            "radius": 0,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 4615"
+            ],
+            "pixelx": 885.9273123313493,
+            "pixely": 1113.9882964494254,
+            "radius": 0,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 4616"
+            ],
+            "pixelx": 846.3657736940371,
+            "pixely": 1104.615383934965,
+            "radius": 0,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 6194"
+            ],
+            "pixelx": 952.4388518743788,
+            "pixely": 1244.4272382817408,
+            "radius": 3.81140029072395,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 6196"
+            ],
+            "pixelx": 885.9273123313493,
+            "pixely": 1113.9882964494254,
+            "radius": 4.827773654255094,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 6197"
+            ],
+            "pixelx": 846.3657736940371,
+            "pixely": 1104.615383934965,
+            "radius": 3.1761670272580655,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 6205"
+            ],
+            "pixelx": 1080.3001310182385,
+            "pixely": 724.1229613496745,
+            "radius": 69.8756750729632,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 6207"
+            ],
+            "pixelx": 1268.7678503020034,
+            "pixely": 584.1408551343941,
+            "radius": 14.652717036080048,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 4614"
+            ],
+            "pixelx": 907.3655146959462,
+            "pixely": 1125.2191396581015,
+            "radius": 3.2608648272725675,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 4617"
+            ],
+            "pixelx": 1193.4400856748161,
+            "pixely": 678.6030577017385,
+            "radius": 2.9220736272145595,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          }
+        ]
+      },
+      "id": 137,
+      "submittedAt": "2025-06-28T15:38:32.838Z",
+      "completedAt": "2025-06-28T15:39:04.664Z"
+    },
+    {
+      "imageId": 56,
+      "astrometrySubmissionId": "12679369",
+      "astrometryJobId": "13508740",
+      "status": "success",
+      "result": {
+        "ra": 56.757057844944306,
+        "dec": 24.1150233819702,
+        "width_arcsec": 14961.45345492984,
+        "height_arcsec": 9726.633397335878,
+        "radius": 2.4785051511238403,
+        "pixscale": 6.754606525927693,
+        "orientation": 38.585257665627864,
+        "parity": 1,
+        "annotations": [
+          {
+            "type": "ic",
+            "names": [
+              "IC 1990"
+            ],
+            "pixelx": 1015.6028915163118,
+            "pixely": 645.2272425533879,
+            "radius": 0,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "η Tau / 25 Tau",
+              "Alcyone"
+            ],
+            "pixelx": 1068.1705326617234,
+            "pixely": 759.5072370012285,
+            "radius": 0,
+            "vmag": 2.8499999046325684,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "16 Tau",
+              "Celaeno"
+            ],
+            "pixelx": 1259.375704874256,
+            "pixely": 477.95699877600276,
+            "radius": 0,
+            "vmag": 5.449999809265137,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "17 Tau",
+              "Electra"
+            ],
+            "pixelx": 1311.8584711141077,
+            "pixely": 556.2699384292519,
+            "radius": 0,
+            "vmag": 3.7200000286102295,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "q Tau / 19 Tau",
+              "Taygeta"
+            ],
+            "pixelx": 1161.4620120417055,
+            "pixely": 435.47481771212273,
+            "radius": 0,
+            "vmag": 4.300000190734863,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "20 Tau",
+              "Maia"
+            ],
+            "pixelx": 1136.6591521563391,
+            "pixely": 523.980294493949,
+            "radius": 0,
+            "vmag": 3.869999885559082,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "21 Tau",
+              "Asterope / Sterope I"
+            ],
+            "pixelx": 1066.2936401726065,
+            "pixely": 452.89068001317537,
+            "radius": 0,
+            "vmag": 5.760000228881836,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "23 Tau",
+              "Merope"
+            ],
+            "pixelx": 1230.286417325198,
+            "pixely": 735.8436675507236,
+            "radius": 0,
+            "vmag": 4.139999866485596,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "27 Tau",
+              "Atlas"
+            ],
+            "pixelx": 926.536404534859,
+            "pixely": 908.9201170829217,
+            "radius": 0,
+            "vmag": 3.619999885559082,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "28 Tau",
+              "Pleione"
+            ],
+            "pixelx": 896.419262021914,
+            "pixely": 876.1514882901375,
+            "radius": 0,
+            "vmag": 5.050000190734863,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "22 Tau",
+              "Sterope II"
+            ],
+            "pixelx": 1062.0115777044189,
+            "pixely": 474.62971082240625,
+            "radius": 0,
+            "vmag": 6.429999828338623,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "bright",
+            "names": [
+              "18 Tau"
+            ],
+            "pixelx": 1040.6748880104547,
+            "pixely": 278.1554259546717,
+            "radius": 0,
+            "vmag": 5.659999847412109,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 1432"
+            ],
+            "pixelx": 1136.6434716490626,
+            "pixely": 523.8884502048202,
+            "radius": 266.48480456865457,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ngc",
+            "names": [
+              "NGC 1435"
+            ],
+            "pixelx": 1306.7912920056556,
+            "pixely": 799.6240629242048,
+            "radius": 133.24240228432728,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 349"
+            ],
+            "pixelx": 1232.3089224185153,
+            "pixely": 740.0757438509333,
+            "radius": 114.14432695318774,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          },
+          {
+            "type": "ic",
+            "names": [
+              "IC 1995"
+            ],
+            "pixelx": 309.2243774745724,
+            "pixely": 359.7214071514675,
+            "radius": 8.882827282230672,
+            "ra": null,
+            "dec": null,
+            "pixelX": null,
+            "pixelY": null
+          }
+        ]
+      },
+      "id": 138,
+      "submittedAt": "2025-06-28T15:38:33.550Z",
+      "completedAt": "2025-06-28T15:39:05.113Z"
+    },
+    {
+      "imageId": 55,
+      "astrometrySubmissionId": "12679397",
+      "astrometryJobId": "13508768",
+      "status": "success",
+      "result": {
+        "ra": 38.163859391105255,
+        "dec": 61.466660559747666,
+        "width_arcsec": 15258.223580990056,
+        "height_arcsec": 10032.80454640442,
+        "radius": 2.536274463499968,
+        "pixscale": 6.967225379447514,
+        "orientation": 238.43462169484792,
         "parity": 1,
         "annotations": [
           {
@@ -379,8 +925,8 @@
             "names": [
               "IC 1824"
             ],
-            "pixelx": 3492.7788493365106,
-            "pixely": 567.8040209534872,
+            "pixelx": 1479.7661994512077,
+            "pixely": 240.60300900257312,
             "radius": 0,
             "ra": null,
             "dec": null,
@@ -392,9 +938,9 @@
             "names": [
               "NGC 896"
             ],
-            "pixelx": 2637.220354429474,
-            "pixely": 2937.7559505092377,
-            "radius": 101.62616002469602,
+            "pixelx": 1117.133906547595,
+            "pixely": 1244.4676226242282,
+            "radius": 43.05874901444427,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -405,9 +951,9 @@
             "names": [
               "NGC 1027"
             ],
-            "pixelx": 3492.7788493365106,
-            "pixely": 567.8040209534872,
-            "radius": 79.26839954933274,
+            "pixelx": 1479.7661994512077,
+            "pixely": 240.60300900257312,
+            "radius": 33.58582199841034,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -418,9 +964,9 @@
             "names": [
               "IC 1795"
             ],
-            "pixelx": 2737.039445927388,
-            "pixely": 2818.717343215334,
-            "radius": 121.95139021241793,
+            "pixelx": 1159.4343769855195,
+            "pixely": 1194.0616677119956,
+            "radius": 51.67049804738271,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -431,9 +977,9 @@
             "names": [
               "IC 1805"
             ],
-            "pixelx": 2578.618462951528,
-            "pixely": 1690.0195379655206,
-            "radius": 609.7569419760032,
+            "pixelx": 1092.4925240540833,
+            "pixely": 716.0350838069593,
+            "radius": 258.3524863871615,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -444,9 +990,9 @@
             "names": [
               "IC 1831"
             ],
-            "pixelx": 4429.670426988175,
-            "pixely": 960.205128330017,
-            "radius": 1221.851261527187,
+            "pixelx": 1876.6317056198739,
+            "pixely": 406.83641773508793,
+            "radius": 517.695313788263,
             "ra": null,
             "dec": null,
             "pixelX": null,
@@ -454,114 +1000,46 @@
           }
         ]
       },
-      "id": 11,
-      "submittedAt": "2025-06-25T01:56:33.889Z",
-      "completedAt": "2025-06-25T02:24:54.253Z"
+      "id": 139,
+      "submittedAt": "2025-06-28T15:39:36.068Z",
+      "completedAt": "2025-06-28T15:40:07.195Z"
     },
     {
-      "imageId": 4,
-      "astrometrySubmissionId": "12652816",
+      "imageId": 60,
+      "astrometrySubmissionId": "12679644",
       "astrometryJobId": null,
-      "status": "success",
+      "status": "failed",
       "result": {
-        "ra": 314.86863970817916,
-        "dec": 44.22753117220769,
-        "width_arcsec": 12716.941745470558,
-        "height_arcsec": 8531.059041498691,
-        "radius": 2.126858191404199,
-        "pixscale": 2.9498821028695335,
-        "orientation": 80.64132906383367,
-        "parity": 1,
-        "annotations": [
-          {
-            "type": "ngc",
-            "names": [
-              "NGC 6996"
-            ],
-            "pixelx": 758.4941217597946,
-            "pixely": 567.6027280740477,
-            "radius": 0,
-            "ra": null,
-            "dec": null,
-            "pixelX": null,
-            "pixelY": null
-          },
-          {
-            "type": "bright",
-            "names": [
-              "ξ Cyg / 62 Cyg"
-            ],
-            "pixelx": 2309.79136627698,
-            "pixely": 2687.1886614693526,
-            "radius": 0,
-            "vmag": 3.7200000286102295,
-            "ra": null,
-            "dec": null,
-            "pixelX": null,
-            "pixelY": null
-          },
-          {
-            "type": "bright",
-            "names": [
-              "57 Cyg"
-            ],
-            "pixelx": 2174.422832758608,
-            "pixely": 72.693971085145,
-            "radius": 0,
-            "vmag": 4.800000190734863,
-            "ra": null,
-            "dec": null,
-            "pixelX": null,
-            "pixelY": null
-          },
-          {
-            "type": "ngc",
-            "names": [
-              "NGC 6989"
-            ],
-            "pixelx": 1118.1403574382357,
-            "pixely": 105.60084305267151,
-            "radius": 54.91745120244439,
-            "ra": null,
-            "dec": null,
-            "pixelX": null,
-            "pixelY": null
-          },
-          {
-            "type": "ngc",
-            "names": [
-              "NGC 6997"
-            ],
-            "pixelx": 1767.7792968293327,
-            "pixely": 761.3286944294607,
-            "radius": 70.17229724324605,
-            "ra": null,
-            "dec": null,
-            "pixelX": null,
-            "pixelY": null
-          },
-          {
-            "type": "ngc",
-            "names": [
-              "NGC 7000"
-            ],
-            "pixelx": 1800.094394905564,
-            "pixely": 1345.161777331894,
-            "radius": 1220.3877560049116,
-            "ra": null,
-            "dec": null,
-            "pixelX": null,
-            "pixelY": null
-          }
-        ]
+        "error": "Job failed on Astrometry.net"
       },
-      "id": 12,
-      "submittedAt": "2025-06-25T02:18:37.221Z",
-      "completedAt": "2025-06-25T02:19:04.248Z"
+      "id": 140,
+      "submittedAt": "2025-06-28T16:02:17.785Z",
+      "completedAt": "2025-06-28T16:02:26.315Z"
     }
   ],
-  "nextImageId": 7,
+  "adminSettings": {
+    "immich": {
+      "host": "http://192.168.1.100:2283",
+      "apiKey": "CP9Egqi7BkHQWq8QqYnGRn51ub2YZ22MQ61jv6pZLM",
+      "autoSync": true,
+      "syncFrequency": "0 */1 * * *",
+      "syncByAlbum": true,
+      "selectedAlbumIds": [
+        "c66a314f-2d1a-4e88-97e9-5e4a3982a0cf"
+      ]
+    },
+    "astrometry": {
+      "enabled": false,
+      "apiKey": "dhroqvcduyzcgynb"
+    },
+    "app": {
+      "debugMode": false
+    }
+  },
+  "notifications": [],
+  "nextImageId": 61,
   "nextEquipmentId": 6,
   "nextImageEquipmentId": 8,
-  "nextJobId": 13
+  "nextJobId": 141,
+  "nextNotificationId": 5
 }

@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer, type Server } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { cronManager } from './cron-manager';
 
 const app = express();
 app.use(express.json());
@@ -35,6 +37,14 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Initialize cron manager
+cronManager.initialize();
+
+// Re-schedule jobs when settings change (poll every 60s)
+setInterval(async () => {
+  await cronManager.rescheduleAll();
+}, 60000);
 
 (async () => {
   const server = await registerRoutes(app);
