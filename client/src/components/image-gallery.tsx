@@ -10,9 +10,22 @@ interface ImageGalleryProps {
   equipment: Equipment[];
   onImageClick: (image: AstroImage) => void;
   isLoading: boolean;
+  hasMoreImages?: boolean;
+  onLoadMore?: () => void;
+  totalImages?: number;
+  visibleCount?: number;
 }
 
-export function ImageGallery({ images, equipment, onImageClick, isLoading }: ImageGalleryProps) {
+export function ImageGallery({ 
+  images, 
+  equipment, 
+  onImageClick, 
+  isLoading,
+  hasMoreImages = false,
+  onLoadMore,
+  totalImages = 0,
+  visibleCount = 0
+}: ImageGalleryProps) {
   const getStatusBadge = (image: AstroImage) => {
     if (image.plateSolved) {
       return <Badge className="status-plate-solved text-xs px-1.5 py-0.5 text-[10px]">Plate Solved</Badge>;
@@ -106,6 +119,19 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
         ))}
       </div>
 
+      {/* Load More Button - Only show if there are more images to load */}
+      {hasMoreImages && onLoadMore && (
+        <div className="text-center mb-8">
+          <Button 
+            className="astro-button-primary"
+            onClick={onLoadMore}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Load More Images ({visibleCount} of {totalImages})
+          </Button>
+        </div>
+      )}
+
       {/* Equipment Section */}
       {equipment.length > 0 && (
         <div className="mb-8">
@@ -133,14 +159,6 @@ export function ImageGallery({ images, equipment, onImageClick, isLoading }: Ima
           </div>
         </div>
       )}
-
-      {/* Load More */}
-      <div className="text-center">
-        <Button className="astro-button-primary">
-          <Plus className="mr-2 h-4 w-4" />
-          Load More Images
-        </Button>
-      </div>
     </>
   );
 }

@@ -3,6 +3,14 @@ import axios from 'axios';
 import { configService } from './config';
 import { storage } from './storage';
 
+// Import io from the main server file
+let io: any = null;
+
+// Function to set io instance (called from server/index.ts)
+export function setSocketIO(socketIO: any) {
+  io = socketIO;
+}
+
 interface CronJob {
   id: string;
   name: string;
@@ -47,6 +55,16 @@ class CronManager {
         if (response.status === 200) {
           console.log(`[CRON] Immich sync completed: ${response.data.message}`);
           
+          // Emit real-time update via Socket.io
+          if (io) {
+            io.emit('immich-sync-complete', {
+              success: true,
+              message: response.data.message,
+              syncedCount: response.data.syncedCount,
+              removedCount: response.data.removedCount
+            });
+          }
+          
           // Update job status
           const job = this.jobs.get('immich-sync');
           if (job) {
@@ -60,6 +78,14 @@ class CronManager {
       } catch (error: any) {
         const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
         console.error('[CRON] Immich sync failed:', errorMessage);
+        
+        // Emit real-time update via Socket.io for failures
+        if (io) {
+          io.emit('immich-sync-complete', {
+            success: false,
+            message: errorMessage
+          });
+        }
         
         // Update job status
         const job = this.jobs.get('immich-sync');

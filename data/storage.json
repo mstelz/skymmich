@@ -330,11 +330,13 @@
       "imageId": 60,
       "astrometrySubmissionId": "12679346",
       "astrometryJobId": "13508718",
-      "status": "processing",
-      "result": null,
+      "status": "failed",
+      "result": {
+        "error": "Job failed on Astrometry.net"
+      },
       "id": 134,
       "submittedAt": "2025-06-28T15:37:29.098Z",
-      "completedAt": null
+      "completedAt": "2025-06-28T22:01:57.287Z"
     },
     {
       "imageId": 59,
@@ -1035,8 +1037,8 @@
       ]
     },
     "astrometry": {
-      "enabled": false,
-      "apiKey": "dhroqvcduyzcgynb"
+      "apiKey": "dhroqvcduyzcgynb",
+      "enabled": true
     },
     "app": {
       "debugMode": false

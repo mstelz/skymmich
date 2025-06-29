@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Telescope, Upload, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { useSocket } from "@/hooks/use-socket";
 
 interface HeaderProps {
   onSync: () => void;
@@ -21,10 +22,11 @@ interface Notification {
 export function Header({ onSync }: HeaderProps) {
   const [location] = useLocation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const socket = useSocket();
 
   const isActive = (path: string) => location === path;
 
-  // Load notifications on component mount and refresh periodically
+  // Load notifications on component mount
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -39,12 +41,29 @@ export function Header({ onSync }: HeaderProps) {
     };
 
     loadNotifications();
-    
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(loadNotifications, 30000);
-    
-    return () => clearInterval(interval);
   }, []);
+
+  // Listen for real-time notification updates via Socket.io
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotificationUpdate = () => {
+      // Refresh notifications when we receive an update
+      fetch('/api/notifications')
+        .then(response => response.json())
+        .then(data => setNotifications(data))
+        .catch(error => console.error('Failed to refresh notifications:', error));
+    };
+
+    // Listen for various events that might affect notifications
+    socket.on('plate-solving-update', handleNotificationUpdate);
+    socket.on('immich-sync-complete', handleNotificationUpdate);
+
+    return () => {
+      socket.off('plate-solving-update', handleNotificationUpdate);
+      socket.off('immich-sync-complete', handleNotificationUpdate);
+    };
+  }, [socket]);
 
   const unacknowledgedCount = notifications.length;
 

@@ -5,6 +5,14 @@ import { xmpSidecarService } from './xmp-sidecar';
 import { configService } from './config';
 import { getConstellationFromCoordinates } from './constellation-utils';
 
+// Import io from the main server file
+let io: any = null;
+
+// Function to set io instance (called from server/index.ts)
+export function setSocketIO(socketIO: any) {
+  io = socketIO;
+}
+
 export interface AstrometryCalibration {
   ra: number;
   dec: number;
@@ -157,6 +165,16 @@ export class AstrometryService {
       status: "processing",
       result: null,
     });
+
+    // Emit real-time update via Socket.io
+    if (io) {
+      io.emit('plate-solving-update', {
+        jobId: job.id,
+        status: "processing",
+        imageId: image.id,
+        message: "Job submitted for plate solving"
+      });
+    }
 
     return { submissionId, jobId: job.id };
   }
@@ -326,6 +344,19 @@ export class AstrometryService {
           console.error(`Failed to write XMP sidecar for image ${image.id}:`, error);
           // Don't fail the entire operation if sidecar writing fails
         }
+
+        // Emit real-time update via Socket.io
+        if (io) {
+          io.emit('plate-solving-update', {
+            jobId: job.id,
+            status: "success",
+            imageId: job.imageId,
+            result: {
+              ...result.calibration,
+              annotations: result.annotations
+            }
+          });
+        }
       }
     }
   }
@@ -371,13 +402,77 @@ export class AstrometryService {
         }
       }
 
+      // Check individual job status if we have a job ID
+      if (job.astrometryJobId) {
+        try {
+          const jobStatusResponse = await axios.get(
+            `https://nova.astrometry.net/api/jobs/${job.astrometryJobId}`,
+            {
+              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+            }
+          );
+          
+          const jobStatus = jobStatusResponse.data;
+          if (jobStatus.status === "failure") {
+            await storage.updatePlateSolvingJob(job.id, { 
+              status: "failed", 
+              result: { error: "Job failed on Astrometry.net" }
+            });
+            
+            // Emit real-time update via Socket.io
+            if (io) {
+              io.emit('plate-solving-update', { 
+                jobId: job.id, 
+                status: "failed", 
+                result: { error: "Job failed on Astrometry.net" }
+              });
+            }
+            
+            return { status: "failed" };
+          }
+        } catch (jobError: any) {
+          if (jobError.response?.status === 404) {
+            await storage.updatePlateSolvingJob(job.id, {
+              status: "failed",
+              result: { error: "Job not found on Astrometry.net" }
+            });
+            
+            // Emit real-time update via Socket.io
+            if (io) {
+              io.emit('plate-solving-update', { 
+                jobId: job.id, 
+                status: "failed", 
+                result: { error: "Job not found on Astrometry.net" }
+              });
+            }
+            
+            return { status: "failed" };
+          }
+          // If we can't check individual job status, continue with submission status check
+        }
+      }
+
       if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
         // Job completed successfully
-        if (job.astrometryJobId) {
-          const result = await this.fetchCompleteResult(job.astrometryJobId);
-          await this.updateJobAndImage(job.id, result);
-          return { status: "success", result };
+        const calibration = astrometryStatus.job_calibrations[0];
+        const result = await this.fetchCompleteResult(job.astrometryJobId!);
+        
+        // Update job and image
+        await this.updateJobAndImage(job.id, result);
+        
+        // Emit real-time update via Socket.io
+        if (io) {
+          io.emit('plate-solving-update', { 
+            jobId: job.id, 
+            status: "success", 
+            result: {
+              ...result.calibration,
+              annotations: result.annotations
+            }
+          });
         }
+        
+        return { status: "success", result };
       } else if (astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
         const jobStatus = astrometryStatus.jobs[0];
         if (jobStatus === null) {
@@ -391,13 +486,7 @@ export class AstrometryService {
 
       return { status: "processing" };
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        await storage.updatePlateSolvingJob(job.id, {
-          status: "failed",
-          result: { error: "Job expired on Astrometry.net" }
-        });
-        return { status: "failed" };
-      }
+      console.error("Error checking job status:", error);
       throw error;
     }
   }

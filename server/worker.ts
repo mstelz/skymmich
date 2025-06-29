@@ -1,16 +1,47 @@
 import { storage } from "./storage";
 import { AstrometryService } from "./astrometry";
 import { configService } from "./config";
+import { io } from "socket.io-client";
 
 class PlateSolvingWorker {
   private isRunning = false;
   private checkInterval = 30000; // 30 seconds
   private maxConcurrent: number = parseInt(process.env.PLATE_SOLVE_MAX_CONCURRENT || "3", 10);
   private astrometryService: AstrometryService;
+  private socket: any = null;
 
   constructor() {
     // Create AstrometryService that uses config service (to access admin settings)
     this.astrometryService = new AstrometryService(true);
+    
+    // Connect to the main server via Socket.io for real-time updates
+    this.connectToServer();
+  }
+
+  private connectToServer() {
+    try {
+      this.socket = io('http://localhost:5000');
+      
+      this.socket.on('connect', () => {
+        console.log('Worker connected to server via Socket.io');
+      });
+      
+      this.socket.on('disconnect', () => {
+        console.log('Worker disconnected from server');
+      });
+      
+      this.socket.on('connect_error', (error: any) => {
+        console.error('Worker Socket.io connection error:', error);
+      });
+    } catch (error) {
+      console.error('Failed to connect worker to server:', error);
+    }
+  }
+
+  private emitUpdate(event: string, data: any) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit(event, data);
+    }
   }
 
   async start() {
@@ -80,9 +111,25 @@ class PlateSolvingWorker {
 
     for (const job of processingJobs) {
       try {
-        await this.astrometryService.checkJobStatus(job.id);
+        const result = await this.astrometryService.checkJobStatus(job.id);
+        
+        // Emit real-time update via Socket.io
+        if (result.status !== "processing") {
+          this.emitUpdate('plate-solving-update', {
+            jobId: job.id,
+            status: result.status,
+            result: result.result
+          });
+        }
       } catch (error) {
         console.error(`Failed to update job ${job.id}:`, error);
+        
+        // Emit error update via Socket.io
+        this.emitUpdate('plate-solving-update', {
+          jobId: job.id,
+          status: "error",
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
       }
     }
   }

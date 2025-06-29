@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { Server as SocketIOServer } from "socket.io";
 import { storage } from "./storage";
 import { insertAstroImageSchema, insertPlateSolvingJobSchema } from "@shared/schema";
 import axios from "axios";
@@ -7,7 +8,7 @@ import { astrometryService } from './astrometry';
 import { configService } from './config';
 import { cronManager } from './cron-manager';
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, io?: SocketIOServer): Promise<Server> {
   
   // Get all astrophotography images with optional filters
   app.get("/api/images", async (req, res) => {
@@ -372,6 +373,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobId = parseInt(req.params.jobId);
       const { status, result } = await astrometryService.checkJobStatus(jobId);
+
+      // Emit real-time update via Socket.io if available
+      if (io) {
+        io.emit('plate-solving-update', { jobId, status, result });
+      }
 
       res.json({ status, result });
 
