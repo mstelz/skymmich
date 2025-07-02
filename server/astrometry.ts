@@ -194,6 +194,8 @@ export class AstrometryService {
 
         const astrometryStatus = statusResponse.data;
 
+        console.log(`Polling submission ${submissionId} - jobs:`, astrometryStatus.jobs, 'calibrations:', astrometryStatus.job_calibrations);
+
         if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
           // Job completed successfully
           const jobId = astrometryStatus.jobs?.[0]?.toString();
@@ -208,6 +210,11 @@ export class AstrometryService {
             // Job failed
             return null;
           }
+          // If job exists but is not null, it's still processing
+          // Continue polling
+        } else {
+          // No jobs array yet - submission is still being processed
+          // This is normal for newly submitted images, continue polling
         }
 
         // Wait before polling again
@@ -393,12 +400,15 @@ export class AstrometryService {
 
       const astrometryStatus = statusResponse.data;
 
+      console.log(`Job ${job.id} status check - submission: ${job.astrometrySubmissionId}, jobs:`, astrometryStatus.jobs);
+
       // If jobId is not set, set it from the jobs array
       if ((!job.astrometryJobId || job.astrometryJobId === "null") && astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
         const newJobId = astrometryStatus.jobs[0]?.toString();
         if (newJobId) {
           await storage.updatePlateSolvingJob(job.id, { astrometryJobId: newJobId });
           job.astrometryJobId = newJobId;
+          console.log(`Updated job ${job.id} with astrometry job ID: ${newJobId}`);
         }
       }
 
@@ -480,11 +490,25 @@ export class AstrometryService {
             status: "failed", 
             result: { error: "Job failed on Astrometry.net" }
           });
+          
+          // Emit real-time update via Socket.io
+          if (io) {
+            io.emit('plate-solving-update', { 
+              jobId: job.id, 
+              status: "failed", 
+              result: { error: "Job failed on Astrometry.net" }
+            });
+          }
+          
           return { status: "failed" };
         }
+        // If job exists but is not null, it's still processing
+        return { status: "processing" };
+      } else {
+        // No jobs array yet - submission is still being processed
+        // This is normal for newly submitted images
+        return { status: "processing" };
       }
-
-      return { status: "processing" };
     } catch (error: any) {
       console.error("Error checking job status:", error);
       throw error;

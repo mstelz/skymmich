@@ -94,9 +94,12 @@ export function Header({ onSync }: HeaderProps) {
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
               Collections
             </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link 
+              href="/plate-solving" 
+              className={`transition-colors ${isActive('/plate-solving') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
               Plate Solving
-            </a>
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-3">

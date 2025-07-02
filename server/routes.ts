@@ -43,6 +43,24 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
     }
   });
 
+  // Update a specific image
+  app.patch("/api/images/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedImage = await storage.updateAstroImage(id, updates);
+      if (!updatedImage) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      res.json(updatedImage);
+    } catch (error) {
+      console.error("Failed to update image:", error);
+      res.status(500).json({ message: "Failed to update image" });
+    }
+  });
+
   // Sync images from Immich
   app.post("/api/sync-immich", async (req, res) => {
     try {
@@ -132,6 +150,9 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
             : null,
           mount: "",
           filters: "",
+          latitude: asset.exifInfo?.latitude || null,
+          longitude: asset.exifInfo?.longitude || null,
+          altitude: asset.exifInfo?.altitude || null,
           plateSolved: false,
           tags: ["astrophotography"],
           objectType: "Deep Sky", // Default classification
@@ -367,6 +388,70 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
     }
   });
 
+  // Bulk submit images for plate solving
+  app.post("/api/plate-solving/bulk", async (req, res) => {
+    try {
+      const { imageIds } = req.body;
+      
+      if (!Array.isArray(imageIds) || imageIds.length === 0) {
+        return res.status(400).json({ message: "imageIds array is required" });
+      }
+
+      // Check if plate solving is enabled in admin settings
+      const astrometryConfig = await configService.getAstrometryConfig();
+      if (!astrometryConfig.enabled) {
+        return res.status(400).json({ 
+          message: "Plate solving is currently disabled. Please enable it in the admin settings." 
+        });
+      }
+
+      const results = [];
+      
+      for (const imageId of imageIds) {
+        try {
+          const image = await storage.getAstroImage(imageId);
+          if (!image) {
+            results.push({ imageId, success: false, error: "Image not found" });
+            continue;
+          }
+
+          if (image.plateSolved) {
+            results.push({ imageId, success: false, error: "Image already plate solved" });
+            continue;
+          }
+
+          // Submit for plate solving (just submit, don't wait for completion)
+          const { submissionId, jobId } = await astrometryService.submitImageForPlateSolving(image);
+          
+          results.push({ 
+            imageId, 
+            success: true, 
+            submissionId, 
+            jobId,
+            message: "Submitted for plate solving"
+          });
+        } catch (error: any) {
+          results.push({ 
+            imageId, 
+            success: false, 
+            error: error.response?.data?.message || error.message 
+          });
+        }
+      }
+
+      res.json({
+        message: "Bulk plate solving submission completed",
+        results
+      });
+    } catch (error: any) {
+      console.error("Bulk plate solving error:", error);
+      res.status(500).json({
+        message: "Failed to submit images for plate solving",
+        error: error.message
+      });
+    }
+  });
+
   // Update plate solving job status
   // Note: This endpoint is mainly for debugging. The worker process automatically checks and updates job status.
   app.post("/api/plate-solving/update/:jobId", async (req, res) => {
@@ -386,6 +471,43 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
       res.status(500).json({ 
         message: "Failed to update plate solving status",
         error: error.response?.data?.message || error.message 
+      });
+    }
+  });
+
+  // Get plate solving job data for an image
+  app.get("/api/images/:id/plate-solving-job", async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.id);
+      const image = await storage.getAstroImage(imageId);
+      
+      if (!image) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      // Find the plate solving job for this image
+      const jobs = await storage.getPlateSolvingJobs();
+      const job = jobs.find(j => j.imageId === imageId && j.status === 'success');
+      
+      if (!image.plateSolved || !job) {
+        return res.status(400).json({ message: "Image has not been successfully plate solved" });
+      }
+
+      res.json({
+        jobId: job.id,
+        submissionId: job.astrometrySubmissionId,
+        astrometryJobId: job.astrometryJobId,
+        status: job.status,
+        submittedAt: job.submittedAt,
+        completedAt: job.completedAt
+      });
+
+    } catch (error) {
+      const err = error as any;
+      console.error("Plate solving job fetch error:", err.response?.data || err.message);
+      res.status(500).json({ 
+        message: "Failed to fetch plate solving job data",
+        error: err.response?.data?.message || err.message 
       });
     }
   });
@@ -672,6 +794,45 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
       res.json({ message: "Equipment deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete equipment" });
+    }
+  });
+
+  // Get constellations
+  app.get("/api/constellations", async (req, res) => {
+    try {
+      const images = await storage.getAstroImages();
+      const constellations = Array.from(new Set(
+        images
+          .filter(img => img.constellation)
+          .map(img => img.constellation!)
+      )).sort();
+      res.json(constellations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch constellations" });
+    }
+  });
+
+  // Get tags
+  app.get("/api/tags", async (req, res) => {
+    try {
+      const images = await storage.getAstroImages();
+      const tagCounts: Record<string, number> = {};
+      
+      images.forEach(img => {
+        if (img.tags) {
+          img.tags.forEach(tag => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
+        }
+      });
+      
+      const tags = Object.entries(tagCounts)
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count);
+      
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tags" });
     }
   });
 

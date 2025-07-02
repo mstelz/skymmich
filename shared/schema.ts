@@ -25,6 +25,11 @@ export const astrophotographyImages = pgTable("astrophotography_images", {
   mount: text("mount"),
   filters: text("filters"),
   
+  // Location data from EXIF
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  altitude: real("altitude"),
+  
   // Plate solving data
   plateSolved: boolean("plate_solved").default(false),
   ra: text("ra"),
@@ -48,7 +53,7 @@ export const astrophotographyImages = pgTable("astrophotography_images", {
 export const equipment = pgTable("equipment", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(), // telescope, camera, mount, filter, accessories
+  type: text("type").notNull(), // telescope, camera, mount, filter, accessories, software
   specifications: json("specifications"),
   imageUrl: text("image_url"),
   description: text("description"),

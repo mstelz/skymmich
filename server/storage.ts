@@ -160,6 +160,9 @@ class FileStorage {
       camera: image.camera || null,
       mount: image.mount || null,
       filters: image.filters || null,
+      latitude: image.latitude || null,
+      longitude: image.longitude || null,
+      altitude: image.altitude || null,
       plateSolved: image.plateSolved || false,
       ra: image.ra || null,
       dec: image.dec || null,
@@ -427,7 +430,7 @@ class FileStorage {
         .filter(img => img.plateSolved && img.tags && img.tags.length > 0)
         .map(img => {
           // Extract primary astronomical target from tags
-          const primaryTargets = img.tags.filter(tag => 
+          const primaryTargets = img.tags!.filter(tag => 
             tag.startsWith('NGC ') || 
             tag.startsWith('IC ') || 
             tag.startsWith('M ') ||

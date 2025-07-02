@@ -24,8 +24,8 @@
     <rdf:Description rdf:about=""
       xmlns:astro="http://ns.astrometry.net/1.0/">
       <astro:plateSolved>true</astro:plateSolved>
-      <astro:astrometryJobId>13508719</astro:astrometryJobId>
-      <astro:plateSolvedAt>2025-06-28T15:38:02.191Z</astro:plateSolvedAt>
+      <astro:astrometryJobId>13529002</astro:astrometryJobId>
+      <astro:plateSolvedAt>2025-07-01T14:56:19.947Z</astro:plateSolvedAt>
       <astro:imageId>2adfbd44-add4-4245-a245-50ed62fc6421</astro:imageId>
       
       <!-- Calibration Data -->

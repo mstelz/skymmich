@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { 
   Crosshair, 
   History, 
@@ -61,10 +62,14 @@ export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
               </p>
             </>
           )}
-          <Button className="w-full astro-button-secondary">
-            <CloudUpload className="mr-2 h-4 w-4" />
-            Submit New Image
-          </Button>
+          <div>
+            <Link href="/plate-solving">
+              <Button className="w-full astro-button-secondary">
+                <CloudUpload className="mr-2 h-4 w-4" />
+                Submit New Image
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 

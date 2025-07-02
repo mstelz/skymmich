@@ -36,6 +36,16 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
     enabled: !!(showAnnotations && image.plateSolved),
   });
 
+  // Fetch plate solving job data for this image
+  const { data: plateSolvingJob } = useQuery({
+    queryKey: ["/api/images", image.id, "plate-solving-job"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/images/${image.id}/plate-solving-job`);
+      return response.json();
+    },
+    enabled: !!(image.id && image.plateSolved),
+  });
+
   // HTML overlays for Astrometry.net annotations
   const annotationOverlays = showAnnotations && annotationsData?.annotations ? (
     <>
@@ -174,7 +184,20 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                     {image.fieldOfView && <div>Field of View: {image.fieldOfView}</div>}
                     {image.rotation && <div>Rotation: {image.rotation}°</div>}
                     <div className="text-green-400 flex items-center">
-                      <Badge className="status-plate-solved">✓ Verified by Astrometry.net</Badge>
+                      {plateSolvingJob?.submissionId ? (
+                        <a
+                          href={`http://nova.astrometry.net/status/${plateSolvingJob.submissionId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
+                          <Badge className="status-plate-solved cursor-pointer hover:bg-green-600">
+                            ✓ Verified by Astrometry.net
+                          </Badge>
+                        </a>
+                      ) : (
+                        <Badge className="status-plate-solved">✓ Verified by Astrometry.net</Badge>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -283,7 +306,20 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                     {image.fieldOfView && <div>Field of View: {image.fieldOfView}</div>}
                     {image.rotation && <div>Rotation: {image.rotation}°</div>}
                     <div className="text-green-400 flex items-center">
-                      <Badge className="status-plate-solved">✓ Verified by Astrometry.net</Badge>
+                      {plateSolvingJob?.submissionId ? (
+                        <a
+                          href={`http://nova.astrometry.net/status/${plateSolvingJob.submissionId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
+                          <Badge className="status-plate-solved cursor-pointer hover:bg-green-600">
+                            ✓ Verified by Astrometry.net
+                          </Badge>
+                        </a>
+                      ) : (
+                        <Badge className="status-plate-solved">✓ Verified by Astrometry.net</Badge>
+                      )}
                     </div>
                   </div>
                 ) : (

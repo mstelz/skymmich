@@ -165,11 +165,12 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
               className="input w-full"
             >
               <option value="">Choose type...</option>
-              <option value="telescope">Telescope</option>
+                              <option value="telescope">Telescope</option>
               <option value="camera">Camera</option>
               <option value="mount">Mount</option>
               <option value="filter">Filter</option>
               <option value="accessory">Accessory</option>
+              <option value="software">Software</option>
             </select>
           </div>
 
@@ -359,6 +360,7 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
                 <option value="mount">Mount</option>
                 <option value="filter">Filter</option>
                 <option value="accessory">Accessory</option>
+                <option value="software">Software</option>
               </select>
             </div>
           </div>

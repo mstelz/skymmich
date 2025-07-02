@@ -284,6 +284,7 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
                 <option value="mount">Mount</option>
                 <option value="filter">Filter</option>
                 <option value="accessory">Accessory</option>
+                <option value="software">Software</option>
               </select>
             </div>
 
