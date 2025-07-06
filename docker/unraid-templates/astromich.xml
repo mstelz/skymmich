@@ -9,8 +9,17 @@
   <TemplateURL>https://raw.githubusercontent.com/your-repo/astromich/main/docker/unraid-templates/astromich.xml</TemplateURL>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
-  <Date>2024-01-01</Date>
+  <Date>2025-07-06</Date>
   <Changes>
+    ### v1.1.0
+    - SECURITY: Comprehensive security fixes and secret management
+    - FEAT: Complete Docker containerization with multi-stage builds
+    - FEAT: PostgreSQL support for production environments
+    - FEAT: Worker process management with enable/disable functionality
+    - FIX: Thumbnail proxy endpoint 500 errors resolved
+    - REFACTOR: Project renamed from AstroRep to Astromich
+    - DOCS: Enhanced security documentation and deployment guides
+    
     ### v1.0.0
     - Initial release
     - Astrophotography image management
@@ -28,11 +37,18 @@
     - Image tagging and filtering
     - Real-time progress updates
     - Dark theme optimized for astronomy
+    - Secure configuration management
     
     Requirements:
-    - PostgreSQL database (see Astromich-DB template)
+    - PostgreSQL database (install Astromich-DB template first)
     - Optional: Immich server for photo management
     - Optional: Astrometry.net API key for plate solving
+    
+    Security Notes:
+    - API keys are stored securely as environment variables
+    - No secrets are embedded in the container image
+    - Configuration can also be managed via the admin web interface
+    - Always use strong, unique passwords for database connections
   </Description>
   
   <Config Name="WebUI Port" Target="5000" Default="5000" Mode="tcp" Description="Port for web interface" Type="Port" Display="always" Required="true" Mask="false">5000</Config>
@@ -45,9 +61,9 @@
   
   <Config Name="Immich URL" Target="IMMICH_URL" Default="" Mode="" Description="Immich server URL (e.g., http://immich:2283)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
   
-  <Config Name="Immich API Key" Target="IMMICH_API_KEY" Default="" Mode="" Description="Immich API key for integration" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Immich API Key" Target="IMMICH_API_KEY" Default="" Mode="" Description="Immich API key for integration (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
   
-  <Config Name="Astrometry API Key" Target="ASTROMETRY_API_KEY" Default="" Mode="" Description="Astrometry.net API key for plate solving" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Astrometry API Key" Target="ASTROMETRY_API_KEY" Default="" Mode="" Description="Astrometry.net API key for plate solving (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
   
   <Config Name="Enable Plate Solving" Target="ENABLE_PLATE_SOLVING" Default="true" Mode="" Description="Enable background plate solving worker" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
   

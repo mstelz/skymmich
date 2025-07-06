@@ -16,10 +16,10 @@ docker compose up -d
 
 ### 2. Environment Configuration
 
-Copy `.env.example` to `.env` and configure:
+⚠️ **SECURITY**: Copy `docker/.env.docker.example` to `.env` in the project root and configure:
 
 ```bash
-# Required: PostgreSQL password
+# Required: PostgreSQL password (use a strong, unique password)
 POSTGRES_PASSWORD=your_secure_password_here
 
 # Optional: Application configuration
@@ -31,13 +31,15 @@ ENABLE_PLATE_SOLVING=true
 PLATE_SOLVE_MAX_CONCURRENT=3
 ```
 
+**Note**: API keys can also be configured via the admin web interface after startup.
+
 ## Files Overview
 
 ### Core Files
 - `Dockerfile` - Multi-stage build for Astromich application
 - `docker-compose.yml` - Complete development/production setup
 - `startup.sh` - Container entry point script
-- `.env.example` - Environment variable template
+- `.env.docker.example` - Docker environment variable template
 
 ### UnRAID Templates
 - `unraid-templates/astromich.xml` - Main application template
@@ -80,7 +82,7 @@ docker compose down
 docker compose up -d --build
 
 # Scale worker (if needed)
-docker compose up -d --scale astrorep=1
+docker compose up -d --scale astromich=1
 ```
 
 ## Container Architecture
@@ -106,7 +108,7 @@ Both containers include health checks:
 - 30-second intervals with 40-second startup period
 
 ### PostgreSQL Health Check
-- Command: `pg_isready -U astrorep -d astrorep`
+- Command: `pg_isready -U astromich -d astromich`
 - 10-second intervals with 30-second startup period
 
 ## Data Persistence
@@ -154,11 +156,21 @@ docker exec -i astromich-db psql -U astromich astromich < backup.sql
 
 ## Security Considerations
 
-- Change default PostgreSQL password
-- Use strong API keys
-- Keep containers updated
-- Monitor log files for security issues
-- Consider using secrets management for production
+🔒 **Critical Security Notes:**
+
+- **Change default PostgreSQL password** - Use a strong, unique password
+- **Secure API key storage** - Set via environment variables or admin interface
+- **No secrets in images** - Container images contain no embedded secrets
+- **Regular updates** - Keep containers updated with latest security patches
+- **Monitor access** - Review logs for unauthorized access attempts
+- **Production secrets** - Consider using Docker secrets or external secret management
+- **Network security** - PostgreSQL port is not exposed externally
+- **File permissions** - Containers run as non-root user (`astromich`)
+
+**Environment Variables vs Admin Interface:**
+- Environment variables take precedence for initial configuration
+- Admin interface settings are stored in the database
+- Both methods are secure when properly configured
 
 ## Development
 
