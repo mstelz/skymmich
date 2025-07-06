@@ -1,16 +1,22 @@
 {
-  "name": "rest-express",
+  "name": "astromich",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx --env-file=.env server/index.ts",
-    "dev:watch": "NODE_ENV=development nodemon --watch server --ext ts,js --exec \"tsx --env-file=.env server/index.ts\"",
-    "dev:worker": "NODE_ENV=development tsx --env-file=.env server/worker.ts",
+    "dev": "NODE_ENV=development tsx --env-file=.env apps/server/src/index.ts",
+    "dev:watch": "NODE_ENV=development nodemon --watch apps/server --ext ts,js --exec \"tsx --env-file=.env apps/server/src/index.ts\"",
+    "dev:worker": "NODE_ENV=development tsx --env-file=.env apps/server/src/workers/worker.ts",
     "dev:all": "concurrently \"npm run dev:watch\" \"npm run dev:worker\"",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild server/worker.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "vite build && esbuild apps/server/src/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild apps/server/src/workers/worker.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build:docker": "npm run build && npm run copy-assets",
+    "copy-assets": "cp -r tools dist/ && cp drizzle.config.ts dist/ && mkdir -p dist/public && cp -r apps/client/dist/* dist/public/",
     "start": "NODE_ENV=production node dist/index.js",
     "start:worker": "NODE_ENV=production node dist/worker.js",
+    "docker:build": "docker build -t astromich .",
+    "docker:run": "docker compose up -d",
+    "docker:stop": "docker compose down",
+    "docker:logs": "docker compose logs -f",
     "check": "tsc"
   },
   "dependencies": {

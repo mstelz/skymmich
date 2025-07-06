@@ -1,0 +1,69 @@
+version: '3.8'
+
+# Astromich Docker Compose Configuration
+# SECURITY NOTICE: This file references environment variables that should be set externally.
+# Create a .env file with your actual secrets (do not commit it to version control).
+# See .env.example for required variables.
+
+services:
+  astromich:
+    build: .
+    container_name: astromich
+    restart: unless-stopped
+    ports:
+      - "${ASTROMICH_PORT:-5000}:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://astromich:${POSTGRES_PASSWORD}@astromich-db:5432/astromich
+      - IMMICH_URL=${IMMICH_URL:-}
+      - IMMICH_API_KEY=${IMMICH_API_KEY:-}
+      - ASTROMETRY_API_KEY=${ASTROMETRY_API_KEY:-}
+      - ENABLE_PLATE_SOLVING=${ENABLE_PLATE_SOLVING:-true}
+      - PLATE_SOLVE_MAX_CONCURRENT=${PLATE_SOLVE_MAX_CONCURRENT:-3}
+    volumes:
+      - astromich-config:/app/config
+      - astromich-logs:/app/logs
+    depends_on:
+      astromich-db:
+        condition: service_healthy
+    networks:
+      - astromich-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  astromich-db:
+    image: postgres:15-alpine
+    container_name: astromich-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=astromich
+      - POSTGRES_USER=astromich
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - astromich-database:/var/lib/postgresql/data
+    networks:
+      - astromich-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astromich -d astromich"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Don't expose PostgreSQL port externally for security
+
+networks:
+  astromich-network:
+    driver: bridge
+
+volumes:
+  astromich-config:
+    driver: local
+  astromich-database:
+    driver: local
+  astromich-logs:
+    driver: local

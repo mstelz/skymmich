@@ -1,0 +1,2 @@
+// Re-export database types
+export type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob } from '../db/pg-schema';

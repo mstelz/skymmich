@@ -5,5 +5,13 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
-# secrets
-.env
+# secrets and environment files
+.env.local
+.env.production
+.env.production.local
+.env.development.local
+*.key
+*.pem
+*.p12
+secrets/
+config/secrets.json

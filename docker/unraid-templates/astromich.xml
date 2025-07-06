@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Astromich</Name>
+  <Repository>your-registry/astromich:latest</Repository>
+  <Registry>https://hub.docker.com/</Registry>
+  <Network>bridge</Network>
+  <WebUI>http://[IP]:[PORT:5000]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/your-repo/astromich/main/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/your-repo/astromich/main/docker/unraid-templates/astromich.xml</TemplateURL>
+  <Beta>False</Beta>
+  <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
+  <Date>2024-01-01</Date>
+  <Changes>
+    ### v1.0.0
+    - Initial release
+    - Astrophotography image management
+    - Plate solving integration
+    - Equipment tracking
+    - Immich synchronization
+  </Changes>
+  <Description>
+    Astromich is a comprehensive astrophotography image management and analysis application. It provides automatic synchronization with Immich, plate solving capabilities through Astrometry.net, equipment tracking, and detailed image metadata management. Perfect for organizing and analyzing your astrophotography collection.
+    
+    Features:
+    - Automatic Immich synchronization
+    - Plate solving with Astrometry.net
+    - Equipment and settings tracking
+    - Image tagging and filtering
+    - Real-time progress updates
+    - Dark theme optimized for astronomy
+    
+    Requirements:
+    - PostgreSQL database (see Astromich-DB template)
+    - Optional: Immich server for photo management
+    - Optional: Astrometry.net API key for plate solving
+  </Description>
+  
+  <Config Name="WebUI Port" Target="5000" Default="5000" Mode="tcp" Description="Port for web interface" Type="Port" Display="always" Required="true" Mask="false">5000</Config>
+  
+  <Config Name="Config Directory" Target="/app/config" Default="/mnt/user/appdata/astromich/config" Mode="rw" Description="Configuration storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/config</Config>
+  
+  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://astromich:CHANGE_ME@astromich-db:5432/astromich" Mode="" Description="PostgreSQL connection string (ensure Astromich-DB is installed first)" Type="Variable" Display="always" Required="true" Mask="true">postgresql://astromich:CHANGE_ME@astromich-db:5432/astromich</Config>
+  
+  <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Application environment" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
+  
+  <Config Name="Immich URL" Target="IMMICH_URL" Default="" Mode="" Description="Immich server URL (e.g., http://immich:2283)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  
+  <Config Name="Immich API Key" Target="IMMICH_API_KEY" Default="" Mode="" Description="Immich API key for integration" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  
+  <Config Name="Astrometry API Key" Target="ASTROMETRY_API_KEY" Default="" Mode="" Description="Astrometry.net API key for plate solving" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  
+  <Config Name="Enable Plate Solving" Target="ENABLE_PLATE_SOLVING" Default="true" Mode="" Description="Enable background plate solving worker" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  
+  <Config Name="Max Plate Solve Jobs" Target="PLATE_SOLVE_MAX_CONCURRENT" Default="3" Mode="" Description="Maximum concurrent plate solving jobs" Type="Variable" Display="advanced" Required="false" Mask="false">3</Config>
+  
+  <Config Name="Application Port" Target="PORT" Default="5000" Mode="" Description="Internal application port" Type="Variable" Display="advanced" Required="false" Mask="false">5000</Config>
+</Container>

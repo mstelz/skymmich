@@ -14,12 +14,12 @@ async function testConfig() {
   const testConfig = {
     immich: {
       host: 'https://test-immich.example.com',
-      apiKey: 'test-immich-key',
+      apiKey: '[REDACTED-TEST-KEY]',
       autoSync: true,
       syncFrequency: '0 */2 * * *',
     },
     astrometry: {
-      apiKey: 'test-astrometry-key',
+      apiKey: '[REDACTED-TEST-KEY]',
       enabled: true,
     },
     app: {

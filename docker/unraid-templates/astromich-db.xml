@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Astromich-DB</Name>
+  <Repository>postgres:15-alpine</Repository>
+  <Registry>https://hub.docker.com/_/postgres</Registry>
+  <Network>bridge</Network>
+  <Icon>https://raw.githubusercontent.com/docker-library/docs/master/postgres/logo.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/your-repo/astromich/main/docker/unraid-templates/astromich-db.xml</TemplateURL>
+  <Beta>False</Beta>
+  <Category>DatabaseOther:</Category>
+  <Date>2024-01-01</Date>
+  <Changes>
+    ### PostgreSQL 15 Alpine
+    - Optimized for AstroRep application
+    - Automatic health checks
+    - UTF-8 encoding with C collation
+  </Changes>
+  <Description>
+    PostgreSQL database container specifically configured for Astromich. This container provides persistent data storage for your astrophotography image metadata, equipment information, and plate solving results.
+    
+    Features:
+    - PostgreSQL 15 with Alpine Linux (lightweight)
+    - Optimized configuration for Astromich
+    - Health checks for reliability
+    - UTF-8 encoding with C collation
+    - Persistent data storage
+    
+    IMPORTANT: Install this container BEFORE installing Astromich. Make sure to set a strong password and remember it for the Astromich configuration.
+  </Description>
+  
+  <Config Name="Database Data" Target="/var/lib/postgresql/data" Default="/mnt/user/appdata/astromich/database" Mode="rw" Description="Database files storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/database</Config>
+  
+  <Config Name="Database Name" Target="POSTGRES_DB" Default="astromich" Mode="" Description="Database name" Type="Variable" Display="always" Required="true" Mask="false">astromich</Config>
+  
+  <Config Name="Database User" Target="POSTGRES_USER" Default="astromich" Mode="" Description="Database username" Type="Variable" Display="always" Required="true" Mask="false">astromich</Config>
+  
+  <Config Name="Database Password" Target="POSTGRES_PASSWORD" Default="" Mode="" Description="Database password (CHANGE THIS! Use a strong password)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  
+  <Config Name="Postgres Init Args" Target="POSTGRES_INITDB_ARGS" Default="--encoding=UTF-8 --lc-collate=C --lc-ctype=C" Mode="" Description="PostgreSQL initialization arguments" Type="Variable" Display="advanced" Required="false" Mask="false">--encoding=UTF-8 --lc-collate=C --lc-ctype=C</Config>
+</Container>
