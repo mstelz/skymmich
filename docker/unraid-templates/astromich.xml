@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>Astromich</Name>
-  <Repository>your-registry/astromich:latest</Repository>
+  <Repository>astromich:latest</Repository>
   <Registry>https://hub.docker.com/</Registry>
   <Network>bridge</Network>
   <WebUI>http://[IP]:[PORT:5000]/</WebUI>
@@ -40,7 +40,7 @@
     - Secure configuration management
     
     Requirements:
-    - PostgreSQL database (install Astromich-DB template first)
+    - PostgreSQL database (install any PostgreSQL template first with database name 'astromich', username 'astromich', and a strong password)
     - Optional: Immich server for photo management
     - Optional: Astrometry.net API key for plate solving
     
@@ -55,7 +55,7 @@
   
   <Config Name="Config Directory" Target="/app/config" Default="/mnt/user/appdata/astromich/config" Mode="rw" Description="Configuration storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/config</Config>
   
-  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://astromich:CHANGE_ME@astromich-db:5432/astromich" Mode="" Description="PostgreSQL connection string (ensure Astromich-DB is installed first)" Type="Variable" Display="always" Required="true" Mask="true">postgresql://astromich:CHANGE_ME@astromich-db:5432/astromich</Config>
+  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://astromich:CHANGE_ME@postgres:5432/astromich" Mode="" Description="PostgreSQL connection string (ensure PostgreSQL container is installed first)" Type="Variable" Display="always" Required="true" Mask="true">postgresql://astromich:CHANGE_ME@postgres:5432/astromich</Config>
   
   <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Application environment" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
   

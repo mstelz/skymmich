@@ -21,7 +21,7 @@ Astromich seamlessly integrates with your astrophotography workflow, providing a
 - **Smart Filtering**: Filter by equipment, targets, dates, and acquisition details
 - **Deep Zoom Viewer**: High-resolution image exploration with OpenSeaDragon
 - **Metadata Extraction**: Automatic EXIF and XMP sidecar processing
-- **Thumbnail Generation**: Fast preview generation and caching
+- **Uses Existing Images/Thumbnails**: Doesn't duplicate images, instead view directly from the source (Immich).
 
 ### 🔭 **Plate Solving**
 - **Astrometry.net Integration**: Automatic coordinate solving for your images
@@ -44,7 +44,6 @@ Astromich seamlessly integrates with your astrophotography workflow, providing a
 
 ### 🔒 **Security & Deployment**
 - **Docker Ready**: Multi-stage containerization with health checks
-- **Secret Management**: Secure environment variable configuration
 - **UnRAID Support**: Ready-to-use container templates
 - **Database Options**: PostgreSQL for production, SQLite for development
 
@@ -70,9 +69,13 @@ open http://localhost:5000
 
 ### Option 2: UnRAID Template
 
-1. **Install Database**: Use template URL `https://raw.githubusercontent.com/mstelz/Astromich/main/docker/unraid-templates/astromich-db.xml`
+1. **Install PostgreSQL**: Use any PostgreSQL template from Community Applications
+   - **Database Name**: `astromich`
+   - **Username**: `astromich`
+   - **Password**: Strong password (remember for step 2)
+   - **Container Name**: `postgres` (default)
 2. **Install Astromich**: Use template URL `https://raw.githubusercontent.com/mstelz/Astromich/main/docker/unraid-templates/astromich.xml`
-3. **Configure**: Set database password and optional API keys
+3. **Configure**: Update DATABASE_URL with your PostgreSQL password and optional API keys
 4. **Access**: Navigate to `http://your-server:5000`
 
 ### Option 3: Development Setup
@@ -105,7 +108,6 @@ npm run dev
 ### Optional Integrations
 - **Immich Server**: For photo library synchronization
 - **Astrometry.net API Key**: For plate solving capabilities
-- **Reverse Proxy**: Nginx/Traefik for SSL termination
 
 ## ⚙️ Configuration
 
@@ -139,22 +141,22 @@ After startup, access the admin interface at `/admin` to configure:
 ┌─────────────────────────────────────┐    ┌─────────────────────┐
 │        Astromich Container          │    │   PostgreSQL        │
 ├─────────────────────────────────────┤    │   Container         │
-│  Frontend (React + TypeScript)     │    ├─────────────────────┤
-│  ├─ Vite build system              │    │  Database Engine    │
-│  ├─ Tailwind CSS + shadcn/ui       │◄──►│  Data Storage       │
-│  └─ Real-time WebSocket client     │    │  Connection Pool    │
+│  Frontend (React + TypeScript)      │    ├─────────────────────┤
+│  ├─ Vite build system               │    │  Database Engine    │
+│  ├─ Tailwind CSS + shadcn/ui        │◄──►│  Data Storage       │
+│  └─ Real-time WebSocket client      │    │  Connection Pool    │
 ├─────────────────────────────────────┤    │  Health Checks      │
-│  Backend (Express.js + Node.js)    │    └─────────────────────┘
-│  ├─ RESTful API endpoints          │
-│  ├─ Socket.io server               │    ┌─────────────────────┐
-│  ├─ Image proxy & thumbnails       │    │   External APIs     │
-│  └─ Session management             │◄──►├─────────────────────┤
+│  Backend (Express.js + Node.js)     │    └─────────────────────┘
+│  ├─ RESTful API endpoints           │
+│  ├─ Socket.io server                │    ┌─────────────────────┐
+│  ├─ Image proxy & thumbnails        │    │   External APIs     │
+│  └─ Session management              │◄──►├─────────────────────┤
 ├─────────────────────────────────────┤    │  Immich Server      │
 │  Worker Manager                     │    │  Astrometry.net     │
-│  ├─ Background job processing      │    │  Image Sources      │
-│  ├─ Plate solving automation       │    └─────────────────────┘
-│  ├─ Crash recovery & monitoring    │
-│  └─ Graceful shutdown handling     │
+│  ├─ Background job processing       │    │  Image Sources      │
+│  ├─ Plate solving automation        │    └─────────────────────┘
+│  ├─ Crash recovery & monitoring     │
+│  └─ Graceful shutdown handling      │
 └─────────────────────────────────────┘
 ```
 
@@ -262,60 +264,9 @@ npm run test           # Run test suite
 npm run test:watch     # Watch mode testing
 ```
 
-## 🔒 Security
+## 🐳 Production Deployment
 
-Astromich implements comprehensive security measures:
-
-### 🛡️ **Application Security**
-- **No embedded secrets**: All API keys via environment variables
-- **Non-root execution**: Containers run as dedicated `astromich` user
-- **Input validation**: Zod schema validation on all inputs
-- **Session management**: Secure session handling with configurable secrets
-- **API rate limiting**: Protection against abuse and DoS attacks
-
-### 🔐 **Data Protection**
-- **Database encryption**: PostgreSQL with optional encryption at rest
-- **Secure headers**: CSP, HSTS, and security headers enabled
-- **API key masking**: Sensitive data redacted in logs and UI
-- **Volume isolation**: Container data isolated in managed volumes
-
-### 🚨 **Deployment Security**
-- **Secret management**: External configuration via environment variables
-- **Network isolation**: Internal container networking with minimal exposure
-- **Health monitoring**: Automated health checks and failure detection
-- **Update strategy**: Rolling updates with zero-downtime deployments
-
-> 📖 **Security Documentation**: See [Security Guide](docs/containerization-plan.md#security-considerations) for detailed security configuration.
-
-## 🐳 Deployment
-
-### Docker Compose (Production)
-
-```bash
-# Production deployment
-cp docker/.env.docker.example .env
-vim .env  # Configure production settings
-
-docker compose -f docker-compose.yml up -d
-```
-
-### UnRAID (Home Server)
-
-1. **Database Container**:
-   - Template: `astromich-db.xml`
-   - Set strong database password
-   - Configure data volume: `/mnt/user/appdata/astromich/database`
-
-2. **Application Container**:
-   - Template: `astromich.xml`
-   - Reference database password from step 1
-   - Configure data volume: `/mnt/user/appdata/astromich/config`
-   - Set API keys (optional, can configure via admin UI)
-
-3. **Access & Configure**:
-   - Web UI: `http://your-server:5000`
-   - Admin panel: `http://your-server:5000/admin`
-   - Configure Immich and Astrometry.net integrations
+See the **Quick Start** section above for Docker Compose and UnRAID deployment options.
 
 ### Kubernetes (Advanced)
 
@@ -329,105 +280,24 @@ kubectl apply -f k8s/astromich.yaml
 kubectl apply -f k8s/ingress.yaml
 ```
 
-## 📊 Monitoring & Maintenance
-
-### Health Checks
-
-```bash
-# Application health
-curl http://localhost:5000/api/health
-
-# Database connectivity
-docker exec astromich-db pg_isready -U astromich
-
-# Worker status
-curl http://localhost:5000/api/admin/worker/status
-```
-
-### Backup Procedures
-
-```bash
-# Database backup
-docker exec astromich-db pg_dump -U astromich astromich > backup-$(date +%Y%m%d).sql
-
-# Configuration backup
-tar -czf config-backup-$(date +%Y%m%d).tar.gz /mnt/user/appdata/astromich/config
-
-# Restore database
-docker exec -i astromich-db psql -U astromich astromich < backup-20250706.sql
-```
-
-### Log Management
-
-```bash
-# View application logs
-docker compose logs -f astromich
-
-# View worker logs
-docker compose logs -f astromich | grep "Worker"
-
-# Database logs
-docker compose logs -f astromich-db
-```
-
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Development Workflow
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Code Standards
-
-- **TypeScript**: Strict type checking enabled
-- **ESLint**: Follow the configured linting rules
-- **Prettier**: Consistent code formatting
-- **Conventional Commits**: Use semantic commit messages
-- **Testing**: Include tests for new features
-
 ## 🗺️ Roadmap
-
-### v1.2.0 - Enhanced Analytics
 - [ ] Advanced image statistics and analytics
 - [ ] Equipment usage reporting
-- [ ] Performance metrics dashboard
-- [ ] Export capabilities (CSV, JSON)
-
-### v1.3.0 - Advanced Features
-- [ ] Multi-user support with role-based access
+- [ ] XMP Sidecar viewer
 - [ ] Advanced search and filtering
 - [ ] Bulk image processing workflows
-- [ ] Integration with additional services
-
-### v2.0.0 - Major Updates
-- [ ] Machine learning for automatic target detection
-- [ ] Advanced plate solving with local solvers
+- [ ] Advanced plate solving with local solvers (PixInsight)
 - [ ] Mobile app companion
-- [ ] API versioning and external integrations
-
-## 🆘 Support
-
-### Documentation
-- 📖 **User Guide**: [docs/README.md](docs/README.md)
-- 🐳 **Docker Guide**: [docker/README.md](docker/README.md)
-- 🔒 **Security Guide**: [docs/containerization-plan.md](docs/containerization-plan.md)
-- 📋 **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 
 ### Community & Help
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/mstelz/Astromich/issues)
 - 💡 **Feature Requests**: [GitHub Discussions](https://github.com/mstelz/Astromich/discussions)
 - 📧 **Email Support**: [astromich@example.com](mailto:astromich@example.com)
 - 💬 **Discord Community**: [Join our Discord](https://discord.gg/astromich)
-
-### Troubleshooting
-- 🔍 **Common Issues**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-- 📊 **Performance Guide**: [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
-- 🔧 **Configuration Examples**: [docs/EXAMPLES.md](docs/EXAMPLES.md)
 
 ## 📄 License
 
@@ -439,7 +309,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **[Astrometry.net](https://astrometry.net/)** - Plate solving service and algorithms
 - **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful and accessible React components
 - **[Drizzle ORM](https://orm.drizzle.team/)** - Type-safe database toolkit
-- **Astrophotography Community** - Feature requests, testing, and feedback
 
 ---
 
