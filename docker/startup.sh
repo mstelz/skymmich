@@ -8,6 +8,7 @@ echo "Node.js version: $(node --version)"
 echo "Environment: ${NODE_ENV:-development}"
 echo "Database URL: ${DATABASE_URL:-using_default}"
 echo "Plate solving enabled: ${ENABLE_PLATE_SOLVING:-true}"
+echo "XMP sidecar path: ${XMP_SIDECAR_PATH:-/app/sidecars}"
 
 # Wait for database to be ready
 if [ -n "$DATABASE_URL" ]; then
@@ -38,14 +39,30 @@ fi
 
 # Run database migrations
 echo "Running database migrations..."
-if [ -f "/app/tools/scripts/apply-migrations.ts" ]; then
-    node --loader tsx /app/tools/scripts/apply-migrations.ts || {
-        echo "Migration failed, but continuing..."
-    }
+if [ -n "$DATABASE_URL" ]; then
+    # PostgreSQL migrations
+    if [ -f "/app/dist/tools/scripts/apply-pg-migrations.js" ]; then
+        echo "Running PostgreSQL migrations..."
+        node /app/dist/tools/scripts/apply-pg-migrations.js || {
+            echo "PostgreSQL migration failed, but continuing..."
+        }
+    else
+        echo "PostgreSQL migration script not found"
+    fi
+else
+    # SQLite migrations for local development
+    if [ -f "/app/dist/tools/scripts/apply-migrations.ts" ]; then
+        echo "Running SQLite migrations..."
+        node --loader tsx /app/dist/tools/scripts/apply-migrations.ts || {
+            echo "SQLite migration failed, but continuing..."
+        }
+    else
+        echo "SQLite migration script not found"
+    fi
 fi
 
 # Create necessary directories
-mkdir -p /app/config /app/logs
+mkdir -p /app/config /app/logs /app/sidecars
 
 # Set up signal handlers for graceful shutdown
 cleanup() {

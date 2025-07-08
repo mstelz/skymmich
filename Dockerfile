@@ -22,8 +22,8 @@ COPY apps/ ./apps/
 COPY packages/ ./packages/
 COPY tools/ ./tools/
 
-# Build frontend
-RUN npm run build
+# Build frontend and copy assets
+RUN npm run build:docker
 
 # Production stage
 FROM node:20-alpine AS runtime
@@ -44,15 +44,11 @@ COPY package*.json ./
 # Install production dependencies, excluding better-sqlite3
 RUN npm pkg delete dependencies.better-sqlite3 && npm ci --omit=dev && npm cache clean --force
 
-# Copy built application from builder stage
+# Copy built application from builder stage (includes tools, config, and public assets)
 COPY --from=builder /build/dist ./dist
 
-# Copy database migrations and tools
-COPY --from=builder /build/tools ./tools
-COPY --from=builder /build/drizzle.config.ts ./
-
 # Create directories for runtime
-RUN mkdir -p /app/config /app/logs
+RUN mkdir -p /app/config /app/logs /app/sidecars
 RUN chown -R astromich:nodejs /app
 
 # Copy startup script

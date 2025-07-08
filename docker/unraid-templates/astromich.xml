@@ -4,8 +4,8 @@
   <Repository>astromich:latest</Repository>
   <Registry>https://hub.docker.com/</Registry>
   <Network>bridge</Network>
-  <WebUI>http://[IP]:[PORT:5000]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/your-repo/astromich/main/icon.png</Icon>
+  <WebUI>http://[IP]:[PORT:2284]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/your-repo/astromich/main/assets/images/generated-icon.png</Icon>
   <TemplateURL>https://raw.githubusercontent.com/your-repo/astromich/main/docker/unraid-templates/astromich.xml</TemplateURL>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
@@ -27,6 +27,12 @@
     - Equipment tracking
     - Immich synchronization
   </Changes>
+  <Overview>
+    Astromich is a comprehensive astrophotography image management and analysis application that bridges the gap between your astrophotography sessions and organized digital asset management. It provides seamless integration with Immich for photo management, advanced plate solving through Astrometry.net, and detailed equipment tracking to help you organize and analyze your celestial captures.
+  </Overview>
+  
+  <Requires>PostgreSQL</Requires>
+  
   <Description>
     Astromich is a comprehensive astrophotography image management and analysis application. It provides automatic synchronization with Immich, plate solving capabilities through Astrometry.net, equipment tracking, and detailed image metadata management. Perfect for organizing and analyzing your astrophotography collection.
     
@@ -40,7 +46,7 @@
     - Secure configuration management
     
     Requirements:
-    - PostgreSQL database (install any PostgreSQL template first with database name 'astromich', username 'astromich', and a strong password)
+    - PostgreSQL database (REQUIRED - install any PostgreSQL template first with database name 'astromich', username 'astromich', and a strong password)
     - Optional: Immich server for photo management
     - Optional: Astrometry.net API key for plate solving
     
@@ -51,9 +57,13 @@
     - Always use strong, unique passwords for database connections
   </Description>
   
-  <Config Name="WebUI Port" Target="5000" Default="5000" Mode="tcp" Description="Port for web interface" Type="Port" Display="always" Required="true" Mask="false">5000</Config>
+  <Config Name="WebUI Port" Target="5000" Default="2284" Mode="tcp" Description="Port for web interface" Type="Port" Display="always" Required="true" Mask="false">2284</Config>
   
   <Config Name="Config Directory" Target="/app/config" Default="/mnt/user/appdata/astromich/config" Mode="rw" Description="Configuration storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/config</Config>
+  
+  <Config Name="Logs Directory" Target="/app/logs" Default="/mnt/user/appdata/astromich/logs" Mode="rw" Description="Application logs storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/logs</Config>
+  
+  <Config Name="Sidecar Directory" Target="/app/sidecars" Default="/mnt/user/appdata/astromich/sidecars" Mode="rw" Description="XMP sidecar files storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/sidecars</Config>
   
   <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://astromich:CHANGE_ME@postgres:5432/astromich" Mode="" Description="PostgreSQL connection string (ensure PostgreSQL container is installed first)" Type="Variable" Display="always" Required="true" Mask="true">postgresql://astromich:CHANGE_ME@postgres:5432/astromich</Config>
   
@@ -69,5 +79,6 @@
   
   <Config Name="Max Plate Solve Jobs" Target="PLATE_SOLVE_MAX_CONCURRENT" Default="3" Mode="" Description="Maximum concurrent plate solving jobs" Type="Variable" Display="advanced" Required="false" Mask="false">3</Config>
   
-  <Config Name="Application Port" Target="PORT" Default="5000" Mode="" Description="Internal application port" Type="Variable" Display="advanced" Required="false" Mask="false">5000</Config>
+  <Config Name="XMP Sidecar Path" Target="XMP_SIDECAR_PATH" Default="/app/sidecars" Mode="" Description="Directory for XMP sidecar files" Type="Variable" Display="advanced" Required="false" Mask="false">/app/sidecars</Config>
+  
 </Container>

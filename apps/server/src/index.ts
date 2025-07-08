@@ -6,7 +6,7 @@ import path from "path";
 import { configService } from "./services/config";
 import { registerRoutes } from "./routes/routes";
 import { cronManager, setSocketIO as setCronSocketIO } from './services/cron-manager';
-import { setupVite } from "./vite";
+// Vite imports are loaded dynamically to avoid bundling them in production
 import { setSocketIO } from "./services/astrometry";
 import { workerManager } from "./services/worker-manager";
 
@@ -33,11 +33,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Setup routes
 registerRoutes(app, io);
 
-// Setup Vite in development or serve static files in production
-if (process.env.NODE_ENV === "development") {
-  setupVite(app, server);
-} else {
-  // Serve static files in production
+// Main startup function
+async function startServer() {
+  // Serve static files (in production, frontend is pre-built to dist/public)
   const publicPath = path.resolve(process.cwd(), 'dist/public');
   app.use(express.static(publicPath));
   
@@ -49,33 +47,36 @@ if (process.env.NODE_ENV === "development") {
     }
     res.sendFile(path.join(publicPath, 'index.html'));
   });
+
+  // Initialize cron manager
+  cronManager.initialize();
+
+  // Socket.io connection handling
+  io.on("connection", (socket) => {
+    console.log("Client connected:", socket.id);
+    
+    socket.on("disconnect", () => {
+      console.log("Client disconnected:", socket.id);
+    });
+  });
+
+  // Set Socket.io instance in astrometry service for real-time updates
+  setSocketIO(io);
+
+  // Set Socket.io instance in cron manager for real-time updates
+  setCronSocketIO(io);
+
+  // Start worker manager in production (in development, worker runs separately)
+  if (process.env.NODE_ENV === "production") {
+    console.log("Starting worker manager...");
+    workerManager.start().catch(error => {
+      console.error("Failed to start worker manager:", error);
+    });
+  }
 }
 
-// Initialize cron manager
-cronManager.initialize();
-
-// Socket.io connection handling
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-  
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
-});
-
-// Set Socket.io instance in astrometry service for real-time updates
-setSocketIO(io);
-
-// Set Socket.io instance in cron manager for real-time updates
-setCronSocketIO(io);
-
-// Start worker manager in production (in development, worker runs separately)
-if (process.env.NODE_ENV === "production") {
-  console.log("Starting worker manager...");
-  workerManager.start().catch(error => {
-    console.error("Failed to start worker manager:", error);
-  });
-}
+// Start the server
+startServer().catch(console.error);
 
 // Graceful shutdown handling
 const gracefulShutdown = async (signal: string) => {
