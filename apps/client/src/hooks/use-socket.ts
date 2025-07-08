@@ -5,8 +5,8 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // Create socket connection
-    socketRef.current = io('http://localhost:5000');
+    // Create socket connection (automatically connects to the same host)
+    socketRef.current = io();
 
     // Connection event handlers
     socketRef.current.on('connect', () => {
