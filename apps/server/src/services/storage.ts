@@ -234,6 +234,49 @@ class DbStorage {
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
     await db.delete(isProduction ? schema.notifications : schema.sqliteNotifications).where(and(eq((isProduction ? schema.notifications : schema.sqliteNotifications).acknowledged, true), eq((isProduction ? schema.notifications : schema.sqliteNotifications).createdAt, cutoffDate.toISOString()))).execute();
   }
+
+  // Stats
+  async getStats(): Promise<any> {
+    try {
+      const images = await this.getAstroImages();
+      const equipment = await this.getEquipment();
+      const plateSolvingJobs = await this.getPlateSolvingJobs();
+      
+      const plateSolvedImages = images.filter(img => img.plateSolved).length;
+      const pendingJobs = plateSolvingJobs.filter(job => job.status === 'pending').length;
+      const successfulJobs = plateSolvingJobs.filter(job => job.status === 'success').length;
+      const failedJobs = plateSolvingJobs.filter(job => job.status === 'failed').length;
+      
+      // Calculate total integration time
+      const totalIntegrationHours = images.reduce((total, img) => {
+        return total + (img.totalIntegrationHours || 0);
+      }, 0);
+      
+      // Get object type distribution
+      const objectTypeCounts: Record<string, number> = {};
+      images.forEach(img => {
+        const type = img.objectType || 'Unknown';
+        objectTypeCounts[type] = (objectTypeCounts[type] || 0) + 1;
+      });
+      
+      return {
+        totalImages: images.length,
+        plateSolvedImages,
+        totalEquipment: equipment.length,
+        totalIntegrationHours: Math.round(totalIntegrationHours * 100) / 100,
+        objectTypeCounts,
+        plateSolvingStats: {
+          total: plateSolvingJobs.length,
+          pending: pendingJobs,
+          successful: successfulJobs,
+          failed: failedJobs
+        }
+      };
+    } catch (error) {
+      console.error("Failed to get stats:", error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DbStorage();
