@@ -128,7 +128,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {stats.totalHours.toFixed(2)}h Total Integration
+              {(stats.totalHours || 0).toFixed(2)}h Total Integration
             </div>
           </div>
         )}

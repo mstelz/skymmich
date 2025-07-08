@@ -337,8 +337,8 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                   Location
                 </h3>
                 <div className="text-xs text-muted-foreground space-y-1 font-mono">
-                  {image.latitude && <div>Latitude: {image.latitude.toFixed(6)}°</div>}
-                  {image.longitude && <div>Longitude: {image.longitude.toFixed(6)}°</div>}
+                  {image.latitude && typeof image.latitude === 'number' && <div>Latitude: {image.latitude.toFixed(6)}°</div>}
+                  {image.longitude && typeof image.longitude === 'number' && <div>Longitude: {image.longitude.toFixed(6)}°</div>}
                   {image.altitude && <div>Altitude: {image.altitude}m</div>}
                   <div className="mt-2">
                     <a
@@ -713,8 +713,8 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
               </div>
                 {!collapsedSections['location'] && (
                   <div className="text-xs text-gray-300 space-y-1 font-mono">
-                    {currentImage.latitude && <div>Latitude: {currentImage.latitude.toFixed(6)}°</div>}
-                    {currentImage.longitude && <div>Longitude: {currentImage.longitude.toFixed(6)}°</div>}
+                    {currentImage.latitude && typeof currentImage.latitude === 'number' && <div>Latitude: {currentImage.latitude.toFixed(6)}°</div>}
+                    {currentImage.longitude && typeof currentImage.longitude === 'number' && <div>Longitude: {currentImage.longitude.toFixed(6)}°</div>}
                     {currentImage.altitude && <div>Altitude: {currentImage.altitude}m</div>}
                     <div className="mt-2">
                       <a
