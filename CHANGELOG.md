@@ -5,6 +5,28 @@ All notable changes to Astromich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-07-09
+
+### Added
+- **🎉 Open Source Release**: Astromich is now available as an open source project under MIT license
+- **Enhanced plate solving configuration**: Added configurable worker check intervals, polling intervals, max concurrent jobs, and auto-resubmit options
+- **Improved admin interface**: Added detailed controls for plate solving worker configuration
+- **MIT License**: Added proper open source license file
+
+### Changed
+- **Enhanced configuration system**: Plate solving settings now support fine-grained control through admin interface
+- **Worker process improvements**: Added configurable intervals and concurrent job limits
+- **Documentation updates**: Updated README and contributing guidelines for open source community
+
+### Fixed
+- **Configuration persistence**: Plate solving settings now properly persist and take effect without container restart
+- **Worker configuration reloading**: Worker process now dynamically reloads configuration changes
+
+### Documentation
+- **Contributing guidelines**: Comprehensive guide for community contributions
+- **Open source preparation**: Updated all documentation for public release
+- **Configuration examples**: Enhanced environment variable documentation
+
 ## [1.1.0] - 2025-07-06
 
 ### Added
