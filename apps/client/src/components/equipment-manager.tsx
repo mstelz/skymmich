@@ -73,7 +73,7 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
     onSuccess: (data) => {
       console.log('addEquipmentMutation.onSuccess called with:', data);
       queryClient.invalidateQueries({ queryKey: ["/api/images", imageId, "equipment"] });
-      setIsAddingEquipment(false);
+      // Keep the form open for adding more equipment, but reset the form fields
       setSelectedEquipmentId(null);
       setSettings({});
       setNotes("");

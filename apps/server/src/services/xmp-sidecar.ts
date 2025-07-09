@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { dirname } from 'path';
 import { AstrometryCalibration, AstrometryAnnotation } from './astrometry';
 import type { Equipment } from '../../../../packages/shared/src/types';
@@ -169,35 +169,56 @@ export class XmpSidecarService {
    * Write XMP sidecar file for an image
    */
   async writeSidecar(image: any, plateSolvingResult: any, astrometryJobId: string, equipment?: Equipment[]): Promise<string> {
-    const data: XmpSidecarData = {
-      calibration: plateSolvingResult.calibration,
-      annotations: plateSolvingResult.annotations,
-      machineTags: plateSolvingResult.machineTags,
-      imageId: image.immichId,
-      filename: image.filename,
-      astrometryJobId,
-      plateSolvedAt: new Date(),
-      equipment
-    };
+    try {
+      const data: XmpSidecarData = {
+        calibration: plateSolvingResult.calibration,
+        annotations: plateSolvingResult.annotations,
+        machineTags: plateSolvingResult.machineTags,
+        imageId: image.immichId,
+        filename: image.filename,
+        astrometryJobId,
+        plateSolvedAt: new Date(),
+        equipment
+      };
 
-    const xmpContent = this.generateXmpContent(data);
-    
-    // Determine the sidecar file path
-    // For now, we'll write to a local sidecars directory
-    // In production, this would need to be configured to write to the actual Immich storage location
-    const sidecarDir = process.env.XMP_SIDECAR_PATH || './sidecars';
-    const sidecarPath = `${sidecarDir}/${image.filename}.xmp`;
+      const xmpContent = this.generateXmpContent(data);
+      
+      // Determine the sidecar file path
+      const sidecarDir = process.env.XMP_SIDECAR_PATH || './sidecars';
+      const sidecarPath = `${sidecarDir}/${image.filename}.xmp`;
 
-    // Ensure directory exists
-    if (!existsSync(sidecarDir)) {
-      mkdirSync(sidecarDir, { recursive: true });
+      console.log(`Attempting to write XMP sidecar to: ${sidecarPath}`);
+
+      // Ensure directory exists with proper error handling
+      try {
+        if (!existsSync(sidecarDir)) {
+          console.log(`Creating sidecar directory: ${sidecarDir}`);
+          mkdirSync(sidecarDir, { recursive: true });
+        }
+      } catch (dirError) {
+        console.error(`Failed to create sidecar directory ${sidecarDir}:`, dirError);
+        throw new Error(`Cannot create sidecar directory: ${dirError}`);
+      }
+
+      // Check if directory is writable
+      try {
+        const testFile = `${sidecarDir}/.test-write`;
+        writeFileSync(testFile, 'test', 'utf8');
+        unlinkSync(testFile);
+      } catch (writeError) {
+        console.error(`Directory ${sidecarDir} is not writable:`, writeError);
+        throw new Error(`Sidecar directory is not writable: ${writeError}`);
+      }
+
+      // Write the XMP file
+      writeFileSync(sidecarPath, xmpContent, 'utf8');
+      
+      console.log(`XMP sidecar written successfully: ${sidecarPath}`);
+      return sidecarPath;
+    } catch (error) {
+      console.error(`Failed to write XMP sidecar for image ${image.id}:`, error);
+      throw error;
     }
-
-    // Write the XMP file
-    writeFileSync(sidecarPath, xmpContent, 'utf8');
-    
-    console.log(`XMP sidecar written: ${sidecarPath}`);
-    return sidecarPath;
   }
 
   /**

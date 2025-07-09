@@ -1,5 +1,5 @@
 import { db, schema } from '../db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "../../../../packages/shared/src/types";
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -127,7 +127,7 @@ class DbStorage {
     if (equipmentIds.length === 0) {
         return [];
     }
-    const equipment = await db.select().from(isProduction ? schema.equipment : schema.sqliteEquipment).where(eq((isProduction ? schema.equipment : schema.sqliteEquipment).id, equipmentIds[0])).execute();
+    const equipment = await db.select().from(isProduction ? schema.equipment : schema.sqliteEquipment).where(inArray((isProduction ? schema.equipment : schema.sqliteEquipment).id, equipmentIds)).execute();
     return equipment.map(eq => parseJsonFields(eq, ['specifications']));
   }
 

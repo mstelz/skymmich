@@ -24,9 +24,11 @@ services:
       - ASTROMETRY_POLL_INTERVAL=${ASTROMETRY_POLL_INTERVAL:-5}
       - ASTROMETRY_MAX_CONCURRENT=${ASTROMETRY_MAX_CONCURRENT:-3}
       - ASTROMETRY_AUTO_RESUBMIT=${ASTROMETRY_AUTO_RESUBMIT:-false}
+      - XMP_SIDECAR_PATH=/app/sidecars
     volumes:
       - astromich-config:/app/config
       - astromich-logs:/app/logs
+      - astromich-sidecars:/app/sidecars
     depends_on:
       astromich-db:
         condition: service_healthy
@@ -70,4 +72,6 @@ volumes:
   astromich-database:
     driver: local
   astromich-logs:
+    driver: local
+  astromich-sidecars:
     driver: local

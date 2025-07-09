@@ -88,26 +88,27 @@
   
   <Config Name="Sidecar Directory" Target="/app/sidecars" Default="/mnt/user/appdata/astromich/sidecars" Mode="rw" Description="XMP sidecar files storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/astromich/sidecars</Config>
   
-  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://astromich:CHANGE_ME@postgres:5432/astromich" Mode="" Description="PostgreSQL connection string (ensure PostgreSQL container is installed first)" Type="Variable" Display="always" Required="true" Mask="true">postgresql://astromich:CHANGE_ME@postgres:5432/astromich</Config>
+  <Config Name="XMP Sidecar Path" Target="XMP_SIDECAR_PATH" Default="/app/sidecars" Mode="" Description="Directory for XMP sidecar files" Type="Variable" Display="advanced" Required="false" Mask="false">/app/sidecars</Config>
+  
+  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://astromich:CHANGE_ME@postgres:5432/astromich" Mode="" Description="PostgreSQL connection string (ensure PostgreSQL container is installed first)" Type="Variable" Display="always" Required="true" Mask="false">postgresql://astromich:CHANGE_ME@postgres:5432/astromich</Config>
   
   <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Application environment" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
   
   <Config Name="Immich URL" Target="IMMICH_URL" Default="" Mode="" Description="Immich server URL (e.g., http://immich:2283)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
   
-  <Config Name="Immich API Key" Target="IMMICH_API_KEY" Default="" Mode="" Description="Immich API key for integration (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Immich API Key" Target="IMMICH_API_KEY" Default="" Mode="" Description="Immich API key for integration (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
   
-  <Config Name="Astrometry API Key" Target="ASTROMETRY_API_KEY" Default="" Mode="" Description="Astrometry.net API key for plate solving (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Astrometry API Key" Target="ASTROMETRY_API_KEY" Default="" Mode="" Description="Astrometry.net API key for plate solving (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
   
   <Config Name="Enable Plate Solving" Target="ENABLE_PLATE_SOLVING" Default="true" Mode="" Description="Enable background plate solving worker" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
   
-  <Config Name="Worker Check Interval (seconds)" Target="ASTROMETRY_CHECK_INTERVAL" Default="30" Mode="" Description="How often the worker checks for new jobs and updates existing ones (10-300 seconds)" Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
+  <Config Name="Worker Check Interval (seconds)" Target="ASTROMETRY_CHECK_INTERVAL" Default="60" Mode="" Description="How often the worker checks for new jobs and updates existing ones (10-300 seconds)" Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
   
-  <Config Name="Active Polling Interval (seconds)" Target="ASTROMETRY_POLL_INTERVAL" Default="5" Mode="" Description="How often to poll when actively waiting for job completion (1-60 seconds)" Type="Variable" Display="advanced" Required="false" Mask="false">5</Config>
+  <Config Name="Active Polling Interval (seconds)" Target="ASTROMETRY_POLL_INTERVAL" Default="60" Mode="" Description="How often to poll when actively waiting for job completion (1-60 seconds)" Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
   
   <Config Name="Max Concurrent Jobs" Target="ASTROMETRY_MAX_CONCURRENT" Default="3" Mode="" Description="Maximum number of plate solving jobs to run simultaneously (1-10)" Type="Variable" Display="advanced" Required="false" Mask="false">3</Config>
   
   <Config Name="Auto-resubmit Failed Jobs" Target="ASTROMETRY_AUTO_RESUBMIT" Default="false" Mode="" Description="When enabled, failed jobs will be automatically retried. When disabled, failed jobs must be manually resubmitted" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   
-  <Config Name="XMP Sidecar Path" Target="XMP_SIDECAR_PATH" Default="/app/sidecars" Mode="" Description="Directory for XMP sidecar files" Type="Variable" Display="advanced" Required="false" Mask="false">/app/sidecars</Config>
   
 </Container>
