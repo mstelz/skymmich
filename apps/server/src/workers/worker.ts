@@ -5,8 +5,8 @@ import { io } from "socket.io-client";
 
 class PlateSolvingWorker {
   private isRunning = false;
-  private checkInterval = 30000; // 30 seconds
-  private maxConcurrent: number = parseInt(process.env.PLATE_SOLVE_MAX_CONCURRENT || "3", 10);
+  private checkInterval = 30000; // Will be updated from config
+  private maxConcurrent: number = 3; // Will be updated from config
   private astrometryService: AstrometryService;
   private socket: any = null;
 
@@ -50,11 +50,21 @@ class PlateSolvingWorker {
       return;
     }
 
+    // Load configuration
+    const astrometryConfig = await configService.getAstrometryConfig();
+    this.checkInterval = astrometryConfig.checkInterval * 1000; // Convert to milliseconds
+    this.maxConcurrent = astrometryConfig.maxConcurrent;
+
     this.isRunning = true;
-    console.log(`Starting plate solving worker with max ${this.maxConcurrent} concurrent jobs`);
+    console.log(`Starting plate solving worker with max ${this.maxConcurrent} concurrent jobs, check interval: ${astrometryConfig.checkInterval}s`);
 
     while (this.isRunning) {
       try {
+        // Reload config in case it changed
+        const currentConfig = await configService.getAstrometryConfig();
+        this.checkInterval = currentConfig.checkInterval * 1000;
+        this.maxConcurrent = currentConfig.maxConcurrent;
+
         await this.createAndSubmitJobsForUnsolvedImages();
         await this.checkProcessingJobs();
         await this.sleep(this.checkInterval);
@@ -88,8 +98,20 @@ class PlateSolvingWorker {
     for (const image of unsolvedImages) {
       if (submitted >= slotsAvailable) break;
       
-      const hasJob = jobs.some(job => job.imageId === image.id && ["pending", "processing", "success"].includes(job.status));
-      if (!hasJob && image.fullUrl) {
+      // Check if image has a job that's not failed (unless auto-resubmit is enabled)
+      const existingJob = jobs.find(job => job.imageId === image.id);
+      if (existingJob) {
+        if (existingJob.status === "failed" && !astrometryConfig.autoResubmit) {
+          // Skip failed jobs unless auto-resubmit is enabled
+          continue;
+        }
+        if (["pending", "processing", "success"].includes(existingJob.status)) {
+          // Skip if job is already in progress or completed
+          continue;
+        }
+      }
+      
+      if (image.fullUrl) {
         try {
           console.log(`Auto-submitting image ${image.id} (${image.title}) for plate solving`);
           await this.astrometryService.submitImageForPlateSolving(image);

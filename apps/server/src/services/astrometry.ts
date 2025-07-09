@@ -179,11 +179,13 @@ export class AstrometryService {
     return { submissionId, jobId: job.id };
   }
 
-  async pollForPlateSolvingResult(submissionId: string, maxWaitTime: number = 300000): Promise<PlateSolvingResult | null> {
-    const startTime = Date.now();
-    const pollInterval = 5000; // 5 seconds
+  async pollForPlateSolvingResult(submissionId: string): Promise<PlateSolvingResult | null> {
+    // Get configurable values from config service
+    const astrometryConfig = await configService.getAstrometryConfig();
+    const pollInterval = astrometryConfig.pollInterval * 1000; // Convert to milliseconds
 
-    while (Date.now() - startTime < maxWaitTime) {
+    // Keep polling until Astrometry.net explicitly marks the job as failed or successful
+    while (true) {
       try {
         const statusResponse = await axios.get(
           `https://nova.astrometry.net/api/submissions/${submissionId}`,
@@ -228,8 +230,6 @@ export class AstrometryService {
         await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
     }
-
-    throw new Error("Timeout waiting for plate solving to complete");
   }
 
   async fetchCompleteResult(jobId: string): Promise<PlateSolvingResult> {
@@ -368,12 +368,12 @@ export class AstrometryService {
     }
   }
 
-  async completePlateSolvingWorkflow(image: any, maxWaitTime: number = 300000): Promise<PlateSolvingResult> {
+  async completePlateSolvingWorkflow(image: any): Promise<PlateSolvingResult> {
     // Submit image
     const { submissionId, jobId } = await this.submitImageForPlateSolving(image);
     
     // Poll for completion
-    const result = await this.pollForPlateSolvingResult(submissionId, maxWaitTime);
+    const result = await this.pollForPlateSolvingResult(submissionId);
     if (!result) {
       throw new Error("Plate solving failed");
     }

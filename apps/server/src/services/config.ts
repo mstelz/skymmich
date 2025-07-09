@@ -12,6 +12,10 @@ export interface AppConfig {
   astrometry: {
     apiKey: string;
     enabled: boolean;
+    checkInterval: number;
+    pollInterval: number;
+    maxConcurrent: number;
+    autoResubmit: boolean;
   };
   app: {
     debugMode: boolean;
@@ -45,6 +49,10 @@ class ConfigService {
       astrometry: {
         apiKey: adminSettings.astrometry?.apiKey || envConfig.astrometry.apiKey,
         enabled: adminSettings.astrometry?.enabled ?? envConfig.astrometry.enabled,
+        checkInterval: adminSettings.astrometry?.checkInterval ?? envConfig.astrometry.checkInterval,
+        pollInterval: adminSettings.astrometry?.pollInterval ?? envConfig.astrometry.pollInterval,
+        maxConcurrent: adminSettings.astrometry?.maxConcurrent ?? envConfig.astrometry.maxConcurrent,
+        autoResubmit: adminSettings.astrometry?.autoResubmit ?? envConfig.astrometry.autoResubmit,
       },
       app: {
         debugMode: adminSettings.app?.debugMode ?? envConfig.app.debugMode,
@@ -77,6 +85,10 @@ class ConfigService {
       astrometry: {
         apiKey: process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "",
         enabled: process.env.ASTROMETRY_ENABLED !== 'false',
+        checkInterval: parseInt(process.env.ASTROMETRY_CHECK_INTERVAL || "30", 10),
+        pollInterval: parseInt(process.env.ASTROMETRY_POLL_INTERVAL || "5", 10),
+        maxConcurrent: parseInt(process.env.ASTROMETRY_MAX_CONCURRENT || "3", 10),
+        autoResubmit: process.env.ASTROMETRY_AUTO_RESUBMIT === 'true',
       },
       app: {
         debugMode: process.env.DEBUG_MODE === 'true',

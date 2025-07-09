@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
 
       // Use the shared service to complete the full plate solving workflow
       // This will submit, poll for completion, and update the job/image with all results
-      const result = await astrometryService.completePlateSolvingWorkflow(image, 300000); // 5 minute timeout
+      const result = await astrometryService.completePlateSolvingWorkflow(image);
 
       res.json({
         message: "Image plate solving completed successfully",

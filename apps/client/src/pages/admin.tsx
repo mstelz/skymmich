@@ -42,6 +42,10 @@ interface AdminSettings {
   astrometry: {
     apiKey: string;
     enabled: boolean;
+    checkInterval: number; // Worker check interval in seconds
+    pollInterval: number; // Active polling interval in seconds
+    maxConcurrent: number; // Max concurrent jobs
+    autoResubmit: boolean; // Whether to auto-resubmit failed jobs
   };
   app: {
     debugMode: boolean;
@@ -72,6 +76,10 @@ export default function AdminPage() {
     astrometry: {
       apiKey: '',
       enabled: true,
+      checkInterval: 30, // 30 seconds
+      pollInterval: 5, // 5 seconds
+      maxConcurrent: 3,
+      autoResubmit: false, // Don't auto-resubmit failed jobs
     },
     app: {
       debugMode: false,
@@ -520,30 +528,105 @@ export default function AdminPage() {
               </div>
 
               {settings.astrometry.enabled && (
-                <div>
-                  <Label htmlFor="astrometryApiKey">API Key</Label>
-                  <Input
-                    id="astrometryApiKey"
-                    type="password"
-                    placeholder="Enter your Astrometry.net API key"
-                    value={settings.astrometry.apiKey}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      astrometry: { ...prev.astrometry, apiKey: e.target.value }
-                    }))}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Get your API key from{" "}
-                    <a 
-                      href="https://nova.astrometry.net/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      nova.astrometry.net
-                    </a>
+                <>
+                  <div>
+                    <Label htmlFor="astrometryApiKey">API Key</Label>
+                    <Input
+                      id="astrometryApiKey"
+                      type="password"
+                      placeholder="Enter your Astrometry.net API key"
+                      value={settings.astrometry.apiKey}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        astrometry: { ...prev.astrometry, apiKey: e.target.value }
+                      }))}
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Get your API key from{" "}
+                      <a 
+                        href="https://nova.astrometry.net/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        nova.astrometry.net
+                      </a>
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="checkInterval">Worker Check Interval (seconds)</Label>
+                      <Input
+                        id="checkInterval"
+                        type="number"
+                        min="10"
+                        max="300"
+                        value={settings.astrometry.checkInterval}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          astrometry: { ...prev.astrometry, checkInterval: parseInt(e.target.value) || 30 }
+                        }))}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        How often the worker checks for new jobs and updates existing ones
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="pollInterval">Active Polling Interval (seconds)</Label>
+                      <Input
+                        id="pollInterval"
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={settings.astrometry.pollInterval}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          astrometry: { ...prev.astrometry, pollInterval: parseInt(e.target.value) || 5 }
+                        }))}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        How often to poll when actively waiting for job completion
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="maxConcurrent">Max Concurrent Jobs</Label>
+                      <Input
+                        id="maxConcurrent"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={settings.astrometry.maxConcurrent}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          astrometry: { ...prev.astrometry, maxConcurrent: parseInt(e.target.value) || 3 }
+                        }))}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Maximum number of plate solving jobs to run simultaneously
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="autoResubmit"
+                      checked={settings.astrometry.autoResubmit}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        astrometry: { ...prev.astrometry, autoResubmit: checked }
+                      }))}
+                    />
+                    <Label htmlFor="autoResubmit">Auto-resubmit failed jobs</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    When disabled, failed jobs must be manually resubmitted. When enabled, failed jobs will be automatically retried.
                   </p>
-                </div>
+                </>
               )}
 
               <div className="flex items-center justify-between">
