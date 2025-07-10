@@ -2,8 +2,6 @@
   <img src="assets/images/astromich.png" width="300">
 </p>
 
-> A comprehensive astrophotography image management and analysis application
-
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](./docker/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Hardened-brightgreen)](docs/containerization-plan.md#security-considerations)
