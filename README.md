@@ -1,4 +1,6 @@
-# Astromich 🌟
+<p align="center">
+  <img src="assets/images/astromich.png" width="300" title="Login With Custom URL">
+</p>
 
 > A comprehensive astrophotography image management and analysis application
 
