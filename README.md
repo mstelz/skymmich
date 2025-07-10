@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/images/astromich.png" width="300" title="Login With Custom URL">
+  <img src="assets/images/astromich.png" width="300">
 </p>
 
 > A comprehensive astrophotography image management and analysis application
@@ -12,7 +12,6 @@
 Astromich seamlessly integrates with your astrophotography gallery, providing automatic image synchronization, intelligent plate solving, equipment tracking, and comprehensive metadata management. Perfect for organizing and analyzing your deep-sky imaging collection.
 
 <div align="center">
-  <img src="./assets/images/transparent-logo.png" alt="Astromich" width="128" height="128">
   <p><em>🚀 Screenshots and demo coming soon! 📸</em></p>
 </div>
 
