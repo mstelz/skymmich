@@ -5,8 +5,8 @@
   <Registry>https://hub.docker.com/</Registry>
   <Network>bridge</Network>
   <WebUI>http://[IP]:[PORT:2284]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/your-repo/astromich/main/assets/images/transparent-logo.png</Icon>
-  <TemplateURL>https://raw.githubusercontent.com/your-repo/astromich/main/docker/unraid-templates/astromich.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/mstelz/astromich/main/assets/images/transparent-logo.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/mstelz/astromich/main/docker/unraid-templates/astromich.xml</TemplateURL>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
   <Date>2025-01-27</Date>
