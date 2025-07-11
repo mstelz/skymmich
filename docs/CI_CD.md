@@ -39,9 +39,10 @@ Astromich uses GitHub Actions for CI/CD automation with three main workflows:
    - Fails build on CRITICAL vulnerabilities
    - Results uploaded to GitHub Security tab
 
-4. **SBOM Generation**
-   - Software Bill of Materials in SPDX format
-   - Uploaded as build artifact
+4. **Artifacts Generation**
+   - SBOM (Software Bill of Materials) in SPDX format
+   - Application snapshot (built dist files)
+   - Uploaded as build artifacts with 30-day retention
 
 ### 2. PR Test Workflow (`docker-build-test.yml`)
 
@@ -70,9 +71,15 @@ Astromich uses GitHub Actions for CI/CD automation with three main workflows:
    - Report added as PR comment
    - Non-blocking (informational only)
 
-4. **PR Feedback**
+4. **Build Artifacts**
+   - Docker image snapshot (7-day retention)
+   - Application snapshot (7-day retention)
+   - Available for download and testing
+
+5. **PR Feedback**
    - Automatic comment with test results
    - Vulnerability report in collapsible section
+   - Artifact download links
    - Links to full Action logs
 
 ### 3. Release Workflow (`release.yml`)
@@ -139,6 +146,39 @@ Every build generates an SBOM containing:
 - Security vulnerability data
 
 SBOMs are retained for 30 days as build artifacts.
+
+## Build Artifacts
+
+Every build produces downloadable artifacts:
+
+### PR Builds
+- **Docker Image**: Compressed Docker image (`astromich-pr-{PR#}-{SHA}.tar.gz`)
+- **Application Snapshot**: Built application files (`astromich-snapshot-{SHA}.tar.gz`)
+- **Retention**: 7 days
+
+### Main Branch Builds
+- **SBOM**: Software Bill of Materials (`sbom-{SHA}.spdx.json`)
+- **Application Snapshot**: Built application files (`astromich-snapshot-{SHA}.tar.gz`)
+- **Retention**: 30 days
+
+### Using Artifacts
+
+**Load Docker Image:**
+```bash
+# Download and load the Docker image artifact
+gunzip -c astromich-pr-123-abc123.tar.gz | docker load
+
+# Run the image
+docker run -p 5000:5000 astromich:test-123
+```
+
+**Use Application Snapshot:**
+```bash
+# Extract and use the built application
+tar -xzf astromich-snapshot-abc123.tar.gz
+cd dist/
+node index.js
+```
 
 ## Creating a Release
 

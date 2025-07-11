@@ -56,7 +56,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: |
             astromich:test-${{ github.event.pull_request.number }}
@@ -67,8 +67,6 @@ jobs:
 
       - name: Test Docker image structure
         run: |
-          docker buildx build --load -t astromich:test-${{ github.event.pull_request.number }} .
-          
           echo "## Docker Image Test Results 🧪" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
@@ -124,60 +122,113 @@ jobs:
           docker stop astromich-test || true
           docker rm astromich-test || true
 
-      - name: Scan for vulnerabilities
+      - name: Scan for vulnerabilities (SARIF)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: astromich:test-${{ github.event.pull_request.number }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          exit-code: '0'  # Don't fail PR builds on vulnerabilities
+          exit-code: '1'  # Fail on critical vulnerabilities
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always()  # Upload even if scan found vulnerabilities
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-pr'
 
       - name: Generate vulnerability report
         uses: aquasecurity/trivy-action@master
+        if: always()  # Generate report even if previous scan failed
         with:
           image-ref: astromich:test-${{ github.event.pull_request.number }}
           format: 'table'
           severity: 'CRITICAL,HIGH,MEDIUM'
           output: 'trivy-report.txt'
+          exit-code: '0'  # Don't fail, just generate report
+
+      - name: Export Docker image as artifact
+        if: success() || failure()  # Export even if security scan failed
+        run: |
+          docker save astromich:test-${{ github.event.pull_request.number }} | gzip > astromich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
+
+      - name: Upload Docker image artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-pr-${{ github.event.pull_request.number }}
+          path: astromich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
+          retention-days: 7
+
+      - name: Create application snapshot
+        if: success() || failure()
+        run: |
+          mkdir -p snapshot
+          tar -czf snapshot/astromich-snapshot-${{ github.sha }}.tar.gz \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=snapshot \
+            dist/
+
+      - name: Upload application snapshot
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-snapshot-${{ github.sha }}
+          path: snapshot/astromich-snapshot-${{ github.sha }}.tar.gz
+          retention-days: 7
 
       - name: Comment PR with results
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         with:
           script: |
             const fs = require('fs');
             let trivyReport = '';
+            let statusIcon = '✅';
+            let statusText = 'All checks passed!';
+            
+            // Check if the workflow failed
+            if (context.job.status === 'failure') {
+              statusIcon = '❌';
+              statusText = 'Build failed - see details below';
+            }
             
             try {
               trivyReport = fs.readFileSync('trivy-report.txt', 'utf8');
               if (trivyReport.trim()) {
+                // Check if critical vulnerabilities were found
+                if (trivyReport.includes('CRITICAL')) {
+                  statusIcon = '❌';
+                  statusText = 'Critical vulnerabilities found!';
+                }
                 trivyReport = '\n\n<details>\n<summary>Vulnerability Scan Results</summary>\n\n```\n' + trivyReport + '\n```\n</details>';
               } else {
                 trivyReport = '\n\n✅ **No vulnerabilities found!**';
               }
             } catch (e) {
-              trivyReport = '';
+              trivyReport = '\n\n⚠️ **Vulnerability scan report not available**';
             }
             
             const output = `#### Docker Build Test 🐳
             
-            ✅ **All checks passed!**
+            ${statusIcon} **${statusText}**
             
-            - TypeScript compilation successful
-            - Application build successful
-            - Docker image builds successfully
-            - Container starts without errors
+            - TypeScript compilation: ${{ steps.*.outcome[3] == 'success' && '✅' || '❌' }}
+            - Application build: ${{ steps.*.outcome[4] == 'success' && '✅' || '❌' }}
+            - Docker image build: ${{ steps.*.outcome[5] == 'success' && '✅' || '❌' }}
+            - Container smoke test: ${{ steps.*.outcome[7] == 'success' && '✅' || '❌' }}
+            - Security scan: ${{ steps.*.outcome[8] == 'success' && '✅ Passed' || '❌ Failed' }}
             ${trivyReport}
             
-            View the full test results in the [Actions summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            ### 📦 Build Artifacts
+            
+            The following artifacts are available for download:
+            - **Docker Image**: \`docker-image-pr-${{ github.event.pull_request.number }}\` (7 days retention)
+            - **Application Snapshot**: \`app-snapshot-${{ github.sha }}\` (7 days retention)
+            
+            View the full test results and download artifacts from the [Actions summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
             
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
             

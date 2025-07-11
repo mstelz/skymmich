@@ -78,10 +78,21 @@ jobs:
             VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
             REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
 
+      - name: Build single-arch image for scanning (PR only)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-scan
+          cache-from: type=gha
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          image-ref: ${{ github.event_name != 'pull_request' && format('{0}/{1}@{2}', env.REGISTRY, env.IMAGE_NAME, steps.build.outputs.digest) || format('{0}/{1}:pr-scan', env.REGISTRY, env.IMAGE_NAME) }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -96,6 +107,7 @@ jobs:
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
+        if: github.event_name != 'pull_request'  # Only for pushed images
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: spdx-json
@@ -103,27 +115,71 @@ jobs:
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'  # Only for pushed images
         with:
           name: sbom-${{ github.sha }}
           path: sbom.spdx.json
           retention-days: 30
 
-      - name: Create deployment summary
-        if: github.event_name != 'pull_request'
+      - name: Export Docker image as artifact
+        if: github.event_name == 'pull_request'
         run: |
-          echo "## Docker Image Published 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Security Scan" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Passed Trivy vulnerability scan" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- SBOM generated and uploaded" >> $GITHUB_STEP_SUMMARY
+          docker save ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-scan | gzip > astromich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
+
+      - name: Upload Docker image artifact (PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-pr-${{ github.event.pull_request.number }}
+          path: astromich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
+          retention-days: 7
+
+      - name: Create application snapshot
+        run: |
+          mkdir -p snapshot
+          tar -czf snapshot/astromich-snapshot-${{ github.sha }}.tar.gz \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=snapshot \
+            dist/
+
+      - name: Upload application snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-snapshot-${{ github.sha }}
+          path: snapshot/astromich-snapshot-${{ github.sha }}.tar.gz
+          retention-days: 30
+
+      - name: Create deployment summary
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "## PR Build Complete 🔨" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**PR:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- Docker image: \`docker-image-pr-${{ github.event.pull_request.number }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- Application snapshot: \`app-snapshot-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Security Scan" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Passed Trivy vulnerability scan" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## Docker Image Published 🚀" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.meta.outputs.tags }}" | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Security Scan" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Passed Trivy vulnerability scan" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- SBOM: \`sbom-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- Application snapshot: \`app-snapshot-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
