@@ -37,9 +37,11 @@ jobs:
         run: npm ci
 
       - name: Run TypeScript type checking
+        id: typecheck
         run: npm run check
 
       - name: Build application
+        id: app-build
         run: npm run build
 
       - name: Set up Docker Buildx
@@ -96,6 +98,7 @@ jobs:
           docker run --rm --entrypoint="" astromich:test-${{ github.event.pull_request.number }} test -x /app/startup.sh && echo "✅ startup.sh is executable" >> $GITHUB_STEP_SUMMARY || echo "❌ startup.sh is not executable" >> $GITHUB_STEP_SUMMARY
 
       - name: Run container smoke test
+        id: smoke-test
         run: |
           # Start container with minimal config
           docker run -d \
@@ -123,6 +126,7 @@ jobs:
           docker rm astromich-test || true
 
       - name: Scan for vulnerabilities (SARIF)
+        id: security-scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: astromich:test-${{ github.event.pull_request.number }}
@@ -189,6 +193,22 @@ jobs:
             let statusIcon = '✅';
             let statusText = 'All checks passed!';
             
+            // Get step outcomes from context
+            const stepOutcomes = {
+              typecheck: '${{ steps.typecheck.outcome }}',
+              appBuild: '${{ steps.app-build.outcome }}',
+              dockerBuild: '${{ steps.build.outcome }}',
+              smokeTest: '${{ steps.smoke-test.outcome }}',
+              securityScan: '${{ steps.security-scan.outcome }}'
+            };
+            
+            // Check if any steps failed
+            const failedSteps = Object.entries(stepOutcomes).filter(([_, outcome]) => outcome !== 'success');
+            if (failedSteps.length > 0) {
+              statusIcon = '❌';
+              statusText = `${failedSteps.length} step(s) failed`;
+            }
+            
             try {
               const trivyReport = fs.readFileSync('trivy-report.txt', 'utf8');
               if (trivyReport.trim()) {
@@ -200,7 +220,7 @@ jobs:
                 if (criticalCount > 0) {
                   statusIcon = '⚠️';
                   statusText = `${criticalCount} critical vulnerabilities found`;
-                } else if (highCount > 0) {
+                } else if (highCount > 0 && failedSteps.length === 0) {
                   statusText = `${highCount} high-severity vulnerabilities found`;
                 }
                 
@@ -227,10 +247,10 @@ jobs:
             ${statusIcon} **${statusText}**
             
             ### 📋 Build Steps
-            - TypeScript compilation: ${{ steps.*.outcome[3] == 'success' && '✅' || '❌' }}
-            - Application build: ${{ steps.*.outcome[4] == 'success' && '✅' || '❌' }}
-            - Docker image build: ${{ steps.*.outcome[5] == 'success' && '✅' || '❌' }}
-            - Container smoke test: ${{ steps.*.outcome[7] == 'success' && '✅' || '❌' }}
+            - TypeScript compilation: ${stepOutcomes.typecheck === 'success' ? '✅' : '❌'}
+            - Application build: ${stepOutcomes.appBuild === 'success' ? '✅' : '❌'}
+            - Docker image build: ${stepOutcomes.dockerBuild === 'success' ? '✅' : '❌'}
+            - Container smoke test: ${stepOutcomes.smokeTest === 'success' ? '✅' : '❌'}
             ${vulnerabilitySection}
             
             ### 📦 Build Artifacts
