@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { storage } from "../services/storage";
-import { insertAstroImageSchema, insertPlateSolvingJobSchema } from "../../../packages/shared/src/schemas";
+import { insertAstroImageSchema, insertPlateSolvingJobSchema } from "@shared/schema";
 import axios from "axios";
 import { astrometryService } from '../services/astrometry';
 import { configService } from '../services/config';
@@ -155,7 +155,7 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
           longitude: asset.exifInfo?.longitude || null,
           altitude: asset.exifInfo?.altitude || null,
           plateSolved: false,
-          tags: ["astrophotography"],
+          tags: ["astrophotography"] as any,
           objectType: "Deep Sky", // Default classification
           description: asset.exifInfo?.description || "",
         };

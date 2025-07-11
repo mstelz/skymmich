@@ -130,13 +130,13 @@ export default function PlateSolvingPage() {
     if (successfulJobs.length > 0) {
       // Return the most recent successful job
       return successfulJobs.sort((a, b) => 
-        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime()
       )[0];
     }
     
     // If no successful jobs, return the most recent job
     return imageJobs.sort((a, b) => 
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime()
     )[0];
   };
 

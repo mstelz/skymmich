@@ -310,8 +310,8 @@ export class AstrometryService {
       status: "success", 
       result: {
         ...result.calibration,
-        annotations: result.annotations
-      }
+        annotations: result.annotations as any
+      } as any
     });
 
     // Update the original image with plate solving results
@@ -337,7 +337,7 @@ export class AstrometryService {
           rotation: result.calibration.orientation || null,
           astrometryJobId: job.astrometryJobId,
           constellation: constellation,
-          tags: allTags,
+          tags: allTags as any,
         });
 
         // Write XMP sidecar file with equipment information
