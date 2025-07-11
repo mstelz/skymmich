@@ -1,0 +1,80 @@
+version: '3.8'
+
+# Astromich Production Docker Compose Configuration
+# Uses pre-built images from GitHub Container Registry
+# 
+# Quick start:
+# 1. Copy .env.example to .env and configure your settings
+# 2. docker compose -f docker-compose.prod.yml up -d
+# 3. Access at http://localhost:5000
+
+services:
+  astromich:
+    image: ghcr.io/mstelz/astromich:latest
+    container_name: astromich
+    restart: unless-stopped
+    ports:
+      - "${ASTROMICH_PORT:-5000}:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://astromich:${POSTGRES_PASSWORD}@astromich-db:5432/astromich
+      - IMMICH_URL=${IMMICH_URL:-}
+      - IMMICH_API_KEY=${IMMICH_API_KEY:-}
+      - ASTROMETRY_API_KEY=${ASTROMETRY_API_KEY:-}
+      - ENABLE_PLATE_SOLVING=${ENABLE_PLATE_SOLVING:-true}
+      # Plate solving configuration
+      - ASTROMETRY_CHECK_INTERVAL=${ASTROMETRY_CHECK_INTERVAL:-30}
+      - ASTROMETRY_POLL_INTERVAL=${ASTROMETRY_POLL_INTERVAL:-5}
+      - ASTROMETRY_MAX_CONCURRENT=${ASTROMETRY_MAX_CONCURRENT:-3}
+      - ASTROMETRY_AUTO_RESUBMIT=${ASTROMETRY_AUTO_RESUBMIT:-false}
+      - XMP_SIDECAR_PATH=/app/sidecars
+    volumes:
+      - astromich-config:/app/config
+      - astromich-logs:/app/logs
+      - astromich-sidecars:/app/sidecars
+    depends_on:
+      astromich-db:
+        condition: service_healthy
+    networks:
+      - astromich-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  astromich-db:
+    image: postgres:15-alpine
+    container_name: astromich-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=astromich
+      - POSTGRES_USER=astromich
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - astromich-database:/var/lib/postgresql/data
+    networks:
+      - astromich-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astromich -d astromich"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # PostgreSQL port not exposed externally for security
+
+networks:
+  astromich-network:
+    driver: bridge
+
+volumes:
+  astromich-config:
+    driver: local
+  astromich-database:
+    driver: local
+  astromich-logs:
+    driver: local
+  astromich-sidecars:
+    driver: local
