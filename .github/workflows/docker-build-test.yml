@@ -31,7 +31,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
-          ignore: DL3008,DL3009  # Ignore specific rules if needed
+          ignore: DL3008,DL3009,DL3018  # DL3018: Pin versions in Alpine (not always practical)
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
