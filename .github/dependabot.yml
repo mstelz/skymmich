@@ -8,8 +8,6 @@ updates:
       day: "monday"
       time: "04:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "mstelz" # Update with your GitHub username
     labels:
       - "dependencies"
       - "npm"
@@ -33,8 +31,6 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "04:00"
-    reviewers:
-      - "mike" # Update with your GitHub username
     labels:
       - "dependencies"
       - "docker"

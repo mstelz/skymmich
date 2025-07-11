@@ -29,11 +29,12 @@ RUN npm run build:docker
 FROM node:20-alpine AS runtime
 
 # Install curl for health checks
+# hadolint ignore=DL3018
 RUN apk add --no-cache curl
 
 # Create app user for security (non-root execution)
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S astromich -u 1001
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S astromich -u 1001
 
 # Set working directory
 WORKDIR /app
@@ -47,9 +48,9 @@ RUN npm pkg delete dependencies.better-sqlite3 && npm ci --omit=dev && npm cache
 # Copy built application from builder stage (includes tools, config, and public assets)
 COPY --from=builder /build/dist ./dist
 
-# Create directories for runtime
-RUN mkdir -p /app/config /app/logs /app/sidecars
-RUN chown -R astromich:nodejs /app
+# Create directories for runtime and set permissions
+RUN mkdir -p /app/config /app/logs /app/sidecars && \
+    chown -R astromich:nodejs /app
 
 # Copy startup script
 COPY docker/startup.sh ./

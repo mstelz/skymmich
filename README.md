@@ -7,7 +7,12 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" />
   <a href="./docker/unraid-templates"><img src="https://img.shields.io/badge/UnRAID-Compatible-orange)" /></a>
   <a href="https://discord.gg/ffZ8cuJ8Kh"><img src="https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white" alt="Join us on Discord" /></a>
+</p>
 
+<p align="center">
+  <a href="https://github.com/mstelz/Astromich/actions/workflows/docker-build-push.yml"><img src="https://github.com/mstelz/Astromich/actions/workflows/docker-build-push.yml/badge.svg" alt="Build Status" /></a>
+  <a href="https://github.com/mstelz/Astromich/actions/workflows/release.yml"><img src="https://github.com/mstelz/Astromich/actions/workflows/release.yml/badge.svg" alt="Release" /></a>
+  <a href="https://github.com/mstelz/Astromich/security"><img src="https://img.shields.io/badge/Security-Trivy%20Scanned-brightgreen" alt="Security Scan" /></a>
 </p>
 
 Astromich seamlessly integrates with your astrophotography gallery, providing automatic image synchronization, intelligent plate solving, equipment tracking, and comprehensive metadata management. Perfect for organizing and analyzing your deep-sky imaging collection.
@@ -261,6 +266,24 @@ npm run lint           # ESLint checking
 npm run test           # Run test suite
 npm run test:watch     # Watch mode testing
 ```
+
+## 🚢 CI/CD & Deployment
+
+Astromich uses GitHub Actions for continuous integration and deployment. All builds are automatically tested, scanned for vulnerabilities, and containerized.
+
+### Automated Workflows
+
+- **Build & Push**: Automatic Docker image builds on main branch commits
+- **PR Testing**: Validates all pull requests with build tests and security scans
+- **Release**: Semantic versioning releases with tagged Docker images
+
+### Security
+
+- All images are scanned with Trivy for vulnerabilities
+- Critical vulnerabilities block deployments
+- SBOM (Software Bill of Materials) generated for each build
+
+For detailed CI/CD documentation, see [docs/CI_CD.md](docs/CI_CD.md).
 
 ## 🤝 Contributing
 

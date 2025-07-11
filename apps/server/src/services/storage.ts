@@ -39,12 +39,12 @@ class DbStorage {
 
     const images = await query.execute();
 
-    const parsedImages = images.map(img => parseJsonFields(img, ['tags']));
+    const parsedImages = images.map((img: any) => parseJsonFields(img, ['tags']));
 
     if (filters && filters.tags && filters.tags.length > 0) {
         return parsedImages.filter((image: AstroImage) => {
             const tags = image.tags;
-            return filters.tags?.some(tag => tags.includes(tag));
+            return filters.tags?.some(tag => tags?.includes(tag));
         });
     }
 
@@ -88,7 +88,7 @@ class DbStorage {
   // Equipment
   async getEquipment(): Promise<Equipment[]> {
     const equipment = await db.select().from(isProduction ? schema.equipment : schema.sqliteEquipment).execute();
-    return equipment.map(eq => parseJsonFields(eq, ['specifications']));
+    return equipment.map((eq: any) => parseJsonFields(eq, ['specifications']));
   }
 
   async createEquipment(equipmentData: InsertEquipment): Promise<Equipment> {
@@ -118,7 +118,7 @@ class DbStorage {
   // Image Equipment relationships
   async getImageEquipment(imageId: number): Promise<ImageEquipment[]> {
     const imageEquipment = await db.select().from(isProduction ? schema.imageEquipment : schema.sqliteImageEquipment).where(eq((isProduction ? schema.imageEquipment : schema.sqliteImageEquipment).imageId, imageId)).execute();
-    return imageEquipment.map(ie => parseJsonFields(ie, ['settings']));
+    return imageEquipment.map((ie: any) => parseJsonFields(ie, ['settings']));
   }
 
   async getEquipmentForImage(imageId: number): Promise<Equipment[]> {
@@ -128,7 +128,7 @@ class DbStorage {
         return [];
     }
     const equipment = await db.select().from(isProduction ? schema.equipment : schema.sqliteEquipment).where(inArray((isProduction ? schema.equipment : schema.sqliteEquipment).id, equipmentIds)).execute();
-    return equipment.map(eq => parseJsonFields(eq, ['specifications']));
+    return equipment.map((eq: any) => parseJsonFields(eq, ['specifications']));
   }
 
   async addEquipmentToImage(imageId: number, equipmentId: number, settings?: any, notes?: string): Promise<ImageEquipment> {
@@ -159,7 +159,7 @@ class DbStorage {
   // Plate solving
   async getPlateSolvingJobs(): Promise<PlateSolvingJob[]> {
     const jobs = await db.select().from(isProduction ? schema.plateSolvingJobs : schema.sqlitePlateSolvingJobs).execute();
-    return jobs.map(job => parseJsonFields(job, ['result']));
+    return jobs.map((job: any) => parseJsonFields(job, ['result']));
   }
 
   async getPlateSolvingJob(id: number): Promise<PlateSolvingJob | undefined> {
@@ -213,7 +213,7 @@ class DbStorage {
   // Notifications
   async getNotifications(): Promise<any[]> {
     const notifications = await db.select().from(isProduction ? schema.notifications : schema.sqliteNotifications).where(eq((isProduction ? schema.notifications : schema.sqliteNotifications).acknowledged, false)).execute();
-    return notifications.map(n => parseJsonFields(n, ['details']));
+    return notifications.map((n: any) => parseJsonFields(n, ['details']));
   }
 
   async createNotification(notification: any): Promise<any> {
@@ -249,7 +249,7 @@ class DbStorage {
       
       // Calculate total integration time
       const totalIntegrationHours = images.reduce((total, img) => {
-        return total + (img.totalIntegrationHours || 0);
+        return total + (img.totalIntegration || 0);
       }, 0);
       
       // Get object type distribution
