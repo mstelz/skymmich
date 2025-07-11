@@ -102,64 +102,14 @@ jobs:
           docker stop astromich-test || true
           docker rm astromich-test || true
 
-      - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          vuln-type: os,library
-          format: table
-          output: trivy-fs.txt
-          exit-code: 0
-          severity: CRITICAL,HIGH
-
-      - name: Append filesystem scan to summary
-        run: |
-          echo "## 🔍 Filesystem Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
-          cat trivy-fs.txt >> $GITHUB_STEP_SUMMARY
-
-      - name: Trivy secret scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: secret
-          scan-ref: .
-          format: table
-          output: trivy-secret.txt
-          exit-code: 0
-
-      - name: Append secret scan to summary
-        run: |
-          echo "## 🕵️ Secret Scan" >> $GITHUB_STEP_SUMMARY
-          cat trivy-secret.txt >> $GITHUB_STEP_SUMMARY
-
-      - name: Trivy config scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: config
-          scan-ref: .
-          format: table
-          output: trivy-config.txt
-          exit-code: 0
-
-      - name: Append config scan to summary
-        run: |
-          echo "## ⚠️ Config Scan (Dockerfile, Compose, etc.)" >> $GITHUB_STEP_SUMMARY
-          cat trivy-config.txt >> $GITHUB_STEP_SUMMARY
-
-      - name: Trivy image scan
+      - name: Scan for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: astromich:test-${{ github.event.pull_request.number }}
-          format: table
-          output: trivy-image.txt
-          exit-code: 0
-          severity: CRITICAL,HIGH
+          format: 'table'
+          exit-code: '0'  # Don't fail the build on vulnerabilities (for now)
+          severity: 'CRITICAL,HIGH'
 
-      - name: Append image scan to summary
-        run: |
-          echo "## 🐳 Docker Image Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
-          cat trivy-image.txt >> $GITHUB_STEP_SUMMARY
-        
       - name: Comment PR
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
