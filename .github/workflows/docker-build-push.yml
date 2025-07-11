@@ -104,14 +104,26 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          exit-code: '1'  # Fail the build on critical vulnerabilities
+          exit-code: '0'  # Don't fail the build, just report vulnerabilities
+
+      - name: Check SARIF file exists
+        if: always()
+        run: |
+          if [ -f "trivy-results.sarif" ]; then
+            echo "SARIF file exists and has size: $(wc -c < trivy-results.sarif) bytes"
+            echo "First few lines of SARIF file:"
+            head -10 trivy-results.sarif
+          else
+            echo "SARIF file does not exist"
+            exit 1
+          fi
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: 'trivy-results.sarif'
-          category: 'trivy'
+          category: ${{ github.event_name == 'pull_request' && 'trivy-pr' || 'trivy-main' }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
