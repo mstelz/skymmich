@@ -94,18 +94,19 @@ jobs:
             REVISION=${{ github.sha }}
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'  # Fail the release on critical vulnerabilities
+          scan-type: 'image'
+          hide-progress: false
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always() && hashFiles('trivy-results.sarif') != ''
-        continue-on-error: true
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-release'
