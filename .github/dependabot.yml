@@ -1,0 +1,53 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "mstelz" # Update with your GitHub username
+    labels:
+      - "dependencies"
+      - "npm"
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@types/*"
+      types:
+        patterns:
+          - "@types/*"
+
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    reviewers:
+      - "mike" # Update with your GitHub username
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    reviewers:
+      - "mike" # Update with your GitHub username
+    labels:
+      - "dependencies"
+      - "github-actions"
