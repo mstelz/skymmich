@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/astromich
+  IMAGE_NAME: ${{ github.repository_owner }}/skymmich
 
 jobs:
   release:
@@ -48,8 +48,8 @@ jobs:
       - name: Create release archive
         run: |
           mkdir -p release
-          tar -czf release/astromich-${{ github.ref_name }}-dist.tar.gz dist/
-          tar -czf release/astromich-${{ github.ref_name }}-source.tar.gz \
+          tar -czf release/skymmich-${{ github.ref_name }}-dist.tar.gz dist/
+          tar -czf release/skymmich-${{ github.ref_name }}-source.tar.gz \
             --exclude=node_modules \
             --exclude=dist \
             --exclude=.git \
@@ -142,8 +142,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            release/astromich-${{ github.ref_name }}-dist.tar.gz
-            release/astromich-${{ github.ref_name }}-source.tar.gz
+            release/skymmich-${{ github.ref_name }}-dist.tar.gz
+            release/skymmich-${{ github.ref_name }}-source.tar.gz
             release/sbom-${{ github.ref_name }}.spdx.json
           generate_release_notes: true
 
@@ -158,8 +158,8 @@ jobs:
           echo "${{ steps.meta.outputs.tags }}" | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Release Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- Distribution archive: astromich-${{ github.ref_name }}-dist.tar.gz" >> $GITHUB_STEP_SUMMARY
-          echo "- Source archive: astromich-${{ github.ref_name }}-source.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- Distribution archive: skymmich-${{ github.ref_name }}-dist.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- Source archive: skymmich-${{ github.ref_name }}-source.tar.gz" >> $GITHUB_STEP_SUMMARY
           echo "- SBOM: sbom-${{ github.ref_name }}.spdx.json" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Security" >> $GITHUB_STEP_SUMMARY

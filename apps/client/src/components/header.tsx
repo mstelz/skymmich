@@ -73,8 +73,8 @@ export function Header({ onSync }: HeaderProps) {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <img src="/logo.png" alt="Astromich Logo" className="h-8 w-8" />
-              <h1 className="text-xl font-bold text-foreground">Astromich</h1>
+              <img src="/logo.png" alt="Skymmich Logo" className="h-8 w-8" />
+              <h1 className="text-xl font-bold text-foreground">Skymmich</h1>
             </Link>
           </div>
           
@@ -103,7 +103,7 @@ export function Header({ onSync }: HeaderProps) {
           </nav>
           
           <div className="flex items-center space-x-3">
-            <Button onClick={onSync} className="astro-button-primary">
+            <Button onClick={onSync} className="sky-button-primary">
               <Upload className="mr-2 h-4 w-4" />
               Sync Immich
             </Button>

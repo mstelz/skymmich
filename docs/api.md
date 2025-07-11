@@ -1,17 +1,17 @@
-# Astromich API Documentation
+# Skymmich API Documentation
 
-This document describes the REST API endpoints available in Astromich.
+This document describes the REST API endpoints available in Skymmich.
 
 ## Base URL
 
-All API endpoints are relative to your Astromich server's base URL:
+All API endpoints are relative to your Skymmich server's base URL:
 ```
 http://localhost:5000/api
 ```
 
 ## Authentication
 
-Currently, Astromich does not require authentication for API access. All endpoints are publicly accessible when the server is running.
+Currently, Skymmich does not require authentication for API access. All endpoints are publicly accessible when the server is running.
 
 ## Response Format
 
@@ -681,7 +681,7 @@ Currently, there are no rate limits implemented. However, be mindful of:
 
 ## WebSocket Events
 
-Astromich uses Socket.IO for real-time updates. Connect to the main server URL and listen for these events:
+Skymmich uses Socket.IO for real-time updates. Connect to the main server URL and listen for these events:
 
 ### Plate Solving Updates
 ```javascript
@@ -730,6 +730,6 @@ Note: Admin settings take precedence over environment variables.
 ## Support
 
 For API support and questions:
-- Check the [GitHub Issues](https://github.com/mstelz/Astromich/issues)
+- Check the [GitHub Issues](https://github.com/mstelz/Skymmich/issues)
 - Review the [Contributing Guide](../CONTRIBUTING.md)
-- Join discussions in [GitHub Discussions](https://github.com/mstelz/Astromich/discussions)
+- Join discussions in [GitHub Discussions](https://github.com/mstelz/Skymmich/discussions)

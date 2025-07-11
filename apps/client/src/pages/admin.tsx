@@ -677,7 +677,7 @@ export default function AdminPage() {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button type="submit" className="astro-button-primary" disabled={loading}>
+            <Button type="submit" className="sky-button-primary" disabled={loading}>
               <Save className="mr-2 h-4 w-4" />
               {loading ? 'Saving...' : 'Save Settings'}
             </Button>

@@ -1,6 +1,6 @@
 version: '3.8'
 
-# Astromich Production Docker Compose Configuration
+# Skymmich Production Docker Compose Configuration
 # Uses pre-built images from GitHub Container Registry
 # 
 # Quick start:
@@ -9,15 +9,15 @@ version: '3.8'
 # 3. Access at http://localhost:5000
 
 services:
-  astromich:
-    image: ghcr.io/mstelz/astromich:latest
-    container_name: astromich
+  skymmich:
+    image: ghcr.io/mstelz/skymmich:latest
+    container_name: skymmich
     restart: unless-stopped
     ports:
-      - "${ASTROMICH_PORT:-5000}:5000"
+      - "${SKYMMICH_PORT:-5000}:5000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://astromich:${POSTGRES_PASSWORD}@astromich-db:5432/astromich
+      - DATABASE_URL=postgresql://skymmich:${POSTGRES_PASSWORD}@skymmich-db:5432/skymmich
       - IMMICH_URL=${IMMICH_URL:-}
       - IMMICH_API_KEY=${IMMICH_API_KEY:-}
       - ASTROMETRY_API_KEY=${ASTROMETRY_API_KEY:-}
@@ -29,14 +29,14 @@ services:
       - ASTROMETRY_AUTO_RESUBMIT=${ASTROMETRY_AUTO_RESUBMIT:-false}
       - XMP_SIDECAR_PATH=/app/sidecars
     volumes:
-      - astromich-config:/app/config
-      - astromich-logs:/app/logs
-      - astromich-sidecars:/app/sidecars
+      - skymmich-config:/app/config
+      - skymmich-logs:/app/logs
+      - skymmich-sidecars:/app/sidecars
     depends_on:
-      astromich-db:
+      skymmich-db:
         condition: service_healthy
     networks:
-      - astromich-network
+      - skymmich-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
       interval: 30s
@@ -44,21 +44,21 @@ services:
       retries: 3
       start_period: 40s
 
-  astromich-db:
+  skymmich-db:
     image: postgres:15-alpine
-    container_name: astromich-db
+    container_name: skymmich-db
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=astromich
-      - POSTGRES_USER=astromich
+      - POSTGRES_DB=skymmich
+      - POSTGRES_USER=skymmich
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
-      - astromich-database:/var/lib/postgresql/data
+      - skymmich-database:/var/lib/postgresql/data
     networks:
-      - astromich-network
+      - skymmich-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U astromich -d astromich"]
+      test: ["CMD-SHELL", "pg_isready -U skymmich -d skymmich"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -66,15 +66,15 @@ services:
     # PostgreSQL port not exposed externally for security
 
 networks:
-  astromich-network:
+  skymmich-network:
     driver: bridge
 
 volumes:
-  astromich-config:
+  skymmich-config:
     driver: local
-  astromich-database:
+  skymmich-database:
     driver: local
-  astromich-logs:
+  skymmich-logs:
     driver: local
-  astromich-sidecars:
+  skymmich-sidecars:
     driver: local

@@ -281,7 +281,7 @@ export default function PlateSolvingPage() {
               <Button
                 onClick={handleBulkPlateSolve}
                 disabled={selectedImages.size === 0 || plateSolveMutation.isPending}
-                className="astro-button-primary"
+                className="sky-button-primary"
               >
                 {plateSolveMutation.isPending ? (
                   <>

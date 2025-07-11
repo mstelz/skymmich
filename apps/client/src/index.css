@@ -25,9 +25,9 @@
   --radius: 0.5rem;
 
   /* Custom astrophotography colors */
-  --astro-dark: 237 63% 14%;
-  --astro-blue: 217 86% 17%;
-  --astro-purple: 264 31% 35%;
+  --sky-dark: 237 63% 14%;
+  --sky-blue: 217 86% 17%;
+  --sky-purple: 264 31% 35%;
   --stellar-red: 346 78% 60%;
   --star-orange: 37 92% 50%;
   --nebula-gray: 238 40% 26%;
@@ -91,19 +91,19 @@
 }
 
 @layer components {
-  .astro-card {
+  .sky-card {
     @apply bg-card border border-border rounded-xl overflow-hidden hover:bg-opacity-80 transition-all cursor-pointer;
   }
 
-  .astro-button-primary {
+  .sky-button-primary {
     @apply bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors;
   }
 
-  .astro-button-secondary {
+  .sky-button-secondary {
     @apply bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors;
   }
 
-  .astro-input {
+  .sky-input {
     @apply bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary;
   }
 
@@ -111,7 +111,7 @@
     @apply bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary;
   }
 
-  .astro-tag {
+  .sky-tag {
     @apply bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md cursor-pointer hover:bg-purple-700 transition-colors font-medium;
   }
 }

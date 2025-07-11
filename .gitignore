@@ -84,7 +84,7 @@ temp/
 docker-compose.override.yml
 .docker/
 
-# Astromich specific
+# Skymmich specific
 sidecars/
 xmp-sidecars/
 uploads/

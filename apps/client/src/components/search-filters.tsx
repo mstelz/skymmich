@@ -44,7 +44,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               placeholder="Search astrophotography images..."
               value={filters.search}
               onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-              className="pl-10 astro-input"
+              className="pl-10 sky-input"
             />
           </div>
           
@@ -53,7 +53,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               value={filters.objectType || "all"}
               onValueChange={(value) => onFiltersChange({ ...filters, objectType: value === "all" ? "" : value })}
             >
-              <SelectTrigger className="w-[140px] astro-input">
+              <SelectTrigger className="w-[140px] sky-input">
                 <SelectValue placeholder="All Objects" />
               </SelectTrigger>
               <SelectContent>
@@ -72,7 +72,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               value={filters.constellation || "all"}
               onValueChange={(value) => onFiltersChange({ ...filters, constellation: value === "all" ? "" : value })}
             >
-              <SelectTrigger className="w-[140px] astro-input">
+              <SelectTrigger className="w-[140px] sky-input">
                 <SelectValue placeholder="All Constellations" />
               </SelectTrigger>
               <SelectContent>
@@ -94,7 +94,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
                 })
               }
             >
-              <SelectTrigger className="w-[140px] astro-input">
+              <SelectTrigger className="w-[140px] sky-input">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -104,7 +104,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               </SelectContent>
             </Select>
             
-            <Button variant="secondary" className="astro-button-secondary">
+            <Button variant="secondary" className="sky-button-secondary">
               <Filter className="mr-2 h-4 w-4" />
               Advanced
             </Button>

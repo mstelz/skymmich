@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/astromich
+  IMAGE_NAME: ${{ github.repository_owner }}/skymmich
 
 jobs:
   build-and-push:
@@ -144,20 +144,20 @@ jobs:
       - name: Export Docker image as artifact
         if: github.event_name == 'pull_request'
         run: |
-          docker save ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-scan | gzip > astromich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
+          docker save ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-scan | gzip > skymmich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
 
       - name: Upload Docker image artifact (PR)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: docker-image-pr-${{ github.event.pull_request.number }}
-          path: astromich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
+          path: skymmich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
           retention-days: 7
 
       - name: Create application snapshot
         run: |
           mkdir -p snapshot
-          tar -czf snapshot/astromich-snapshot-${{ github.sha }}.tar.gz \
+          tar -czf snapshot/skymmich-snapshot-${{ github.sha }}.tar.gz \
             --exclude=node_modules \
             --exclude=.git \
             --exclude=snapshot \
@@ -167,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-snapshot-${{ github.sha }}
-          path: snapshot/astromich-snapshot-${{ github.sha }}.tar.gz
+          path: snapshot/skymmich-snapshot-${{ github.sha }}.tar.gz
           retention-days: 30
 
       - name: Create deployment summary

@@ -1,5 +1,5 @@
 {
-  "name": "astromich",
+  "name": "skymmich",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "copy-assets": "cp -r tools dist/ && cp drizzle.config.ts dist/",
     "start": "NODE_ENV=production node dist/index.js",
     "start:worker": "NODE_ENV=production node dist/worker.js",
-    "docker:build": "docker build -t astromich .",
+    "docker:build": "docker build -t skymmich .",
     "docker:run": "docker compose up -d",
     "docker:stop": "docker compose down",
     "docker:logs": "docker compose logs -f",

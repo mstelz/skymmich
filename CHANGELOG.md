@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Astromich will be documented in this file.
+All notable changes to Skymmich will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2025-07-09
 
 ### Added
-- **🎉 Open Source Release**: Astromich is now available as an open source project under MIT license
+- **🎉 Open Source Release**: Skymmich is now available as an open source project under MIT license
 - **Enhanced plate solving configuration**: Added configurable worker check intervals, polling intervals, max concurrent jobs, and auto-resubmit options
 - **Improved admin interface**: Added detailed controls for plate solving worker configuration
 - **MIT License**: Added proper open source license file
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment configuration examples** with `.env.example` for secure setup
 
 ### Changed
-- **Project renamed** from "AstroRep" to "Astromich" across all files and configurations
+- **Project renamed** from "AstroRep" to "Skymmich" across all files and configurations
 - **Monorepo structure** - reorganized codebase into `/apps/` and `/packages/` directories
 - **Database configuration** now supports both SQLite (development) and PostgreSQL (production)
 - **Configuration service** enhanced to prioritize database settings over environment variables
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - **🔒 CRITICAL**: All hardcoded secrets removed from `.env` and replaced with placeholders
 - **🔒 Enhanced .gitignore**: Added comprehensive patterns to prevent secret files from being committed
-- **🔒 Non-root container execution**: Docker containers now run as dedicated `astromich` user
+- **🔒 Non-root container execution**: Docker containers now run as dedicated `skymmich` user
 - **🔒 API key logging**: Removed console.log statements that could leak secrets to logs
 - **🔒 Client-side protection**: Eliminated client-side environment variables containing API keys
 
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-01-XX
 
 ### Added
-- Initial release of AstroRep (now Astromich)
+- Initial release of AstroRep (now Skymmich)
 - Image management and gallery functionality
 - Immich integration for photo synchronization
 - Astrometry.net plate solving capabilities

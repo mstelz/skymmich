@@ -1,5 +1,6 @@
 <p align="center">
-  <img src="assets/images/astromich.png" width="300">
+  <img src="assets/images/skymmich-transparent.png" width="300">
+  <h1 style="font-size: 55px" align="center">SKYMMICH</h1>
 </p>
 
 <p align="center">
@@ -10,14 +11,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mstelz/Astromich/actions/workflows/docker-build-push.yml"><img src="https://github.com/mstelz/Astromich/actions/workflows/docker-build-push.yml/badge.svg" alt="Build Status" /></a>
-  <a href="https://github.com/mstelz/Astromich/actions/workflows/release.yml"><img src="https://github.com/mstelz/Astromich/actions/workflows/release.yml/badge.svg" alt="Release" /></a>
-  <a href="https://github.com/mstelz/Astromich/security"><img src="https://img.shields.io/badge/Security-Trivy%20Scanned-brightgreen" alt="Security Scan" /></a>
+  <a href="https://github.com/mstelz/Skymmich/actions/workflows/docker-build-push.yml"><img src="https://github.com/mstelz/Skymmich/actions/workflows/docker-build-push.yml/badge.svg" alt="Build Status" /></a>
+  <a href="https://github.com/mstelz/Skymmich/actions/workflows/release.yml"><img src="https://github.com/mstelz/Skymmich/actions/workflows/release.yml/badge.svg" alt="Release" /></a>
+  <a href="https://github.com/mstelz/Skymmich/security"><img src="https://img.shields.io/badge/Security-Trivy%20Scanned-brightgreen" alt="Security Scan" /></a>
 </p>
 
-**Astromich** is a self-hosted photo gallery and management system designed specifically for astrophotographers. Built to integrate seamlessly with your [Immich](https://immich.app/) photo library, it provides intelligent plate solving, equipment tracking, and comprehensive metadata management tailored for deep-sky imaging workflows.
+**Skymmich** is a self-hosted photo gallery and management system designed specifically for astrophotographers. Built to integrate seamlessly with your [Immich](https://immich.app/) photo library, it provides intelligent plate solving, equipment tracking, and comprehensive metadata management tailored for deep-sky imaging workflows.
 
 Perfect for organizing, analyzing, and showcasing your astrophotography collection with full control over your data and infrastructure.
+
+> **📢 Disclaimer**: Skymmich is an independent project and is not affiliated with, endorsed by, or officially connected to Immich or its developers. Skymmich is a third-party application that integrates with Immich's public API.
 
 <div align="center">
   <img width="80%" src="assets/images/demo.gif" />
@@ -56,7 +59,7 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 
 ## 🚀 Quick Start
 
-> **Prerequisites**: Astromich requires a running [Immich](https://immich.app/) instance for photo management. Ensure you have Immich set up and accessible before proceeding.
+> **Prerequisites**: Skymmich requires a running [Immich](https://immich.app/) instance for photo management. Ensure you have Immich set up and accessible before proceeding.
 
 ### Option 1: Docker Compose (Recommended)
 
@@ -64,14 +67,14 @@ Complete production setup with PostgreSQL database:
 
 ```bash
 # Download production compose file and environment template
-curl -o docker-compose.prod.yml https://raw.githubusercontent.com/mstelz/Astromich/main/docker-compose.prod.yml
-curl -o .env.prod.example https://raw.githubusercontent.com/mstelz/Astromich/main/.env.prod.example
+curl -o docker-compose.prod.yml https://raw.githubusercontent.com/mstelz/Skymmich/main/docker-compose.prod.yml
+curl -o .env.prod.example https://raw.githubusercontent.com/mstelz/Skymmich/main/.env.prod.example
 
 # Configure environment
 cp .env.prod.example .env
 # Edit .env with your Immich server details and database password
 
-# Start services (PostgreSQL + Astromich from ghcr.io)
+# Start services (PostgreSQL + Skymmich from ghcr.io)
 docker compose -f docker-compose.prod.yml up -d
 
 # Access the application
@@ -80,7 +83,7 @@ open http://localhost:5000
 
 **What this includes:**
 - PostgreSQL 15 database with persistent storage
-- Astromich application from GitHub Container Registry
+- Skymmich application from GitHub Container Registry
 - Health checks and automatic restarts
 - Secure networking between containers
 - Volume mounts for configuration and logs
@@ -93,17 +96,17 @@ Single container deployment using GitHub Container Registry:
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/mstelz/astromich:latest
+docker pull ghcr.io/mstelz/skymmich:latest
 
 # Run with Docker (requires existing PostgreSQL)
 docker run -d \
-  --name astromich \
+  --name skymmich \
   -p 5000:5000 \
   -e NODE_ENV=production \
-  -e DATABASE_URL="postgresql://user:password@your-postgres-host:5432/astromich" \
+  -e DATABASE_URL="postgresql://user:password@your-postgres-host:5432/skymmich" \
   -e IMMICH_URL="http://your-immich-server:2283" \
   -e IMMICH_API_KEY="your-immich-api-key" \
-  ghcr.io/mstelz/astromich:latest
+  ghcr.io/mstelz/skymmich:latest
 
 # Access the application
 open http://localhost:5000
@@ -111,16 +114,16 @@ open http://localhost:5000
 
 ### Option 3: UnRAID Template
 
-> **📢 Coming Soon**: Astromich will be available in UnRAID Community Applications for easy one-click installation.
+> **📢 Coming Soon**: Skymmich will be available in UnRAID Community Applications for easy one-click installation.
 
 For now, manual installation:
 
 1. **Install PostgreSQL**: Use any PostgreSQL template from Community Applications
-   - **Database Name**: `astromich`
-   - **Username**: `astromich`
+   - **Database Name**: `skymmich`
+   - **Username**: `skymmich`
    - **Password**: Strong password (remember for step 2)
    - **Container Name**: `postgres` (default)
-2. **Install Astromich**: Use template URL `https://raw.githubusercontent.com/mstelz/Astromich/main/docker/unraid-templates/astromich.xml`
+2. **Install Skymmich**: Use template URL `https://raw.githubusercontent.com/mstelz/Skymmich/main/docker/unraid-templates/skymmich.xml`
 3. **Configure**: Update DATABASE_URL with your PostgreSQL password and optional API keys
 4. **Access**: Navigate to `http://your-server:2284`
 
@@ -128,8 +131,8 @@ For now, manual installation:
 
 ```bash
 # Clone and install dependencies
-git clone https://github.com/mstelz/Astromich.git
-cd Astromich
+git clone https://github.com/mstelz/Skymmich.git
+cd Skymmich
 npm install
 
 # Option A: Build and run with Docker Compose (builds from source)
@@ -188,12 +191,12 @@ After startup, access the admin interface at `/admin` to configure:
 
 ## 📦 Container Images
 
-Astromich provides ready-to-use container images through GitHub Container Registry:
+Skymmich provides ready-to-use container images through GitHub Container Registry:
 
 ### Available Images
-- **Latest Release**: `ghcr.io/mstelz/astromich:latest`
-- **Specific Version**: `ghcr.io/mstelz/astromich:v1.x.x`
-- **Development**: `ghcr.io/mstelz/astromich:main`
+- **Latest Release**: `ghcr.io/mstelz/skymmich:latest`
+- **Specific Version**: `ghcr.io/mstelz/skymmich:v1.x.x`
+- **Development**: `ghcr.io/mstelz/skymmich:main`
 
 ### Supported Architectures
 - `linux/amd64` (x86_64)
@@ -211,7 +214,7 @@ All images are automatically built, tested, and scanned for vulnerabilities usin
 
 ```
 ┌─────────────────────────────────────┐    ┌─────────────────────┐
-│        Astromich Container          │    │   PostgreSQL        │
+│        Skymmich Container           │    │   PostgreSQL        │
 ├─────────────────────────────────────┤    │   Container         │
 │  Frontend (React + TypeScript)      │    ├─────────────────────┤
 │  ├─ Vite build system               │    │  Database Engine    │
@@ -235,7 +238,7 @@ All images are automatically built, tested, and scanned for vulnerabilities usin
 ## 📁 Project Structure
 
 ```
-Astromich/
+Skymmich/
 ├── apps/
 │   ├── client/                 # React frontend application
 │   │   ├── src/
@@ -279,8 +282,8 @@ node --version  # v20+
 npm --version   # 10+
 
 # Clone repository
-git clone https://github.com/mstelz/Astromich.git
-cd Astromich
+git clone https://github.com/mstelz/Skymmich.git
+cd Skymmich
 ```
 
 ### Setup
@@ -317,7 +320,7 @@ npm run db:migrate     # Apply pending migrations
 npm run db:studio      # Open Drizzle Studio (database GUI)
 
 # Docker development
-docker compose up -d astromich-db  # Database only
+docker compose up -d skymmich-db  # Database only
 npm run dev                        # Local app + Docker DB
 ```
 
@@ -338,7 +341,7 @@ npm run test:watch     # Watch mode testing
 
 ## 🚢 CI/CD & Deployment
 
-Astromich uses GitHub Actions for continuous integration and deployment. All builds are automatically tested, scanned for vulnerabilities, and containerized.
+Skymmich uses GitHub Actions for continuous integration and deployment. All builds are automatically tested, scanned for vulnerabilities, and containerized.
 
 ### Automated Workflows
 
@@ -374,8 +377,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [ ] Community features (sharing, public galleries)
 
 ### Community & Help
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/mstelz/Astromich/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/mstelz/Astromich/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/mstelz/Skymmich/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/mstelz/Skymmich/discussions)
 
 ## 📄 License
 
@@ -394,6 +397,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the astrophotography community**
 
-[⭐ Star this repo](https://github.com/mstelz/Astromich) | [🐛 Report bug](https://github.com/mstelz/Astromich/issues) | [💡 Request feature](https://github.com/mstelz/Astromich/discussions)
+[⭐ Star this repo](https://github.com/mstelz/Skymmich) | [🐛 Report bug](https://github.com/mstelz/Skymmich/issues) | [💡 Request feature](https://github.com/mstelz/Skymmich/discussions)
 
 </div>

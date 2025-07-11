@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Astromich Container Startup Script
+# Skymmich Container Startup Script
 set -e
 
-echo "Starting Astromich container..."
+echo "Starting Skymmich container..."
 echo "Node.js version: $(node --version)"
 echo "Environment: ${NODE_ENV:-development}"
 echo "Database URL: ${DATABASE_URL:-using_default}"

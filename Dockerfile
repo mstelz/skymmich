@@ -1,4 +1,4 @@
-# Multi-stage build for Astromich
+# Multi-stage build for Skymmich
 # SECURITY: This image does not contain any secrets or API keys
 # All sensitive configuration is provided via environment variables at runtime
 FROM node:24-alpine AS builder
@@ -34,7 +34,7 @@ RUN apk add --no-cache curl
 
 # Create app user for security (non-root execution)
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S astromich -u 1001
+    adduser -S skymmich -u 1001
 
 # Set working directory
 WORKDIR /app
@@ -50,14 +50,14 @@ COPY --from=builder /build/dist ./dist
 
 # Create directories for runtime and set permissions
 RUN mkdir -p /app/config /app/logs /app/sidecars && \
-    chown -R astromich:nodejs /app
+    chown -R skymmich:nodejs /app
 
 # Copy startup script
 COPY docker/startup.sh ./
 RUN chmod +x startup.sh
 
 # Switch to non-root user for security
-USER astromich
+USER skymmich
 
 # Expose port
 EXPOSE 5000

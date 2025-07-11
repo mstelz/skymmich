@@ -61,7 +61,7 @@ export function ImageGallery({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
         {[...Array(6)].map((_, i) => (
-          <Card key={i} className="astro-card animate-pulse">
+          <Card key={i} className="sky-card animate-pulse">
             <div className="w-full h-48 bg-muted" />
             <CardContent className="p-4">
               <div className="h-4 bg-muted rounded mb-2" />
@@ -123,7 +123,7 @@ export function ImageGallery({
       {hasMoreImages && onLoadMore && (
         <div className="text-center mb-8">
           <Button 
-            className="astro-button-primary"
+            className="sky-button-primary"
             onClick={onLoadMore}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -142,7 +142,7 @@ export function ImageGallery({
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {equipment.map((item) => (
-              <Card key={item.id} className="astro-card">
+              <Card key={item.id} className="sky-card">
                 {item.imageUrl && (
                   <img
                     src={item.imageUrl}

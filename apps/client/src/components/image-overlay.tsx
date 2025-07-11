@@ -398,12 +398,12 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 <h3 className="font-semibold mb-2 text-foreground">Tags</h3>
                 <div className="flex flex-wrap gap-2">
                   {image.tags.map((tag) => (
-                    <Badge key={tag} className="astro-tag">
+                    <Badge key={tag} className="sky-tag">
                       {tag}
                     </Badge>
                   ))}
                   {image.objectType && (
-                    <Badge className="astro-tag">{image.objectType}</Badge>
+                    <Badge className="sky-tag">{image.objectType}</Badge>
                   )}
                 </div>
               </section>
@@ -485,7 +485,7 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
       {!isExpanded && (
         <aside
           className="w-full max-w-md h-full flex flex-col gap-6 shadow-2xl border-r border-black/60 relative"
-          style={{ background: "hsl(217, 86%, 17%)" }} // astro-blue
+          style={{ background: "hsl(217, 86%, 17%)" }} // sky-blue
         >
           {/* Close button */}
           <button
@@ -785,12 +785,12 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 {!collapsedSections['tags'] && (
                   <div className="flex flex-wrap gap-2">
                     {image.tags.map((tag) => (
-                      <Badge key={tag} className="astro-tag">
+                      <Badge key={tag} className="sky-tag">
                         {tag}
                       </Badge>
                     ))}
                     {image.objectType && (
-                      <Badge className="astro-tag">{image.objectType}</Badge>
+                      <Badge className="sky-tag">{image.objectType}</Badge>
                     )}
                   </div>
                 )}

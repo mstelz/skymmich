@@ -127,7 +127,7 @@ export { io };
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Astromich server running on port ${PORT}`);
+  console.log(`Skymmich server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
   console.log(`Worker enabled: ${process.env.ENABLE_PLATE_SOLVING || 'true'}`);

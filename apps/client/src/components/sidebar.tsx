@@ -64,7 +64,7 @@ export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
           )}
           <div>
             <Link href="/plate-solving">
-              <Button className="w-full astro-button-secondary">
+              <Button className="w-full sky-button-secondary">
                 <CloudUpload className="mr-2 h-4 w-4" />
                 Submit New Image
               </Button>
@@ -164,7 +164,7 @@ export function Sidebar({ stats, tags, onTagClick }: SidebarProps) {
               tags.slice(0, 12).map(({ tag, count }) => (
                 <Badge
                   key={tag}
-                  className="astro-tag cursor-pointer"
+                  className="sky-tag cursor-pointer"
                   onClick={() => onTagClick(tag)}
                 >
                   {tag} ({count})

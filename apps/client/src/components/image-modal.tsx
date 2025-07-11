@@ -165,7 +165,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                       onClick={() => plateSolveMutation.mutate(image.id)}
                       disabled={plateSolveMutation.isPending}
                       size="sm"
-                      className="astro-button-secondary"
+                      className="sky-button-secondary"
                     >
                       {plateSolveMutation.isPending ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -213,12 +213,12 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                   <h4 className="font-semibold text-foreground mb-2">Tags</h4>
                   <div className="flex flex-wrap gap-2">
                     {image.tags.map((tag) => (
-                      <Badge key={tag} className="astro-tag">
+                      <Badge key={tag} className="sky-tag">
                         {tag}
                       </Badge>
                     ))}
                     {image.objectType && (
-                      <Badge className="astro-tag">{image.objectType}</Badge>
+                      <Badge className="sky-tag">{image.objectType}</Badge>
                     )}
                   </div>
                 </div>
@@ -287,7 +287,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                       onClick={() => plateSolveMutation.mutate(image.id)}
                       disabled={plateSolveMutation.isPending}
                       size="sm"
-                      className="astro-button-secondary"
+                      className="sky-button-secondary"
                     >
                       {plateSolveMutation.isPending ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -336,12 +336,12 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                 <h4 className="font-semibold text-foreground mb-2">Tags</h4>
                 <div className="flex flex-wrap gap-2">
                   {image.tags.map((tag) => (
-                    <Badge key={tag} className="astro-tag">
+                    <Badge key={tag} className="sky-tag">
                       {tag}
                     </Badge>
                   ))}
                   {image.objectType && (
-                    <Badge className="astro-tag">{image.objectType}</Badge>
+                    <Badge className="sky-tag">{image.objectType}</Badge>
                   )}
                 </div>
               </div>
