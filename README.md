@@ -11,7 +11,7 @@
 Astromich seamlessly integrates with your astrophotography gallery, providing automatic image synchronization, intelligent plate solving, equipment tracking, and comprehensive metadata management. Perfect for organizing and analyzing your deep-sky imaging collection.
 
 <div align="center">
-  <p><em>🚀 Screenshots and demo coming soon! 📸</em></p>
+  <img width="80%" src="assets/images/demo.gif" />
 </div>
 
 ## ✨ Features
