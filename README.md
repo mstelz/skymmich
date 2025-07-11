@@ -6,6 +6,8 @@
   <a href="./docker"><img src="https://img.shields.io/badge/Docker-Ready-blue?logo=docker"/></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" />
   <a href="./docker/unraid-templates"><img src="https://img.shields.io/badge/UnRAID-Compatible-orange)" /></a>
+  <a href="https://discord.gg/ffZ8cuJ8Kh"><img src="https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white" alt="Join us on Discord" /></a>
+
 </p>
 
 Astromich seamlessly integrates with your astrophotography gallery, providing automatic image synchronization, intelligent plate solving, equipment tracking, and comprehensive metadata management. Perfect for organizing and analyzing your deep-sky imaging collection.
