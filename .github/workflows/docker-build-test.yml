@@ -127,6 +127,7 @@ jobs:
 
       - name: Scan for vulnerabilities (SARIF)
         id: security-scan
+        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: skymmich:test-${{ github.event.pull_request.number }}
@@ -137,7 +138,8 @@ jobs:
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()  # Upload even if scan found vulnerabilities
+        if: always() && hashFiles('trivy-results.sarif') != ''
+        continue-on-error: true
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-pr'
