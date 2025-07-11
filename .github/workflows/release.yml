@@ -79,7 +79,7 @@ jobs:
 
       - name: Build and push Docker image
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -135,7 +135,7 @@ jobs:
           echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${{ github.ref_name }}" >> changelog.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
           body_path: changelog.md
