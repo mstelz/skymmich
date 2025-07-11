@@ -2,17 +2,18 @@
   <img src="assets/images/astromich.png" width="300">
 </p>
 
-> A comprehensive astrophotography image management and analysis application
+<p align="center">
+  <a href="./docker"><img src="https://img.shields.io/badge/Docker-Ready-blue?logo=docker"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" />
+  <a href="./docker/unraid-templates"><img src="https://img.shields.io/badge/UnRAID-Compatible-orange)" /></a>
+  <a href="https://discord.gg/ffZ8cuJ8Kh"><img src="https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white" alt="Join us on Discord" /></a>
 
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](./docker/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Security](https://img.shields.io/badge/Security-Hardened-brightgreen)](docs/containerization-plan.md#security-considerations)
-[![UnRAID](https://img.shields.io/badge/UnRAID-Compatible-orange)](./docker/unraid-templates/)
+</p>
 
 Astromich seamlessly integrates with your astrophotography gallery, providing automatic image synchronization, intelligent plate solving, equipment tracking, and comprehensive metadata management. Perfect for organizing and analyzing your deep-sky imaging collection.
 
 <div align="center">
-  <p><em>🚀 Screenshots and demo coming soon! 📸</em></p>
+  <img width="80%" src="assets/images/demo.gif" />
 </div>
 
 ## ✨ Features
