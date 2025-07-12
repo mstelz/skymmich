@@ -35,21 +35,21 @@
 }
 
 .dark {
-  --background: hsl(237, 63%, 14%);
+  --background: hsl(215, 28%, 7%);
   --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(238, 40%, 26%);
+  --muted: hsl(215, 20%, 12%);
   --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(217, 86%, 17%);
+  --popover: hsl(215, 25%, 10%);
   --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(217, 86%, 17%);
+  --card: hsl(215, 25%, 10%);
   --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(236, 32%, 40%);
-  --input: hsl(238, 40%, 26%);
+  --border: hsl(215, 15%, 20%);
+  --input: hsl(215, 20%, 12%);
   --primary: hsl(207, 90%, 54%);
   --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(238, 40%, 26%);
+  --secondary: hsl(215, 20%, 12%);
   --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(238, 40%, 26%);
+  --accent: hsl(215, 20%, 12%);
   --accent-foreground: hsl(0, 0%, 98%);
   --destructive: hsl(346, 78%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
@@ -77,11 +77,11 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(237, 63%, 14%);
+    background: hsl(215, 28%, 7%);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(236, 32%, 40%);
+    background: hsl(215, 15%, 20%);
     border-radius: 4px;
   }
 

@@ -484,8 +484,7 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
       {/* Info panel */}
       {!isExpanded && (
         <aside
-          className="w-full max-w-md h-full flex flex-col gap-6 shadow-2xl border-r border-black/60 relative"
-          style={{ background: "hsl(217, 86%, 17%)" }} // sky-blue
+          className="w-full max-w-md h-full flex flex-col gap-6 shadow-2xl border-r border-border relative bg-card"
         >
           {/* Close button */}
           <button
