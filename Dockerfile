@@ -6,6 +6,9 @@ FROM node:24-alpine AS builder
 # Set working directory
 WORKDIR /build
 
+# Set npm configuration for better ARM64 support
+RUN npm config set unsafe-perm true
+
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
@@ -15,7 +18,8 @@ COPY postcss.config.js ./
 COPY drizzle.config.ts ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm ci
+# Handle npm bug with Rollup optional dependencies on ARM64/musl
+RUN npm ci || (npm cache clean --force && npm install)
 
 # Copy source code
 COPY apps/ ./apps/
