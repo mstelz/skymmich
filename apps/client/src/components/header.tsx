@@ -73,7 +73,7 @@ export function Header({ onSync }: HeaderProps) {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <img src="/logor.png" alt="Skymmich Logo" className="h-8 w-8" />
+              <img src="/logo.png" alt="Skymmich Logo" className="h-8 w-8" />
               <h1 className="text-xl font-bold text-foreground">Skymmich</h1>
             </Link>
           </div>
