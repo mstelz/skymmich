@@ -7,7 +7,7 @@ FROM node:24-alpine AS builder
 WORKDIR /build
 
 # Set npm configuration for better ARM64 support
-RUN npm config set unsafe-perm true
+# Note: unsafe-perm is deprecated and not needed in modern npm versions
 
 # Copy package files
 COPY package*.json ./
