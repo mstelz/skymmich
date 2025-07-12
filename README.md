@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/images/skymmich-transparent.png" width="300">
+  <img src="apps/client/public/logo.png" width="300">
   <h1 style="font-size: 55px" align="center">SKYMMICH</h1>
 </p>
 
