@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Telescope, Upload, Settings } from "lucide-react";
+import { Telescope, Upload, Settings, Github } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/use-socket";
@@ -107,6 +107,16 @@ export function Header({ onSync }: HeaderProps) {
               <Upload className="mr-2 h-4 w-4" />
               Sync Immich
             </Button>
+            <a 
+              href="https://github.com/mstelz/skymmich" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              title="View on GitHub"
+            >
+              <Button variant="ghost" size="icon">
+                <Github className="h-5 w-5" />
+              </Button>
+            </a>
             <Link href="/admin">
               <Button 
                 variant="ghost" 

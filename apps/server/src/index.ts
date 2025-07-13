@@ -4,7 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
 import { configService } from "./services/config";
-import { registerRoutes } from "./routes/routes";
+import { registerRoutes } from "./routes";
 import { cronManager, setSocketIO as setCronSocketIO } from './services/cron-manager';
 // Vite imports are loaded dynamically to avoid bundling them in production
 import { setSocketIO } from "./services/astrometry";
