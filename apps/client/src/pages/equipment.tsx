@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Edit3, Trash2, X, Check } from "lucide-react";
 import type { Equipment } from "@shared/schema";
 import type { ReactNode } from "react";
 
-export default function EquipmentCatalog(): JSX.Element {
+export default function EquipmentCatalog(): React.JSX.Element {
   const { data, isLoading } = useQuery<Equipment[]>({
     queryKey: ["/api/equipment"],
     queryFn: async () => {
