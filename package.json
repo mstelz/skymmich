@@ -61,7 +61,7 @@
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.3",
-    "drizzle-zod": "^0.8.2",
+    "drizzle-zod": "^0.5.1",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
@@ -93,7 +93,7 @@
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
-    "zod": "^4.0.5",
+    "zod": "^3.25.76",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
