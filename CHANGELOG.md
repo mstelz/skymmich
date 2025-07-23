@@ -5,6 +5,12 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2025-07-23
+
+### Fixed
+- **Release Workflow**: Fixed Trivy vulnerability scanning by scanning local image before registry push
+- **CI/CD**: Resolved chicken-and-egg problem with Docker image scanning in release process
+
 ## [0.1.0] - 2025-07-23
 
 ### Added
