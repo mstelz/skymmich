@@ -126,8 +126,21 @@ jobs:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-release'
 
+      - name: Wait for image propagation
+        run: |
+          echo "Waiting for image to be available in registry..."
+          for i in {1..10}; do
+            if docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} > /dev/null 2>&1; then
+              echo "Image manifest found after $i attempts"
+              break
+            fi
+            echo "Attempt $i: Image not yet available, waiting 30 seconds..."
+            sleep 30
+          done
+
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
+        continue-on-error: true  # Don't fail release if SBOM generation fails
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: spdx-json
