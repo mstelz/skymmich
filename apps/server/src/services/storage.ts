@@ -67,7 +67,10 @@ class DbStorage {
         tags: isProduction ? image.tags : JSON.stringify(image.tags),
     };
     const result = await db.insert(isProduction ? schema.astrophotographyImages : schema.sqliteAstrophotographyImages).values(values).returning().execute();
-    return result[0] ? parseJsonFields(result[0], ['tags']) : undefined;
+    if (!result[0]) {
+      throw new Error('Failed to create astro image');
+    }
+    return parseJsonFields(result[0], ['tags']);
   }
 
   async updateAstroImage(id: number, updates: Partial<InsertAstroImage>): Promise<AstroImage | undefined> {
@@ -97,7 +100,10 @@ class DbStorage {
         specifications: isProduction ? equipmentData.specifications : JSON.stringify(equipmentData.specifications),
     };
     const result = await db.insert(isProduction ? schema.equipment : schema.sqliteEquipment).values(values).returning().execute();
-    return result[0] ? parseJsonFields(result[0], ['specifications']) : undefined;
+    if (!result[0]) {
+      throw new Error('Failed to create equipment');
+    }
+    return parseJsonFields(result[0], ['specifications']);
   }
 
   async updateEquipment(id: number, updates: Partial<InsertEquipment>): Promise<Equipment | undefined> {
@@ -139,7 +145,10 @@ class DbStorage {
         notes,
     };
     const result = await db.insert(isProduction ? schema.imageEquipment : schema.sqliteImageEquipment).values(values).returning().execute();
-    return result[0] ? parseJsonFields(result[0], ['settings']) : undefined;
+    if (!result[0]) {
+      throw new Error('Failed to add equipment to image');
+    }
+    return parseJsonFields(result[0], ['settings']);
   }
 
   async removeEquipmentFromImage(imageId: number, equipmentId: number): Promise<boolean> {
@@ -178,7 +187,10 @@ class DbStorage {
         result: isProduction ? job.result : JSON.stringify(job.result),
     };
     const result = await db.insert(isProduction ? schema.plateSolvingJobs : schema.sqlitePlateSolvingJobs).values(values).returning().execute();
-    return result[0] ? parseJsonFields(result[0], ['result']) : undefined;
+    if (!result[0]) {
+      throw new Error('Failed to create plate solving job');
+    }
+    return parseJsonFields(result[0], ['result']);
   }
 
   async updatePlateSolvingJob(id: number, updates: Partial<InsertPlateSolvingJob>): Promise<PlateSolvingJob | undefined> {
