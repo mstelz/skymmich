@@ -104,8 +104,8 @@ jobs:
             # For main branch: use the pushed image with digest
             IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-main.outputs.digest }}"
           else
-            # For PR: use the locally loaded image (no registry prefix needed)
-            IMAGE_REF="skymmich:pr-scan"
+            # For PR: use the locally loaded image with full tag
+            IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-scan"
           fi
           echo "IMAGE_REF=${IMAGE_REF}" >> $GITHUB_OUTPUT
           echo "Using image reference: ${IMAGE_REF}"
