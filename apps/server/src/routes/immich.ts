@@ -136,6 +136,22 @@ router.post('/test-immich-connection', async (req, res) => {
       });
     }
 
+    // Basic SSRF protection - validate URL format and protocol
+    try {
+      const url = new URL(host);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Only HTTP and HTTPS protocols are allowed',
+        });
+      }
+    } catch (urlError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid URL format',
+      });
+    }
+
     // Test the connection by trying to get albums (same endpoint as working sync)
     const response = await axios.get(`${host}/api/albums`, {
       headers: {
@@ -234,6 +250,16 @@ router.post('/albums', async (req, res) => {
     const { host, apiKey } = req.body;
     if (!host || !apiKey) {
       return res.status(400).json({ message: 'Host and API key are required' });
+    }
+
+    // Basic SSRF protection - validate URL format and protocol
+    try {
+      const url = new URL(host);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        return res.status(400).json({ message: 'Only HTTP and HTTPS protocols are allowed' });
+      }
+    } catch (urlError) {
+      return res.status(400).json({ message: 'Invalid URL format' });
     }
     const response = await axios.get(`${host}/api/albums`, {
       headers: { 'X-API-Key': apiKey },
