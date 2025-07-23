@@ -5,18 +5,29 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.1] - 2025-07-23
+## [0.1.0] - 2025-07-23
+
+### Added
+- **🎉 Initial Release**: First public release of Skymmich
+- **Image Management**: Gallery interface for viewing and organizing astrophotography images
+- **Immich Integration**: Synchronization with Immich photo management server
+- **Plate Solving**: Astrometry.net integration for automatic celestial coordinate detection
+- **Equipment Catalog**: Manage telescopes, cameras, and other astrophotography equipment
+- **Admin Interface**: Web-based configuration for all application settings
+- **Docker Support**: Containerized deployment with multi-architecture support
 
 ### Security
 - **🔒 CRITICAL**: Updated axios from 1.10.0 to 1.11.0 to fix CVE-2025-7783 form-data vulnerability
 - **🔒 SSRF Protection**: Added URL validation to admin connection testing endpoints to prevent Server-Side Request Forgery attacks
 - **🔒 Protocol Validation**: Restricted connection testing to HTTP/HTTPS protocols only
 
-### Fixed
-- **Security vulnerability**: Fixed predictable boundary values in form-data that could lead to HTTP parameter pollution
-- **SSRF attacks**: Added validation to prevent malicious URLs in admin configuration endpoints
+### Technical
+- **Database Support**: SQLite for development, PostgreSQL for production
+- **Real-time Updates**: Socket.io integration for live status updates
+- **Cron Scheduling**: Automated synchronization and processing tasks
+- **API Documentation**: Comprehensive REST API for all functionality
 
-## [1.2.0] - 2025-07-09
+## [Unreleased] - Development History
 
 ### Added
 - **🎉 Open Source Release**: Skymmich is now available as an open source project under MIT license
