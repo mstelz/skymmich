@@ -1,74 +1,76 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(60, 4.8%, 95.9%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(60, 4.8%, 95.9%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
+@theme {
+  --color-background: hsl(0, 0%, 100%);
+  --color-foreground: hsl(20, 14.3%, 4.1%);
+  --color-muted: hsl(60, 4.8%, 95.9%);
+  --color-muted-foreground: hsl(25, 5.3%, 44.7%);
+  --color-popover: hsl(0, 0%, 100%);
+  --color-popover-foreground: hsl(20, 14.3%, 4.1%);
+  --color-card: hsl(0, 0%, 100%);
+  --color-card-foreground: hsl(20, 14.3%, 4.1%);
+  --color-border: hsl(20, 5.9%, 90%);
+  --color-input: hsl(20, 5.9%, 90%);
+  --color-primary: hsl(207, 90%, 54%);
+  --color-primary-foreground: hsl(211, 100%, 99%);
+  --color-secondary: hsl(60, 4.8%, 95.9%);
+  --color-secondary-foreground: hsl(24, 9.8%, 10%);
+  --color-accent: hsl(60, 4.8%, 95.9%);
+  --color-accent-foreground: hsl(24, 9.8%, 10%);
+  --color-destructive: hsl(0, 84.2%, 60.2%);
+  --color-destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --color-ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
 
   /* Custom astrophotography colors */
-  --sky-dark: 237 63% 14%;
-  --sky-blue: 217 86% 17%;
-  --sky-purple: 264 31% 35%;
-  --stellar-red: 346 78% 60%;
-  --star-orange: 37 92% 50%;
-  --nebula-gray: 238 40% 26%;
-  --space-gray: 236 32% 40%;
+  --color-astro-dark: hsl(237, 63%, 14%);
+  --color-astro-blue: hsl(217, 86%, 17%);
+  --color-astro-purple: hsl(264, 31%, 35%);
+  --color-stellar-red: hsl(346, 78%, 60%);
+  --color-star-orange: hsl(37, 92%, 50%);
+  --color-nebula-gray: hsl(238, 40%, 26%);
+  --color-space-gray: hsl(236, 32%, 40%);
 }
 
-.dark {
-  --background: hsl(215, 28%, 7%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(215, 20%, 12%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(215, 25%, 10%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(215, 25%, 10%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(215, 15%, 20%);
-  --input: hsl(215, 20%, 12%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(215, 20%, 12%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(215, 20%, 12%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(346, 78%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  --radius: 0.5rem;
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: hsl(215, 28%, 7%);
+    --color-foreground: hsl(0, 0%, 98%);
+    --color-muted: hsl(215, 20%, 12%);
+    --color-muted-foreground: hsl(240, 5%, 64.9%);
+    --color-popover: hsl(215, 25%, 10%);
+    --color-popover-foreground: hsl(0, 0%, 98%);
+    --color-card: hsl(215, 25%, 10%);
+    --color-card-foreground: hsl(0, 0%, 98%);
+    --color-border: hsl(215, 15%, 20%);
+    --color-input: hsl(215, 20%, 12%);
+    --color-primary: hsl(207, 90%, 54%);
+    --color-primary-foreground: hsl(211, 100%, 99%);
+    --color-secondary: hsl(215, 20%, 12%);
+    --color-secondary-foreground: hsl(0, 0%, 98%);
+    --color-accent: hsl(215, 20%, 12%);
+    --color-accent-foreground: hsl(0, 0%, 98%);
+    --color-destructive: hsl(346, 78%, 60%);
+    --color-destructive-foreground: hsl(0, 0%, 98%);
+    --color-ring: hsl(240, 4.9%, 83.9%);
+  }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--color-border));
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    -webkit-font-smoothing: antialiased;
+    background-color: hsl(var(--color-background));
+    color: hsl(var(--color-foreground));
   }
 
   /* Force dark theme for astrophotography app */
   html {
-    @apply dark;
+    color-scheme: dark;
   }
 
   /* Custom scrollbar for dark theme */
@@ -92,27 +94,89 @@
 
 @layer components {
   .sky-card {
-    @apply bg-card border border-border rounded-xl overflow-hidden hover:bg-opacity-80 transition-all cursor-pointer;
+    background-color: hsl(var(--color-card));
+    border: 1px solid hsl(var(--color-border));
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .sky-card:hover {
+    background-color: color-mix(in srgb, hsl(var(--color-card)) 80%, transparent);
   }
 
   .sky-button-primary {
-    @apply bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors;
+    background-color: rgb(220 38 38);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s;
+  }
+
+  .sky-button-primary:hover {
+    background-color: rgb(185 28 28);
   }
 
   .sky-button-secondary {
-    @apply bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors;
+    background-color: rgb(147 51 234);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s;
+  }
+
+  .sky-button-secondary:hover {
+    background-color: rgb(126 34 206);
   }
 
   .sky-input {
-    @apply bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary;
+    background-color: hsl(var(--color-input));
+    border: 1px solid hsl(var(--color-border));
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: hsl(var(--color-foreground));
+  }
+
+  .sky-input::placeholder {
+    color: hsl(var(--color-muted-foreground));
+  }
+
+  .sky-input:focus {
+    outline: none;
+    border-color: hsl(var(--color-primary));
   }
 
   .input {
-    @apply bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary;
+    background-color: hsl(var(--color-input));
+    border: 1px solid hsl(var(--color-border));
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: hsl(var(--color-foreground));
+  }
+
+  .input::placeholder {
+    color: hsl(var(--color-muted-foreground));
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: hsl(var(--color-primary));
   }
 
   .sky-tag {
-    @apply bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md cursor-pointer hover:bg-purple-700 transition-colors font-medium;
+    background-color: rgb(147 51 234);
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 500;
+  }
+
+  .sky-tag:hover {
+    background-color: rgb(126 34 206);
   }
 }
 
@@ -132,17 +196,33 @@
 
 /* Status indicators */
 .status-plate-solved {
-  @apply bg-green-600 text-white px-2 py-1 rounded text-xs;
+  background-color: rgb(22 163 74);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
 }
 
 .status-processing {
-  @apply bg-yellow-600 text-white px-2 py-1 rounded text-xs;
+  background-color: rgb(202 138 4);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
 }
 
 .status-failed {
-  @apply bg-red-600 text-white px-2 py-1 rounded text-xs;
+  background-color: rgb(220 38 38);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
 }
 
 .status-no-data {
-  @apply bg-gray-600 text-white px-2 py-1 rounded text-xs;
+  background-color: rgb(75 85 99);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
 }
