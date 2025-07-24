@@ -5,6 +5,18 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Server startup**: Fixed path-to-regexp error during development server startup by replacing catch-all route pattern
+- **Worker connection**: Resolved Socket.io connection timing issues between worker and main server
+- **Route handling**: Improved SPA route handling with middleware approach to avoid path-to-regexp compatibility issues
+
+### Security
+- **🔒 esbuild vulnerability**: Fixed moderate security vulnerability GHSA-67mh-4wv8-2f99 in esbuild dependency
+- **Dependency security**: Added npm overrides to force secure esbuild version (^0.25.8) across all dependencies
+- **Package cleanup**: Removed deprecated @types/socket.io package
+
 ## [0.1.2] - 2025-07-23
 
 ### Fixed

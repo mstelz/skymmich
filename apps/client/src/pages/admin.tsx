@@ -100,7 +100,7 @@ export default function AdminPage() {
     setAlbumsLoading(true);
     setAlbumError(null);
     try {
-      const response = await fetch('/api/immich/albums', {
+      const response = await fetch('/api/assets/albums', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -232,7 +232,7 @@ export default function AdminPage() {
     setImmichTestMessage('');
     
     try {
-      const response = await fetch('/api/test-immich-connection', {
+      const response = await fetch('/api/assets/test-immich-connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

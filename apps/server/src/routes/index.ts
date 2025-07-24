@@ -12,7 +12,7 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
   app.use('/api/images', imageRoutes);
   app.use('/api/plate-solving', plateSolvingRoutes(io));
   app.use('/api/equipment', equipmentRoutes);
-  app.use('/api/immich', immichRoutes);
+  app.use('/api/assets', immichRoutes);
   app.use('/api', systemRoutes);
 
   const httpServer = createServer(app);

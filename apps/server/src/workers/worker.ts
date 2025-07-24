@@ -14,8 +14,10 @@ class PlateSolvingWorker {
     // Create AstrometryService that uses config service (to access admin settings)
     this.astrometryService = new AstrometryService(true);
     
-    // Connect to the main server via Socket.io for real-time updates
-    this.connectToServer();
+    // Connect to the main server via Socket.io for real-time updates after a delay
+    setTimeout(() => {
+      this.connectToServer();
+    }, 2000); // Wait 2 seconds for server to fully start
   }
 
   private connectToServer() {

@@ -85,7 +85,7 @@ router.post('/test-astrometry-connection', async (req, res) => {
       errorMessage = error.message;
     }
 
-    res.status(500).json({
+    res.json({
       success: false,
       message: errorMessage,
     });

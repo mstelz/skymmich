@@ -173,7 +173,7 @@ router.post('/test-immich-connection', async (req, res) => {
         contentType,
         data: response.data?.toString().substring(0, 200), // First 200 chars for debugging
       });
-      return res.status(500).json({
+      return res.json({
         success: false,
         message: `Server returned non-JSON response (${contentType}). Please check the host URL.`,
       });
@@ -209,7 +209,7 @@ router.post('/test-immich-connection', async (req, res) => {
       errorMessage = error.message;
     }
 
-    res.status(500).json({
+    res.json({
       success: false,
       message: errorMessage,
     });
@@ -217,7 +217,7 @@ router.post('/test-immich-connection', async (req, res) => {
 });
 
 // Proxy Immich image requests
-router.get('/assets/:assetId/:type', async (req, res) => {
+router.get('/:assetId/:type', async (req, res) => {
   try {
     const { assetId, type } = req.params;
     const config = await configService.getImmichConfig();

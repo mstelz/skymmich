@@ -40,16 +40,15 @@ async function startServer() {
   app.use(express.static(publicPath));
   
   // Serve index.html for all non-API routes (SPA)
-  app.get('*', (req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/')) {
+  // Using middleware instead of route pattern to avoid path-to-regexp issues
+  app.use((req, res, next) => {
+    // Skip API routes and static files
+    if (req.path.startsWith('/api/') || req.path.includes('.')) {
       return next();
     }
+    // Serve index.html for SPA routes
     res.sendFile(path.join(publicPath, 'index.html'));
   });
-
-  // Initialize cron manager
-  cronManager.initialize();
 
   // Socket.io connection handling
   io.on("connection", (socket) => {
@@ -65,6 +64,21 @@ async function startServer() {
 
   // Set Socket.io instance in cron manager for real-time updates
   setCronSocketIO(io);
+
+  // Start the HTTP server first
+  const PORT = process.env.PORT || 5000;
+  await new Promise<void>((resolve) => {
+    server.listen(PORT, () => {
+      console.log(`Skymmich server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
+      console.log(`Worker enabled: ${process.env.ENABLE_PLATE_SOLVING || 'true'}`);
+      resolve();
+    });
+  });
+
+  // Initialize cron manager after server is running
+  cronManager.initialize();
 
   // Start worker manager in production (in development, worker runs separately)
   if (process.env.NODE_ENV === "production") {
@@ -124,11 +138,3 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Export io for use in other modules
 export { io };
-
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Skymmich server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
-  console.log(`Worker enabled: ${process.env.ENABLE_PLATE_SOLVING || 'true'}`);
-});
