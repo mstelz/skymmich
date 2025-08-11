@@ -106,7 +106,7 @@
     "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "5.0.3",
     "@types/express-session": "^1.18.2",
-    "@types/node": "24.1.0",
+    "@types/node": "24.2.1",
     "@types/openseadragon": "^4.1.0",
     "@types/passport": "^1.0.16",
     "@types/passport-local": "^1.0.38",
