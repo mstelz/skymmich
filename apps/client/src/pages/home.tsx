@@ -77,7 +77,7 @@ export default function Home() {
 
   const handleSync = async () => {
     try {
-      const response = await fetch("/api/sync-immich", { 
+      const response = await fetch("/api/immich/sync-immich", { 
         method: "POST",
         credentials: "include"
       });
@@ -85,9 +85,15 @@ export default function Home() {
       if (response.ok) {
         refetchImages();
         refetchStats();
+        console.log("Sync completed successfully");
+      } else {
+        const errorData = await response.json();
+        console.error("Sync failed with status:", response.status, errorData);
+        alert(`Sync failed: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Sync failed:", error);
+      alert(`Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

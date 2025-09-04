@@ -1,9 +1,6 @@
-version: '3.8'
-
 # Skymmich Docker Compose Configuration
-# SECURITY NOTICE: This file references environment variables that should be set externally.
-# Create a .env file with your actual secrets (do not commit it to version control).
-# See .env.example for required variables.
+# SECURITY NOTICE: Set POSTGRES_PASSWORD in a .env file (do not commit to version control).
+# All other configuration (Immich, Astrometry.net) is done through the web UI after startup.
 
 services:
   skymmich:
@@ -15,15 +12,6 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://skymmich:${POSTGRES_PASSWORD}@skymmich-db:5432/skymmich
-      - IMMICH_URL=${IMMICH_URL:-}
-      - IMMICH_API_KEY=${IMMICH_API_KEY:-}
-      - ASTROMETRY_API_KEY=${ASTROMETRY_API_KEY:-}
-      - ENABLE_PLATE_SOLVING=${ENABLE_PLATE_SOLVING:-true}
-      # Plate solving configuration
-      - ASTROMETRY_CHECK_INTERVAL=${ASTROMETRY_CHECK_INTERVAL:-30}
-      - ASTROMETRY_POLL_INTERVAL=${ASTROMETRY_POLL_INTERVAL:-5}
-      - ASTROMETRY_MAX_CONCURRENT=${ASTROMETRY_MAX_CONCURRENT:-3}
-      - ASTROMETRY_AUTO_RESUBMIT=${ASTROMETRY_AUTO_RESUBMIT:-false}
       - XMP_SIDECAR_PATH=/app/sidecars
     volumes:
       - skymmich-config:/app/config

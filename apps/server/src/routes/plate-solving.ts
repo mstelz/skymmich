@@ -11,11 +11,11 @@ export default (io?: SocketIOServer) => {
   // Submit image for plate solving
   router.post('/images/:id/plate-solve', async (req, res) => {
     try {
-      // Check if plate solving is enabled in admin settings
+      // Check if plate solving is enabled and API key is configured
       const astrometryConfig = await configService.getAstrometryConfig();
-      if (!astrometryConfig.enabled) {
+      if (!astrometryConfig.enabled || !astrometryConfig.apiKey) {
         return res.status(400).json({
-          message: 'Plate solving is currently disabled. Please enable it in the admin settings.',
+          message: 'Plate solving is not configured. Please enable it and provide an API key in the admin settings.',
         });
       }
 
@@ -65,11 +65,11 @@ export default (io?: SocketIOServer) => {
         return res.status(400).json({ message: 'imageIds array is required' });
       }
 
-      // Check if plate solving is enabled in admin settings
+      // Check if plate solving is enabled and API key is configured
       const astrometryConfig = await configService.getAstrometryConfig();
-      if (!astrometryConfig.enabled) {
+      if (!astrometryConfig.enabled || !astrometryConfig.apiKey) {
         return res.status(400).json({
-          message: 'Plate solving is currently disabled. Please enable it in the admin settings.',
+          message: 'Plate solving is not configured. Please enable it and provide an API key in the admin settings.',
         });
       }
 

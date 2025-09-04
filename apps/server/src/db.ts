@@ -25,12 +25,30 @@ async function initializeDatabase() {
       
       // Dynamic imports to handle missing dependencies gracefully
       const { drizzle: sqliteDrizzle } = await import('drizzle-orm/better-sqlite3');
+      const { migrate } = await import('drizzle-orm/better-sqlite3/migrator');
       const Database = (await import('better-sqlite3')).default;
       const sqliteSchema = await import('../../../packages/shared/src/db/sqlite-schema');
       
       const sqlite = new Database('local.db');
       schema = sqliteSchema;
       db = sqliteDrizzle(sqlite, { schema });
+      
+      // Check if tables exist and run migrations if needed
+      const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__drizzle_migrations'").all();
+      const hasUserTables = tables.length > 0;
+      
+      if (!hasUserTables) {
+        console.log('No tables found, running migrations...');
+        try {
+          migrate(db, { migrationsFolder: './tools/migrations/sqlite' });
+          console.log('Migrations completed successfully');
+        } catch (migrationError) {
+          console.error('Migration error:', migrationError);
+          throw migrationError;
+        }
+      } else {
+        console.log(`Found ${tables.length} existing tables, skipping migrations`);
+      }
     } catch (error) {
       throw new Error(
         'No database configuration found. Please set DATABASE_URL environment variable for PostgreSQL connection.'

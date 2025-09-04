@@ -130,5 +130,5 @@ server.listen(PORT, () => {
   console.log(`Skymmich server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
-  console.log(`Worker enabled: ${process.env.ENABLE_PLATE_SOLVING || 'true'}`);
+  console.log(`Worker manager available in production mode`);
 });

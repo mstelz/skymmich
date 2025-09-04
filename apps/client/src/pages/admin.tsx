@@ -42,6 +42,7 @@ interface AdminSettings {
   astrometry: {
     apiKey: string;
     enabled: boolean;
+    autoEnabled: boolean; // Whether to enable automatic background plate solving
     checkInterval: number; // Worker check interval in seconds
     pollInterval: number; // Active polling interval in seconds
     maxConcurrent: number; // Max concurrent jobs
@@ -76,6 +77,7 @@ export default function AdminPage() {
     astrometry: {
       apiKey: '',
       enabled: true,
+      autoEnabled: false, // Disable automatic background processing by default
       checkInterval: 30, // 30 seconds
       pollInterval: 5, // 5 seconds
       maxConcurrent: 3,
@@ -228,11 +230,18 @@ export default function AdminPage() {
   };
 
   const testImmichConnection = async () => {
+    // Validate required fields
+    if (!settings.immich.host.trim() || !settings.immich.apiKey.trim()) {
+      setImmichTestStatus('error');
+      setImmichTestMessage('Please enter both host URL and API key before testing');
+      return;
+    }
+
     setImmichTestStatus('testing');
     setImmichTestMessage('');
     
     try {
-      const response = await fetch('/api/test-immich-connection', {
+      const response = await fetch('/api/immich/test-immich-connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -496,7 +505,12 @@ export default function AdminPage() {
                     </p>
                   )}
                 </div>
-                <Button onClick={testImmichConnection} disabled={immichTestStatus === 'testing'} size="sm" variant="outline">
+                <Button 
+                  onClick={testImmichConnection} 
+                  disabled={immichTestStatus === 'testing' || !settings.immich.host.trim() || !settings.immich.apiKey.trim()} 
+                  size="sm" 
+                  variant="outline"
+                >
                   {getTestButtonIcon(immichTestStatus)}
                   Test Connection
                 </Button>
@@ -526,6 +540,9 @@ export default function AdminPage() {
                 />
                 <Label htmlFor="astrometryEnabled">Enable plate solving</Label>
               </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                This enables manual plate solving from the UI. An API key is required for any plate solving functionality.
+              </p>
 
               {settings.astrometry.enabled && (
                 <>
@@ -556,7 +573,27 @@ export default function AdminPage() {
 
                   <Separator />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Switch
+                      id="astrometryAutoEnabled"
+                      checked={settings.astrometry.autoEnabled}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        astrometry: { ...prev.astrometry, autoEnabled: checked }
+                      }))}
+                      disabled={!settings.astrometry.apiKey.trim()}
+                    />
+                    <Label htmlFor="astrometryAutoEnabled">Enable automatic background plate solving</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    When enabled, the background worker will automatically process plate solving jobs. Requires API key to be configured.
+                  </p>
+
+                  {settings.astrometry.autoEnabled && (
+                    <>
+                      <Separator />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="checkInterval">Worker Check Interval (seconds)</Label>
                       <Input
@@ -626,6 +663,8 @@ export default function AdminPage() {
                   <p className="text-sm text-muted-foreground">
                     When disabled, failed jobs must be manually resubmitted. When enabled, failed jobs will be automatically retried.
                   </p>
+                    </>
+                  )}
                 </>
               )}
 

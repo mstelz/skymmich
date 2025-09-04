@@ -12,6 +12,7 @@ export interface AppConfig {
   astrometry: {
     apiKey: string;
     enabled: boolean;
+    autoEnabled: boolean;
     checkInterval: number;
     pollInterval: number;
     maxConcurrent: number;
@@ -33,29 +34,30 @@ class ConfigService {
     // Try to get admin settings first (from storage)
     const adminSettings = await this.getAdminSettings();
     
-    // Fall back to environment variables if admin settings are not available
-    const envConfig = this.getEnvConfig();
+    // Fall back to hardcoded defaults if admin settings are not available
+    const defaultConfig = this.getHardcodedDefaults();
     
-    // Merge with admin settings taking priority
+    // Merge with admin settings taking priority over defaults
     this.config = {
       immich: {
-        host: adminSettings.immich?.host || envConfig.immich.host,
-        apiKey: adminSettings.immich?.apiKey || envConfig.immich.apiKey,
-        autoSync: adminSettings.immich?.autoSync ?? envConfig.immich.autoSync,
-        syncFrequency: adminSettings.immich?.syncFrequency || envConfig.immich.syncFrequency,
-        syncByAlbum: adminSettings.immich?.syncByAlbum ?? envConfig.immich.syncByAlbum ?? true,
-        selectedAlbumIds: adminSettings.immich?.selectedAlbumIds || envConfig.immich.selectedAlbumIds || [],
+        host: adminSettings.immich?.host || defaultConfig.immich.host,
+        apiKey: adminSettings.immich?.apiKey || defaultConfig.immich.apiKey,
+        autoSync: adminSettings.immich?.autoSync ?? defaultConfig.immich.autoSync,
+        syncFrequency: adminSettings.immich?.syncFrequency || defaultConfig.immich.syncFrequency,
+        syncByAlbum: adminSettings.immich?.syncByAlbum ?? defaultConfig.immich.syncByAlbum,
+        selectedAlbumIds: adminSettings.immich?.selectedAlbumIds || defaultConfig.immich.selectedAlbumIds,
       },
       astrometry: {
-        apiKey: adminSettings.astrometry?.apiKey || envConfig.astrometry.apiKey,
-        enabled: adminSettings.astrometry?.enabled ?? envConfig.astrometry.enabled,
-        checkInterval: adminSettings.astrometry?.checkInterval ?? envConfig.astrometry.checkInterval,
-        pollInterval: adminSettings.astrometry?.pollInterval ?? envConfig.astrometry.pollInterval,
-        maxConcurrent: adminSettings.astrometry?.maxConcurrent ?? envConfig.astrometry.maxConcurrent,
-        autoResubmit: adminSettings.astrometry?.autoResubmit ?? envConfig.astrometry.autoResubmit,
+        apiKey: adminSettings.astrometry?.apiKey || defaultConfig.astrometry.apiKey,
+        enabled: adminSettings.astrometry?.enabled ?? defaultConfig.astrometry.enabled,
+        autoEnabled: adminSettings.astrometry?.autoEnabled ?? defaultConfig.astrometry.autoEnabled,
+        checkInterval: adminSettings.astrometry?.checkInterval ?? defaultConfig.astrometry.checkInterval,
+        pollInterval: adminSettings.astrometry?.pollInterval ?? defaultConfig.astrometry.pollInterval,
+        maxConcurrent: adminSettings.astrometry?.maxConcurrent ?? defaultConfig.astrometry.maxConcurrent,
+        autoResubmit: adminSettings.astrometry?.autoResubmit ?? defaultConfig.astrometry.autoResubmit,
       },
       app: {
-        debugMode: adminSettings.app?.debugMode ?? envConfig.app.debugMode,
+        debugMode: adminSettings.app?.debugMode ?? defaultConfig.app.debugMode,
       },
     };
 
@@ -72,26 +74,29 @@ class ConfigService {
     }
   }
 
-  private getEnvConfig(): AppConfig {
+  private getHardcodedDefaults(): AppConfig {
+    // These are minimal defaults used only when DB is empty on first run
+    // User must configure URLs/API keys through admin UI to make anything functional
     return {
       immich: {
-        host: process.env.IMMICH_URL || process.env.IMMICH_API_URL || "",
-        apiKey: process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "",
-        autoSync: process.env.IMMICH_AUTO_SYNC === 'true',
-        syncFrequency: process.env.IMMICH_SYNC_FREQUENCY || "0 */4 * * *",
-        syncByAlbum: process.env.IMMICH_SYNC_BY_ALBUM === 'true',
-        selectedAlbumIds: process.env.IMMICH_SELECTED_ALBUM_IDS ? process.env.IMMICH_SELECTED_ALBUM_IDS.split(',') : [],
+        host: "",  // Empty - user must configure
+        apiKey: "",  // Empty - user must configure
+        autoSync: false,  // Disabled by default
+        syncFrequency: "0 */4 * * *",  // Default cron (every 4 hours)
+        syncByAlbum: false,  // Disabled by default
+        selectedAlbumIds: [],  // Empty array
       },
       astrometry: {
-        apiKey: process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "",
-        enabled: process.env.ASTROMETRY_ENABLED !== 'false',
-        checkInterval: parseInt(process.env.ASTROMETRY_CHECK_INTERVAL || "30", 10),
-        pollInterval: parseInt(process.env.ASTROMETRY_POLL_INTERVAL || "5", 10),
-        maxConcurrent: parseInt(process.env.ASTROMETRY_MAX_CONCURRENT || "3", 10),
-        autoResubmit: process.env.ASTROMETRY_AUTO_RESUBMIT === 'true',
+        apiKey: "",  // Empty - user must configure
+        enabled: false,  // Disabled until user provides API key
+        autoEnabled: false,  // Disabled by default
+        checkInterval: 30,  // Reasonable default (seconds)
+        pollInterval: 5,  // Reasonable default (seconds)
+        maxConcurrent: 3,  // Reasonable default
+        autoResubmit: false,  // Disabled by default
       },
       app: {
-        debugMode: process.env.DEBUG_MODE === 'true',
+        debugMode: false,  // Disabled by default
       },
     };
   }

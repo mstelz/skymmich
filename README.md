@@ -66,13 +66,11 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 Complete production setup with PostgreSQL database:
 
 ```bash
-# Download production compose file and environment template
+# Download production compose file
 curl -o docker-compose.prod.yml https://raw.githubusercontent.com/mstelz/Skymmich/main/docker-compose.prod.yml
-curl -o .env.prod.example https://raw.githubusercontent.com/mstelz/Skymmich/main/.env.prod.example
 
-# Configure environment
-cp .env.prod.example .env
-# Edit .env with your Immich server details and database password
+# Configure environment (set your database password and API keys)
+# Edit docker-compose.prod.yml environment section with your settings
 
 # Start services (PostgreSQL + Skymmich from ghcr.io)
 docker compose -f docker-compose.prod.yml up -d
@@ -136,14 +134,18 @@ cd Skymmich
 npm install
 
 # Option A: Build and run with Docker Compose (builds from source)
-cp docker/.env.docker.example .env
-# Edit .env with your settings
+# Edit docker-compose.yml environment section with your settings
 docker compose up -d
 
 # Option B: Local development server
 cp .env.example .env.local
-# Edit .env.local with your development settings
+# Edit .env.local with your development settings (uses SQLite by default)
 npm run dev
+
+# Option C: Worker-only deployment (standalone)
+cp .env.worker.example .env.worker
+# Edit .env.worker with database and API settings
+npm run dev:worker:standalone
 
 # Access at http://localhost:5000 (Docker) or http://localhost:5173 (local)
 ```
@@ -153,7 +155,9 @@ npm run dev
 ### Core Requirements
 - **Immich Server**: Self-hosted photo management server (currently the only supported photo source)
 - **Docker**: 20.10+ (for containerized deployment)
-- **Database**: PostgreSQL 15+ (production) or SQLite (development)
+- **Database**: PostgreSQL 15+ (production) or SQLite (development/testing)
+  - Automatic schema management with Drizzle ORM
+  - Unified schema works across both database types
 
 ### Development Requirements
 - **Node.js**: 20+ (for building from source)
@@ -292,8 +296,9 @@ cd Skymmich
 # Install dependencies
 npm install
 
-# Setup environment
-cp .env.example .env.local
+# Setup environment (choose one based on your needs)
+cp .env.example .env.local           # Main application settings
+cp .env.worker.example .env.worker   # Worker-only deployment
 # Configure your development settings
 
 # Initialize database
@@ -304,11 +309,11 @@ npm run db:migrate     # Apply migrations
 ### Development Commands
 
 ```bash
-# Start development server (SQLite database)
-npm run dev            # Backend only
-npm run dev:watch      # Backend with file watching
-npm run dev:worker     # Worker process only
-npm run dev:all        # Backend + Worker (concurrent)
+# Start development server (SQLite database by default)
+npm run dev                      # Full stack: server + frontend + worker
+npm run dev:server:watch         # Server only with file watching
+npm run dev:worker               # Worker process only
+npm run dev:worker:standalone    # Standalone worker (uses .env.worker)
 
 # Build for production
 npm run build          # Build frontend and backend
@@ -324,6 +329,30 @@ docker compose up -d skymmich-db  # Database only
 npm run dev                        # Local app + Docker DB
 ```
 
+### Testing
+
+Skymmich includes comprehensive end-to-end testing using Playwright:
+
+```bash
+# Run all tests
+npm run test:e2e       # Run Playwright end-to-end tests
+
+# Interactive testing
+npm run test:e2e:ui    # Run tests with Playwright UI mode
+npm run test:e2e:debug # Debug tests with Playwright inspector
+npm run test:e2e:headed # Run tests in headed browser mode
+```
+
+**Test Structure:**
+- `tests/e2e/` - End-to-end test specifications
+- `tests/e2e/pages/` - Page Object Model classes for maintainable tests
+- `playwright.config.ts` - Playwright configuration with multiple browsers
+
+**Prerequisites for Testing:**
+- Skymmich application running on `http://localhost:5173`
+- Test database with sample data
+- All dependencies installed via `npm install`
+
 ### Code Quality
 
 ```bash
@@ -333,10 +362,6 @@ npm run check          # TypeScript compilation check
 # Code formatting
 npm run format         # Prettier formatting
 npm run lint           # ESLint checking
-
-# Testing
-npm run test           # Run test suite
-npm run test:watch     # Watch mode testing
 ```
 
 ## 🚢 CI/CD & Deployment

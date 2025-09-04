@@ -50,8 +50,8 @@ class PlateSolvingWorker {
       return;
     }
 
-    // Load configuration
-    const astrometryConfig = await configService.getAstrometryConfig();
+    // Load configuration (handles both standalone and DB modes)
+    const astrometryConfig = await this.getWorkerConfig();
     this.checkInterval = astrometryConfig.checkInterval * 1000; // Convert to milliseconds
     this.maxConcurrent = astrometryConfig.maxConcurrent;
 
@@ -60,8 +60,8 @@ class PlateSolvingWorker {
 
     while (this.isRunning) {
       try {
-        // Reload config in case it changed
-        const currentConfig = await configService.getAstrometryConfig();
+        // Reload config in case it changed (handles both standalone and DB modes)
+        const currentConfig = await this.getWorkerConfig();
         this.checkInterval = currentConfig.checkInterval * 1000;
         this.maxConcurrent = currentConfig.maxConcurrent;
 
@@ -75,11 +75,45 @@ class PlateSolvingWorker {
     }
   }
 
+  private async isStandaloneMode(): Promise<boolean> {
+    // Check if we're in standalone mode (no admin settings configured)
+    try {
+      const astrometryConfig = await configService.getAstrometryConfig();
+      // If no API key is configured in DB, check if env vars are provided for standalone mode
+      return !astrometryConfig.apiKey && !!(process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY);
+    } catch (error) {
+      // If we can't access config service, assume standalone mode
+      return true;
+    }
+  }
+
+  private async getWorkerConfig() {
+    const isStandalone = await this.isStandaloneMode();
+    
+    if (isStandalone) {
+      console.log('Worker running in standalone mode - using environment variables');
+      return {
+        apiKey: process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "",
+        enabled: true, // In standalone mode, assume enabled if API key provided
+        autoEnabled: true, // In standalone mode, auto is always enabled
+        checkInterval: parseInt(process.env.ASTROMETRY_CHECK_INTERVAL || "30", 10),
+        pollInterval: parseInt(process.env.ASTROMETRY_POLL_INTERVAL || "5", 10),
+        maxConcurrent: parseInt(process.env.PLATE_SOLVE_MAX_CONCURRENT || "3", 10),
+        autoResubmit: process.env.ASTROMETRY_AUTO_RESUBMIT === 'true',
+      };
+    } else {
+      console.log('Worker running with UI server - using database configuration');
+      return await configService.getAstrometryConfig();
+    }
+  }
+
   async createAndSubmitJobsForUnsolvedImages() {
-    // Check if plate solving is enabled in admin settings
-    const astrometryConfig = await configService.getAstrometryConfig();
-    if (!astrometryConfig.enabled) {
-      return; // Don't submit jobs if plate solving is disabled
+    const astrometryConfig = await this.getWorkerConfig();
+    
+    // Check if plate solving is configured and enabled
+    if (!astrometryConfig.enabled || !astrometryConfig.autoEnabled || !astrometryConfig.apiKey) {
+      console.log('Automatic plate solving not enabled or configured, skipping job creation');
+      return;
     }
 
     const images = await storage.getAstroImages();

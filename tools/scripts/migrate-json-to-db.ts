@@ -13,33 +13,33 @@ async function migrate() {
 
   // Migrate astroImages
   for (const image of data.astroImages) {
-    await db.insert(schema.sqliteAstrophotographyImages).values({
+    await db.insert(schema.astrophotographyImages).values({
       ...image,
-      tags: JSON.stringify(image.tags),
+      tags: image.tags,
     });
   }
 
   // Migrate equipment
   for (const equip of data.equipment) {
-    await db.insert(schema.sqliteEquipment).values({
+    await db.insert(schema.equipment).values({
       ...equip,
-      specifications: JSON.stringify(equip.specifications),
+      specifications: equip.specifications,
     });
   }
 
   // Migrate imageEquipment
   for (const ie of data.imageEquipment) {
-    await db.insert(schema.sqliteImageEquipment).values({
+    await db.insert(schema.imageEquipment).values({
         ...ie,
-        settings: JSON.stringify(ie.settings),
+        settings: ie.settings,
     });
   }
 
   // Migrate plateSolvingJobs
   for (const job of data.plateSolvingJobs) {
-    await db.insert(schema.sqlitePlateSolvingJobs).values({
+    await db.insert(schema.plateSolvingJobs).values({
         ...job,
-        result: JSON.stringify(job.result),
+        result: job.result,
     });
   }
 

@@ -14,9 +14,9 @@ async function migrate() {
   // Migrate adminSettings
   if (data.adminSettings) {
     for (const key in data.adminSettings) {
-      await db.insert(schema.sqliteAdminSettings).values({
+      await db.insert(schema.adminSettings).values({
         key,
-        value: JSON.stringify(data.adminSettings[key]),
+        value: data.adminSettings[key],
       });
     }
   }
@@ -24,9 +24,9 @@ async function migrate() {
   // Migrate notifications
   if (data.notifications) {
     for (const notification of data.notifications) {
-      await db.insert(schema.sqliteNotifications).values({
+      await db.insert(schema.notifications).values({
         ...notification,
-        details: JSON.stringify(notification.details),
+        details: notification.details,
       });
     }
   }

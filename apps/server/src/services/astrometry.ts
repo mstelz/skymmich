@@ -50,19 +50,12 @@ export class AstrometryService {
   private useConfigService: boolean;
 
   constructor(useConfigService: boolean = true) {
+    // Always use config service now - worker handles standalone mode detection
     this.useConfigService = useConfigService;
-    
-    // For worker processes, we might want to use env vars directly
-    if (!useConfigService) {
-      this.astrometryApiKey = process.env.ASTROMETRY_API_KEY || process.env.ASTROMETRY_KEY || "";
-      this.immichApiKey = process.env.IMMICH_API_KEY || process.env.IMMICH_KEY || "";
-      this.immichHost = process.env.IMMICH_HOST || "";
-    } else {
-      // Initialize with empty values, will be loaded from config service when needed
-      this.astrometryApiKey = "";
-      this.immichApiKey = "";
-      this.immichHost = "";
-    }
+    // Initialize with empty values, will be loaded from config service when needed
+    this.astrometryApiKey = "";
+    this.immichApiKey = "";
+    this.immichHost = "";
   }
 
   private async ensureConfigLoaded() {

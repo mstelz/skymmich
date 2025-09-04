@@ -1,12 +1,10 @@
-version: '3.8'
-
 # Skymmich Production Docker Compose Configuration
 # Uses pre-built images from GitHub Container Registry
 # 
 # Quick start:
-# 1. Copy .env.example to .env and configure your settings
+# 1. Create .env file with POSTGRES_PASSWORD=your_secure_password
 # 2. docker compose -f docker-compose.prod.yml up -d
-# 3. Access at http://localhost:5000
+# 3. Access at http://localhost:5000 and configure via web UI
 
 services:
   skymmich:
@@ -18,15 +16,6 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://skymmich:${POSTGRES_PASSWORD}@skymmich-db:5432/skymmich
-      - IMMICH_URL=${IMMICH_URL:-}
-      - IMMICH_API_KEY=${IMMICH_API_KEY:-}
-      - ASTROMETRY_API_KEY=${ASTROMETRY_API_KEY:-}
-      - ENABLE_PLATE_SOLVING=${ENABLE_PLATE_SOLVING:-true}
-      # Plate solving configuration
-      - ASTROMETRY_CHECK_INTERVAL=${ASTROMETRY_CHECK_INTERVAL:-30}
-      - ASTROMETRY_POLL_INTERVAL=${ASTROMETRY_POLL_INTERVAL:-5}
-      - ASTROMETRY_MAX_CONCURRENT=${ASTROMETRY_MAX_CONCURRENT:-3}
-      - ASTROMETRY_AUTO_RESUBMIT=${ASTROMETRY_AUTO_RESUBMIT:-false}
       - XMP_SIDECAR_PATH=/app/sidecars
     volumes:
       - skymmich-config:/app/config

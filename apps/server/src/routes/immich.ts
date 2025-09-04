@@ -80,29 +80,29 @@ router.post('/sync-immich', async (req, res) => {
 
       // Extract EXIF data and create astrophotography image
       const astroImage = {
-        immichId: asset.id,
-        title: asset.originalFileName || asset.id,
-        filename: asset.originalFileName || '',
+        immichId: String(asset.id),
+        title: String(asset.originalFileName || asset.id),
+        filename: String(asset.originalFileName || ''),
         thumbnailUrl: `/api/assets/${asset.id}/thumbnail`,
         fullUrl: `/api/assets/${asset.id}/thumbnail?size=preview`,
         captureDate: asset.fileCreatedAt ? new Date(asset.fileCreatedAt) : null,
-        focalLength: asset.exifInfo?.focalLength || null,
+        focalLength: asset.exifInfo?.focalLength ? Number(asset.exifInfo.focalLength) : null,
         aperture: asset.exifInfo?.fNumber ? `f/${asset.exifInfo.fNumber}` : null,
-        iso: asset.exifInfo?.iso || null,
-        exposureTime: asset.exifInfo?.exposureTime || null,
+        iso: asset.exifInfo?.iso ? Number(asset.exifInfo.iso) : null,
+        exposureTime: asset.exifInfo?.exposureTime ? String(asset.exifInfo.exposureTime) : null,
         frameCount: 1,
         totalIntegration: asset.exifInfo?.exposureTime ? parseFloat(asset.exifInfo.exposureTime) / 3600 : null,
         telescope: '',
         camera: asset.exifInfo?.make && asset.exifInfo?.model ? `${asset.exifInfo.make} ${asset.exifInfo.model}` : null,
         mount: '',
         filters: '',
-        latitude: asset.exifInfo?.latitude || null,
-        longitude: asset.exifInfo?.longitude || null,
-        altitude: asset.exifInfo?.altitude || null,
+        latitude: asset.exifInfo?.latitude ? Number(asset.exifInfo.latitude) : null,
+        longitude: asset.exifInfo?.longitude ? Number(asset.exifInfo.longitude) : null,
+        altitude: asset.exifInfo?.altitude ? Number(asset.exifInfo.altitude) : null,
         plateSolved: false,
-        tags: ['astrophotography'] as any,
+        tags: ['astrophotography'],
         objectType: 'Deep Sky', // Default classification
-        description: asset.exifInfo?.description || '',
+        description: String(asset.exifInfo?.description || ''),
       };
 
       await storage.createAstroImage(astroImage);
@@ -216,33 +216,6 @@ router.post('/test-immich-connection', async (req, res) => {
   }
 });
 
-// Proxy Immich image requests
-router.get('/assets/:assetId/:type', async (req, res) => {
-  try {
-    const { assetId, type } = req.params;
-    const config = await configService.getImmichConfig();
-    const immichUrl = config.host;
-    const immichApiKey = config.apiKey;
-    if (!immichUrl || !immichApiKey) {
-      return res.status(500).json({ message: 'Immich configuration missing' });
-    }
-    // Forward query parameters (e.g., ?size=preview)
-    const query = req.url.split('?')[1] ? '?' + req.url.split('?')[1] : '';
-    const url = `${immichUrl}/api/assets/${assetId}/${type}${query}`;
-    const response = await axios.get(url, {
-      headers: { 'X-API-Key': immichApiKey },
-      responseType: 'stream',
-    });
-    res.set(response.headers);
-    response.data.pipe(res);
-  } catch (error: any) {
-    if (error.response) {
-      res.status(error.response.status).json({ message: error.response.statusText });
-    } else {
-      res.status(500).json({ message: error.message });
-    }
-  }
-});
 
 // Fetch albums from Immich
 router.post('/albums', async (req, res) => {

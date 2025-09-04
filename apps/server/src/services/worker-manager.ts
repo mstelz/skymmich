@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import path from 'path';
+import { configService } from './config';
 
 export class WorkerManager extends EventEmitter {
   private workerProcess: ChildProcess | null = null;
@@ -13,13 +14,21 @@ export class WorkerManager extends EventEmitter {
 
   constructor() {
     super();
-    this.isEnabled = process.env.ENABLE_PLATE_SOLVING === 'true';
-    console.log(`WorkerManager initialized. Plate solving enabled: ${this.isEnabled}`);
   }
 
   async start(): Promise<void> {
+    // Check admin configuration for automatic plate solving
+    const astrometryConfig = await configService.getAstrometryConfig();
+    this.isEnabled = astrometryConfig.enabled && astrometryConfig.autoEnabled && !!astrometryConfig.apiKey;
+    
+    console.log(`WorkerManager: Checking automatic plate solving configuration...`);
+    console.log(`  - Basic enabled: ${astrometryConfig.enabled}`);
+    console.log(`  - Auto enabled: ${astrometryConfig.autoEnabled}`);
+    console.log(`  - API key configured: ${!!astrometryConfig.apiKey}`);
+    console.log(`WorkerManager: Automatic plate solving enabled: ${this.isEnabled}`);
+
     if (!this.isEnabled) {
-      console.log('Worker not started - plate solving is disabled');
+      console.log('Worker not started - automatic plate solving is disabled or not configured in admin settings');
       return;
     }
 

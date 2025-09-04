@@ -30,8 +30,6 @@ config/secrets.json
 *.db
 *.sqlite
 *.sqlite3
-local.db
-database.db
 
 # Logs
 logs/
@@ -51,6 +49,11 @@ pids/
 coverage/
 *.lcov
 .nyc_output/
+
+# Test results
+test-results/
+playwright-report/
+.playwright/
 
 # IDE and editor files
 .vscode/
