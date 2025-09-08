@@ -73,11 +73,15 @@
     - Always use strong, unique passwords for database connections
     
     Plate Solving Configuration:
-    - Worker check interval: How often the worker checks for new jobs (10-300 seconds)
-    - Active polling interval: How often to poll when waiting for completion (1-60 seconds)
-    - Max wait time: Maximum time to wait for job completion (60-1800 seconds)
-    - Max concurrent jobs: Maximum simultaneous jobs (1-10)
-    - Auto-resubmit: Whether to automatically retry failed jobs (default: disabled)
+    - Worker check interval: How often the worker checks for new jobs (10-300 seconds) [WORKER ONLY]
+    - Active polling interval: How often to poll when waiting for completion (1-60 seconds) [WORKER ONLY]
+    - Max concurrent jobs: Maximum simultaneous jobs (1-10) [WORKER ONLY]
+    - Auto-resubmit: Whether to automatically retry failed jobs (default: disabled) [WORKER ONLY]
+    
+    Worker Mode:
+    - The plate solving worker runs as a background process within the container
+    - Worker-only settings only affect the background plate solving process
+    - These settings can also be configured through the admin web interface
   </Description>
   
   <Config Name="WebUI Port" Target="5000" Default="2284" Mode="tcp" Description="Port for web interface" Type="Port" Display="always" Required="true" Mask="false">2284</Config>
@@ -100,15 +104,15 @@
   
   <Config Name="Astrometry API Key" Target="ASTROMETRY_API_KEY" Default="" Mode="" Description="Astrometry.net API key for plate solving (can also be configured via admin interface)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
   
-  <Config Name="Enable Plate Solving" Target="ENABLE_PLATE_SOLVING" Default="true" Mode="" Description="Enable background plate solving worker" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  <Config Name="Enable Plate Solving" Target="ENABLE_PLATE_SOLVING" Default="true" Mode="" Description="Enable background plate solving worker [WORKER ONLY]" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
   
-  <Config Name="Worker Check Interval (seconds)" Target="ASTROMETRY_CHECK_INTERVAL" Default="60" Mode="" Description="How often the worker checks for new jobs and updates existing ones (10-300 seconds)" Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
+  <Config Name="Worker Check Interval (seconds)" Target="ASTROMETRY_CHECK_INTERVAL" Default="60" Mode="" Description="How often the worker checks for new jobs and updates existing ones (10-300 seconds) [WORKER ONLY]" Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
   
-  <Config Name="Active Polling Interval (seconds)" Target="ASTROMETRY_POLL_INTERVAL" Default="60" Mode="" Description="How often to poll when actively waiting for job completion (1-60 seconds)" Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
+  <Config Name="Active Polling Interval (seconds)" Target="ASTROMETRY_POLL_INTERVAL" Default="60" Mode="" Description="How often to poll when actively waiting for job completion (1-60 seconds) [WORKER ONLY]" Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
   
-  <Config Name="Max Concurrent Jobs" Target="ASTROMETRY_MAX_CONCURRENT" Default="3" Mode="" Description="Maximum number of plate solving jobs to run simultaneously (1-10)" Type="Variable" Display="advanced" Required="false" Mask="false">3</Config>
+  <Config Name="Max Concurrent Jobs" Target="PLATE_SOLVE_MAX_CONCURRENT" Default="3" Mode="" Description="Maximum number of plate solving jobs to run simultaneously (1-10) [WORKER ONLY]" Type="Variable" Display="advanced" Required="false" Mask="false">3</Config>
   
-  <Config Name="Auto-resubmit Failed Jobs" Target="ASTROMETRY_AUTO_RESUBMIT" Default="false" Mode="" Description="When enabled, failed jobs will be automatically retried. When disabled, failed jobs must be manually resubmitted" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Auto-resubmit Failed Jobs" Target="ASTROMETRY_AUTO_RESUBMIT" Default="false" Mode="" Description="When enabled, failed jobs will be automatically retried. When disabled, failed jobs must be manually resubmitted [WORKER ONLY]" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   
   
 </Container>
