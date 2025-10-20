@@ -1,7 +1,7 @@
 # Multi-stage build for Skymmich
 # SECURITY: This image does not contain any secrets or API keys
 # All sensitive configuration is provided via environment variables at runtime
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Set working directory
 WORKDIR /build
@@ -30,7 +30,7 @@ COPY tools/ ./tools/
 RUN npm run build:docker
 
 # Production stage
-FROM node:24-alpine AS runtime
+FROM node:25-alpine AS runtime
 
 # Install curl for health checks
 # hadolint ignore=DL3018
