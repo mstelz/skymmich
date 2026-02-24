@@ -37,6 +37,8 @@ updates:
     ignore:
       - dependency-name: "node"
         versions: ["25.x"]
+      - dependency-name: "@types/node"
+        versions: ["25.x"]
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
