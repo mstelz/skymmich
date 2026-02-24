@@ -2,15 +2,41 @@ import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class EquipmentPage extends BasePage {
-  readonly equipmentCatalog: Locator;
-  readonly equipmentList: Locator;
-  readonly equipmentItems: Locator;
+  readonly heading: Locator;
+  readonly addButton: Locator;
+  readonly emptyState: Locator;
+  readonly equipmentCards: Locator;
+
+  // Add equipment form
+  readonly addFormTitle: Locator;
+  readonly nameInput: Locator;
+  readonly typeSelect: Locator;
+  readonly descriptionInput: Locator;
+  readonly specKeyInput: Locator;
+  readonly specValueInput: Locator;
+  readonly addSpecButton: Locator;
+  readonly submitButton: Locator;
+  readonly cancelButton: Locator;
+  readonly closeFormButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.equipmentCatalog = page.locator('.equipment-catalog, .equipment-list, .catalog').first();
-    this.equipmentList = page.locator('[data-testid="equipment-list"], .equipment-grid, .equipment-items');
-    this.equipmentItems = page.locator('.equipment-item, .equipment-card, [data-equipment]');
+    this.heading = page.getByRole('heading', { name: /equipment catalog/i });
+    this.addButton = page.getByRole('button', { name: /add new equipment/i });
+    this.emptyState = page.getByText(/no equipment found/i);
+    this.equipmentCards = page.locator('.space-y-4 > div').filter({ has: page.locator('.font-semibold') });
+
+    // Add form elements
+    this.addFormTitle = page.getByRole('heading', { name: 'Add New Equipment' });
+    this.nameInput = page.getByPlaceholder('e.g., William Optics RedCat 51');
+    this.typeSelect = page.locator('select').first();
+    this.descriptionInput = page.getByPlaceholder('Brief description of the equipment...');
+    this.specKeyInput = page.getByPlaceholder('e.g., focalLength');
+    this.specValueInput = page.getByPlaceholder('e.g., 250mm');
+    this.addSpecButton = page.getByRole('button', { name: 'Add', exact: true });
+    this.submitButton = page.getByRole('button', { name: /add equipment/i });
+    this.cancelButton = page.getByRole('button', { name: /cancel/i });
+    this.closeFormButton = page.locator('button').filter({ has: page.locator('svg') }).first();
   }
 
   async goto() {
@@ -19,22 +45,24 @@ export class EquipmentPage extends BasePage {
 
   async verifyPageLoaded() {
     await expect(this.page).toHaveURL(/\/equipment/);
-    await this.page.waitForTimeout(2000);
-    
-    if (await this.equipmentCatalog.count() > 0) {
-      await expect(this.equipmentCatalog).toBeVisible();
+    await expect(this.heading).toBeVisible();
+    await expect(this.addButton).toBeVisible();
+  }
+
+  async openAddForm() {
+    await this.addButton.click();
+    await expect(this.addFormTitle).toBeVisible();
+  }
+
+  async fillEquipmentForm(name: string, type: string, description?: string) {
+    await this.nameInput.fill(name);
+    await this.typeSelect.selectOption(type);
+    if (description) {
+      await this.descriptionInput.fill(description);
     }
   }
 
-  async getEquipmentCount() {
-    await this.page.waitForTimeout(1000);
-    return await this.equipmentItems.count();
-  }
-
-  async clickEquipmentItem(index: number = 0) {
-    const count = await this.equipmentItems.count();
-    if (count > index) {
-      await this.equipmentItems.nth(index).click();
-    }
+  async hasEquipment() {
+    return (await this.emptyState.count()) === 0;
   }
 }

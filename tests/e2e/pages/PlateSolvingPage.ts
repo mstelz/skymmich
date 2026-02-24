@@ -2,17 +2,27 @@ import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class PlateSolvingPage extends BasePage {
-  readonly plateSolvingContent: Locator;
-  readonly uploadArea: Locator;
-  readonly solveButton: Locator;
-  readonly resultsArea: Locator;
+  readonly heading: Locator;
+  readonly description: Locator;
+  readonly searchInput: Locator;
+  readonly showOnlyUnsolved: Locator;
+  readonly imageSelectionCard: Locator;
+  readonly selectAllButton: Locator;
+  readonly imageGrid: Locator;
+  readonly loadingIndicator: Locator;
+  readonly emptyState: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.plateSolvingContent = page.locator('.plate-solving, .solver-interface, .solving-panel').first();
-    this.uploadArea = page.locator('[data-testid="upload"], .upload-area, .file-drop').first();
-    this.solveButton = page.locator('button:has-text("Solve"), button:has-text("Start"), .solve-btn').first();
-    this.resultsArea = page.locator('.results, .solution-results, [data-testid="results"]').first();
+    this.heading = page.getByRole('heading', { name: /plate solving/i, level: 1 });
+    this.description = page.getByText('Manually submit images for plate solving using Astrometry.net');
+    this.searchInput = page.locator('#search');
+    this.showOnlyUnsolved = page.locator('#showOnlyUnsolved');
+    this.imageSelectionCard = page.getByText('Image Selection');
+    this.selectAllButton = page.getByRole('button', { name: /select all|deselect all/i });
+    this.imageGrid = page.locator('.grid-cols-2');
+    this.loadingIndicator = page.getByText(/loading images/i);
+    this.emptyState = page.getByText(/no images found/i);
   }
 
   async goto() {
@@ -21,28 +31,25 @@ export class PlateSolvingPage extends BasePage {
 
   async verifyPageLoaded() {
     await expect(this.page).toHaveURL(/\/plate-solving/);
-    await this.page.waitForTimeout(2000);
+    await expect(this.heading).toBeVisible();
+    await expect(this.description).toBeVisible();
   }
 
-  async uploadFile(filePath: string) {
-    if (await this.uploadArea.count() > 0) {
-      const fileInput = this.page.locator('input[type="file"]').first();
-      if (await fileInput.count() > 0) {
-        await fileInput.setInputFiles(filePath);
-      }
-    }
+  async verifyStatsCards() {
+    await expect(this.page.getByText('Total Jobs')).toBeVisible();
+    await expect(this.page.getByText('Pending')).toBeVisible();
+    await expect(this.page.getByText('Processing')).toBeVisible();
+    await expect(this.page.getByText('Completed')).toBeVisible();
+    await expect(this.page.getByText('Failed')).toBeVisible();
   }
 
-  async startSolving() {
-    if (await this.solveButton.count() > 0) {
-      await this.solveButton.click();
-      await this.page.waitForTimeout(1000);
-    }
+  async searchImages(query: string) {
+    await this.searchInput.fill(query);
   }
 
-  async waitForResults(timeout: number = 30000) {
-    if (await this.resultsArea.count() > 0) {
-      await expect(this.resultsArea).toBeVisible({ timeout });
-    }
+  async getSelectedCount() {
+    const text = await this.page.getByText(/\d+ of \d+ images selected/).textContent();
+    const match = text?.match(/(\d+) of (\d+)/);
+    return match ? { selected: parseInt(match[1]), total: parseInt(match[2]) } : null;
   }
 }

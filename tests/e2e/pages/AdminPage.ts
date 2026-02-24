@@ -2,19 +2,55 @@ import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class AdminPage extends BasePage {
-  readonly adminContent: Locator;
-  readonly settingsPanel: Locator;
-  readonly configForm: Locator;
+  readonly heading: Locator;
   readonly saveButton: Locator;
-  readonly statusIndicator: Locator;
+
+  // Immich configuration
+  readonly immichHostInput: Locator;
+  readonly immichApiKeyInput: Locator;
+  readonly immichAutoSyncSwitch: Locator;
+  readonly immichSyncByAlbumSwitch: Locator;
+  readonly immichSyncFrequencyInput: Locator;
+  readonly immichTestConnectionButton: Locator;
+
+  // Astrometry configuration
+  readonly astrometryEnabledSwitch: Locator;
+  readonly astrometryApiKeyInput: Locator;
+  readonly astrometryAutoEnabledSwitch: Locator;
+  readonly astrometryTestConnectionButton: Locator;
+  readonly checkIntervalInput: Locator;
+  readonly pollIntervalInput: Locator;
+  readonly maxConcurrentInput: Locator;
+  readonly autoResubmitSwitch: Locator;
+
+  // Application settings
+  readonly debugModeSwitch: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.adminContent = page.locator('.admin-panel, .admin-interface, .settings').first();
-    this.settingsPanel = page.locator('.settings-panel, .config-panel, [data-testid="settings"]').first();
-    this.configForm = page.locator('form, .config-form').first();
-    this.saveButton = page.locator('button:has-text("Save"), button[type="submit"]').first();
-    this.statusIndicator = page.locator('.status, .health-check, .system-status').first();
+    this.heading = page.getByRole('heading', { name: /admin settings/i, level: 1 });
+    this.saveButton = page.getByRole('button', { name: /save settings/i });
+
+    // Immich
+    this.immichHostInput = page.locator('#immichHost');
+    this.immichApiKeyInput = page.locator('#immichApiKey');
+    this.immichAutoSyncSwitch = page.locator('#immichAutoSync');
+    this.immichSyncByAlbumSwitch = page.locator('#immichSyncByAlbum');
+    this.immichSyncFrequencyInput = page.locator('#immichSyncFrequency');
+    this.immichTestConnectionButton = page.getByRole('button', { name: /test connection/i }).first();
+
+    // Astrometry
+    this.astrometryEnabledSwitch = page.locator('#astrometryEnabled');
+    this.astrometryApiKeyInput = page.locator('#astrometryApiKey');
+    this.astrometryAutoEnabledSwitch = page.locator('#astrometryAutoEnabled');
+    this.astrometryTestConnectionButton = page.getByRole('button', { name: /test connection/i }).last();
+    this.checkIntervalInput = page.locator('#checkInterval');
+    this.pollIntervalInput = page.locator('#pollInterval');
+    this.maxConcurrentInput = page.locator('#maxConcurrent');
+    this.autoResubmitSwitch = page.locator('#autoResubmit');
+
+    // App settings
+    this.debugModeSwitch = page.locator('#debugMode');
   }
 
   async goto() {
@@ -23,26 +59,19 @@ export class AdminPage extends BasePage {
 
   async verifyPageLoaded() {
     await expect(this.page).toHaveURL(/\/admin/);
-    await this.page.waitForTimeout(2000);
+    await expect(this.heading).toBeVisible();
+    await expect(this.saveButton).toBeVisible();
   }
 
-  async updateSetting(fieldName: string, value: string) {
-    const field = this.page.locator(`input[name="${fieldName}"], input[id="${fieldName}"]`).first();
-    if (await field.count() > 0) {
-      await field.fill(value);
-    }
+  async verifyConfigSections() {
+    await expect(this.page.getByText('Immich Configuration')).toBeVisible();
+    await expect(this.page.getByText('Astrometry.net Configuration')).toBeVisible();
+    await expect(this.page.getByText('Application Settings')).toBeVisible();
   }
 
-  async saveSettings() {
-    if (await this.saveButton.count() > 0) {
-      await this.saveButton.click();
-      await this.page.waitForTimeout(1000);
-    }
-  }
-
-  async checkSystemStatus() {
-    if (await this.statusIndicator.count() > 0) {
-      await expect(this.statusIndicator).toBeVisible();
-    }
+  async verifyFormFields() {
+    await expect(this.immichHostInput).toBeVisible();
+    await expect(this.immichApiKeyInput).toBeVisible();
+    await expect(this.debugModeSwitch).toBeVisible();
   }
 }
