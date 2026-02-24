@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -48,7 +48,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Lint Dockerfile
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
           ignore: DL3008,DL3009,DL3018  # DL3018: Pin versions in Alpine (not always practical)
@@ -127,7 +127,7 @@ jobs:
 
       - name: Scan for vulnerabilities (SARIF)
         id: security-scan
-        uses: aquasecurity/trivy-action@0.33.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: skymmich:test-${{ github.event.pull_request.number }}
           format: 'sarif'
@@ -138,7 +138,7 @@ jobs:
           hide-progress: false
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: 'trivy-results.sarif'
@@ -186,7 +186,7 @@ jobs:
           retention-days: 7
 
       - name: Comment PR with results
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: always() && github.event_name == 'pull_request'
         with:
           script: |
