@@ -40,7 +40,7 @@ async function startServer() {
   app.use(express.static(publicPath));
   
   // Serve index.html for all non-API routes (SPA)
-  app.get('/*', (req, res, next) => {
+  app.get('/{*splat}', (req, res, next) => {
     // Skip API routes
     if (req.path.startsWith('/api/')) {
       return next();
