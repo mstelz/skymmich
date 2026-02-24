@@ -151,7 +151,7 @@ jobs:
           output-file: sbom.spdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: github.event_name != 'pull_request'  # Only for pushed images
         with:
           name: sbom-${{ github.sha }}
@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload Docker image artifact (PR)
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docker-image-pr-${{ github.event.pull_request.number }}
           path: skymmich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
@@ -181,7 +181,7 @@ jobs:
             dist/
 
       - name: Upload application snapshot
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: app-snapshot-${{ github.sha }}
           path: snapshot/skymmich-snapshot-${{ github.sha }}.tar.gz
