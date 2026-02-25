@@ -155,6 +155,20 @@ router.get('/notifications', async (req, res) => {
   }
 });
 
+// Acknowledge all notifications
+router.post('/notifications/acknowledge-all', async (req, res) => {
+  try {
+    await storage.acknowledgeAllNotifications();
+    res.json({ success: true, message: 'All notifications acknowledged' });
+  } catch (error: any) {
+    console.error('Failed to acknowledge all notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to acknowledge all notifications',
+    });
+  }
+});
+
 // Acknowledge notification
 router.post('/notifications/:id/acknowledge', async (req, res) => {
   try {

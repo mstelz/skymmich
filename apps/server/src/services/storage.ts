@@ -216,6 +216,10 @@ class DbStorage {
     await db.update(schema.notifications).set({ acknowledged: true }).where(eq((schema.notifications).id, id)).execute();
   }
 
+  async acknowledgeAllNotifications(): Promise<void> {
+    await db.update(schema.notifications).set({ acknowledged: true }).where(eq((schema.notifications).acknowledged, false)).execute();
+  }
+
   async clearOldNotifications(daysOld: number = 30): Promise<void> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);

@@ -93,6 +93,7 @@ export default function AdminPage() {
   const [immichTestMessage, setImmichTestMessage] = useState('');
   const [astrometryTestMessage, setAstrometryTestMessage] = useState('');
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [albums, setAlbums] = useState<ImmichAlbum[]>([]);
   const [albumsLoading, setAlbumsLoading] = useState(false);
   const [albumError, setAlbumError] = useState<string | null>(null);
@@ -156,6 +157,29 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
+    }
+  };
+
+  const acknowledgeAllNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications/acknowledge-all', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setNotifications([]);
+        setShowAllNotifications(false);
+        toast({
+          title: "Success",
+          description: "All notifications acknowledged",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to acknowledge all notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to acknowledge all notifications",
+        variant: "destructive",
+      });
     }
   };
 
@@ -339,16 +363,28 @@ export default function AdminPage() {
         {notifications.length > 0 && (
           <Card className="mb-6 border-orange-200 bg-orange-50">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-orange-800">
-                <Bell className="h-5 w-5" />
-                <span>System Notifications ({notifications.length})</span>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2 text-orange-800">
+                  <Bell className="h-5 w-5" />
+                  <span>System Notifications ({notifications.length})</span>
+                </CardTitle>
+                {notifications.length >= 2 && (
+                  <Button
+                    onClick={acknowledgeAllNotifications}
+                    size="sm"
+                    variant="outline"
+                    className="text-orange-800 border-orange-300 hover:bg-orange-100"
+                  >
+                    Acknowledge All
+                  </Button>
+                )}
+              </div>
               <CardDescription className="text-orange-700">
                 Please review and acknowledge these notifications
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {notifications.map((notification) => (
+              {(showAllNotifications ? notifications : notifications.slice(0, 5)).map((notification) => (
                 <div key={notification.id} className="flex items-start space-x-3 p-3 bg-white rounded-lg border">
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1">
@@ -367,6 +403,16 @@ export default function AdminPage() {
                   </Button>
                 </div>
               ))}
+              {notifications.length > 5 && (
+                <Button
+                  onClick={() => setShowAllNotifications(!showAllNotifications)}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-orange-700 hover:text-orange-900"
+                >
+                  {showAllNotifications ? 'Show less' : `Show all (${notifications.length})`}
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

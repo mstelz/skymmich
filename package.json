@@ -24,7 +24,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "seed": "tsx tools/scripts/seed.ts",
+    "seed:reset": "tsx tools/scripts/seed.ts --reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

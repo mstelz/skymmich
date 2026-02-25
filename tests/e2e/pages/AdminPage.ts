@@ -26,6 +26,13 @@ export class AdminPage extends BasePage {
   // Application settings
   readonly debugModeSwitch: Locator;
 
+  // Notifications
+  readonly notificationCard: Locator;
+  readonly notificationTitle: Locator;
+  readonly acknowledgeAllButton: Locator;
+  readonly showAllButton: Locator;
+  readonly notificationItems: Locator;
+
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole('heading', { name: /admin settings/i, level: 1 });
@@ -51,6 +58,13 @@ export class AdminPage extends BasePage {
 
     // App settings
     this.debugModeSwitch = page.locator('#debugMode');
+
+    // Notifications
+    this.notificationCard = page.locator('.border-orange-200');
+    this.notificationTitle = page.getByText(/System Notifications/);
+    this.acknowledgeAllButton = page.getByRole('button', { name: /acknowledge all/i });
+    this.showAllButton = page.getByRole('button', { name: /show all|show less/i });
+    this.notificationItems = this.notificationCard.locator('div.flex.items-start.p-3');
   }
 
   async goto() {
@@ -73,5 +87,39 @@ export class AdminPage extends BasePage {
     await expect(this.immichHostInput).toBeVisible();
     await expect(this.immichApiKeyInput).toBeVisible();
     await expect(this.debugModeSwitch).toBeVisible();
+  }
+
+  async mockNotifications(notifications: any[]) {
+    await this.page.route('**/api/notifications', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(notifications) }),
+    );
+  }
+
+  async mockAcknowledgeAll() {
+    await this.page.route('**/api/notifications/acknowledge-all', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) }),
+    );
+  }
+
+  async mockAcknowledgeNotification() {
+    await this.page.route('**/api/notifications/*/acknowledge', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) }),
+    );
+  }
+
+  async mockSettings(settings: any) {
+    await this.page.route('**/api/admin/settings', (route) => {
+      if (route.request().method() === 'GET') {
+        route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(settings) });
+      } else {
+        route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+      }
+    });
+  }
+
+  async mockAlbums(albums: any[] = []) {
+    await this.page.route('**/api/immich/albums', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(albums) }),
+    );
   }
 }
