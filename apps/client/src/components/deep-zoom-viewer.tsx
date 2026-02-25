@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import OpenSeadragon, { Placement } from "openseadragon";
+import OpenSeadragon from "openseadragon";
 
 interface Annotation {
   pixelx: number;
