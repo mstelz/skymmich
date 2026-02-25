@@ -13,6 +13,25 @@ const router = Router();
 router.post('/admin/settings', async (req, res) => {
   try {
     const settings = req.body;
+
+    // Validate Immich host URL if provided
+    if (settings.immich?.host) {
+      try {
+        const url = new URL(settings.immich.host);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Only HTTP and HTTPS protocols are allowed for Immich host',
+          });
+        }
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Immich host URL format',
+        });
+      }
+    }
+
     await configService.updateConfig(settings);
     res.json({ success: true, message: 'Settings saved successfully' });
   } catch (error: any) {
