@@ -17,7 +17,7 @@
     "start:worker": "NODE_ENV=production node dist/worker.js",
     "start:worker:standalone": "NODE_ENV=production node dist/worker.js",
     "docker:build": "docker build --no-cache -t skymmich .",
-    "docker:run": "docker compose up -d",
+    "docker:run": "docker compose up -d --build --force-recreate",
     "docker:stop": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "check": "tsc",

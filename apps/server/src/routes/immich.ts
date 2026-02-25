@@ -92,7 +92,7 @@ router.post('/sync-immich', async (req, res) => {
         exposureTime: asset.exifInfo?.exposureTime ? String(asset.exifInfo.exposureTime) : null,
         frameCount: 1,
         totalIntegration: asset.exifInfo?.exposureTime ? parseFloat(asset.exifInfo.exposureTime) / 3600 : null,
-        telescope: '',
+        telescope: asset.exifInfo?.lensModel ? String(asset.exifInfo.lensModel) : '',
         camera: asset.exifInfo?.make && asset.exifInfo?.model ? `${asset.exifInfo.make} ${asset.exifInfo.model}` : null,
         mount: '',
         filters: '',

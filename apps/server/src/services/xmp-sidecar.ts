@@ -15,14 +15,6 @@ export interface XmpSidecarData {
 }
 
 export class XmpSidecarService {
-  private immichBasePath: string;
-
-  constructor() {
-    // This would need to be configured based on your Immich storage setup
-    // For now, we'll assume a local path that mirrors the Immich structure
-    this.immichBasePath = process.env.IMMICH_STORAGE_PATH || '/var/lib/immich/upload';
-  }
-
   /**
    * Generate XMP sidecar content for astronomical data
    */
@@ -60,7 +52,7 @@ export class XmpSidecarService {
     }, {} as Record<string, Equipment[]>);
 
     const xmpContent = `<?xml version="1.0" encoding="UTF-8"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Astrorep">
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Skymmich">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     
     <!-- Dublin Core -->

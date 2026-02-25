@@ -38,9 +38,9 @@ export class PlateSolvingPage extends BasePage {
   async verifyStatsCards() {
     await expect(this.page.getByText('Total Jobs')).toBeVisible();
     await expect(this.page.getByText('Pending', { exact: true })).toBeVisible();
-    await expect(this.page.getByText('Processing')).toBeVisible();
-    await expect(this.page.getByText('Completed')).toBeVisible();
-    await expect(this.page.getByText('Failed')).toBeVisible();
+    await expect(this.page.getByText('Processing', { exact: true })).toBeVisible();
+    await expect(this.page.getByText('Completed', { exact: true })).toBeVisible();
+    await expect(this.page.getByText('Failed', { exact: true })).toBeVisible();
   }
 
   async searchImages(query: string) {
