@@ -140,24 +140,9 @@ export default function PlateSolvingPage() {
     )[0];
   };
 
-  const handleSync = async () => {
-    try {
-      const response = await fetch("/api/sync-immich", { 
-        method: "POST",
-        credentials: "include"
-      });
-      
-      if (response.ok) {
-        queryClient.invalidateQueries({ queryKey: ["/api/images"] });
-      }
-    } catch (error) {
-      console.error("Sync failed:", error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <Header onSync={handleSync} />
+      <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-8">

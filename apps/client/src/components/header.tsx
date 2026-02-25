@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Telescope, Upload, Settings, Github } from "lucide-react";
+import { Telescope, Upload, Settings, Github, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/use-socket";
-
-interface HeaderProps {
-  onSync: () => void;
-}
+import { useToast } from "@/hooks/use-toast";
 
 interface Notification {
   id: number;
@@ -19,10 +16,12 @@ interface Notification {
   acknowledged: boolean;
 }
 
-export function Header({ onSync }: HeaderProps) {
+export function Header() {
   const [location] = useLocation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [syncing, setSyncing] = useState(false);
   const socket = useSocket();
+  const { toast } = useToast();
 
   const isActive = (path: string) => location === path;
 
@@ -65,6 +64,35 @@ export function Header({ onSync }: HeaderProps) {
     };
   }, [socket]);
 
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const response = await fetch('/api/immich/sync-immich', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        toast({ title: 'Sync completed', description: 'Successfully synced images from Immich' });
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          title: 'Sync failed',
+          description: errorData.message || `Server returned ${response.status}`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Sync failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const unacknowledgedCount = notifications.length;
 
   return (
@@ -103,9 +131,9 @@ export function Header({ onSync }: HeaderProps) {
           </nav>
           
           <div className="flex items-center space-x-3">
-            <Button onClick={onSync} className="sky-button-primary">
-              <Upload className="mr-2 h-4 w-4" />
-              Sync Immich
+            <Button onClick={handleSync} disabled={syncing} className="sky-button-primary">
+              {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              {syncing ? 'Syncing...' : 'Sync Immich'}
             </Button>
             <a 
               href="https://github.com/mstelz/skymmich" 

@@ -31,21 +31,6 @@ export default function EquipmentCatalog(): React.JSX.Element {
     },
   });
 
-  const handleSync = async () => {
-    try {
-      const response = await fetch("/api/sync-immich", { 
-        method: "POST",
-        credentials: "include"
-      });
-      
-      if (response.ok) {
-        console.log("Sync completed");
-      }
-    } catch (error) {
-      console.error("Sync failed:", error);
-    }
-  };
-
   let equipmentList: ReactNode = null;
   if (equipment.length === 0) {
     equipmentList = <div className="text-center text-gray-500 py-8">No equipment found.</div>;
@@ -79,7 +64,7 @@ export default function EquipmentCatalog(): React.JSX.Element {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSync={handleSync} />
+      <Header />
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Equipment Catalog</h2>

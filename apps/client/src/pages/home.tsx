@@ -75,35 +75,13 @@ export default function Home() {
     setVisibleCount(prev => prev + 12); // Load 12 more images
   };
 
-  const handleSync = async () => {
-    try {
-      const response = await fetch("/api/immich/sync-immich", { 
-        method: "POST",
-        credentials: "include"
-      });
-      
-      if (response.ok) {
-        refetchImages();
-        refetchStats();
-        console.log("Sync completed successfully");
-      } else {
-        const errorData = await response.json();
-        console.error("Sync failed with status:", response.status, errorData);
-        alert(`Sync failed: ${errorData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error("Sync failed:", error);
-      alert(`Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
   // Get only the visible images based on pagination
   const visibleImages = filteredImages.slice(0, visibleCount);
   const hasMoreImages = visibleCount < filteredImages.length;
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden w-full">
-      <Header onSync={handleSync} />
+      <Header />
       <SearchFilters 
         filters={filters}
         onFiltersChange={handleFiltersChange}

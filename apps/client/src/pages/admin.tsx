@@ -349,7 +349,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSync={() => {}} />
+      <Header />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center space-x-4 mb-8">
           <Settings className="h-8 w-8 text-primary" />
