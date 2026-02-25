@@ -66,7 +66,7 @@ test.describe('Plate Solving Page', () => {
       await expect(loading).not.toBeVisible({ timeout: 10000 });
     }
 
-    const hasImages = (await plateSolvingPage.imageGrid.locator('.group').count()) > 0;
+    const hasImages = (await plateSolvingPage.imageGrid.locator('.cursor-pointer').count()) > 0;
     if (!hasImages) {
       await expect(plateSolvingPage.emptyState).toBeVisible();
     }

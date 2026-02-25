@@ -17,7 +17,7 @@ export class HomePage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.searchInput = page.getByPlaceholder('Search astrophotography images...');
-    this.imageGallery = page.locator('main .grid');
+    this.imageGallery = page.locator('main .grid').first();
     this.sidebar = page.locator('aside');
     this.loadMoreButton = page.getByRole('button', { name: /load more/i });
     this.appTitle = page.locator('header h1');
