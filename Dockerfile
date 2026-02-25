@@ -3,11 +3,11 @@
 # All sensitive configuration is provided via environment variables at runtime
 FROM node:24-alpine AS builder
 
+# Upgrade npm to fix tar (CVE-2026-26960) and minimatch (CVE-2026-26996)
+RUN npm install -g npm@11.10.1
+
 # Set working directory
 WORKDIR /build
-
-# Set npm configuration for better ARM64 support
-# Note: unsafe-perm is deprecated and not needed in modern npm versions
 
 # Copy package files
 COPY package*.json ./
@@ -31,6 +31,9 @@ RUN npm run build:docker
 
 # Production stage
 FROM node:24-alpine AS runtime
+
+# Upgrade npm to fix tar (CVE-2026-26960) and minimatch (CVE-2026-26996)
+RUN npm install -g npm@11.10.1
 
 # Install curl for health checks
 # hadolint ignore=DL3018
