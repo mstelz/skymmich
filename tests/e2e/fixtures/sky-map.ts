@@ -19,6 +19,16 @@ export const mockSkyMapMarkers = [
     constellation: 'Lyra',
     fieldOfView: '0.3° x 0.2°',
   },
+  {
+    id: 4,
+    title: 'Pleiades (M45)',
+    ra: '56.85',
+    dec: '24.1166',
+    thumbnailUrl: '/api/placeholder/400/300',
+    objectType: 'Open Cluster',
+    constellation: 'Taurus',
+    fieldOfView: '2.0° x 2.0°',
+  },
 ];
 
 export const emptySkyMapMarkers: typeof mockSkyMapMarkers = [];

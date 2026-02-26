@@ -241,3 +241,37 @@ test.describe('Home Page - Image Overlay', () => {
     await expect(tagsSection).toBeVisible();
   });
 });
+
+test.describe('Home Page - Deep Linking', () => {
+  let homePage: HomePage;
+
+  test.beforeEach(async ({ page }) => {
+    homePage = new HomePage(page);
+  });
+
+  test('should open image overlay when navigating with ?image=ID', async ({ page }) => {
+    // Assuming image with ID 1 exists in seed data
+    await page.goto('/?image=1');
+    await page.waitForLoadState('networkidle');
+
+    // Verify overlay is open by checking for close button
+    const closeButton = page.locator('button[aria-label="Close"]');
+    await expect(closeButton).toBeVisible();
+
+    // Verify correct image is loaded if possible, or at least that overlay is active
+    await expect(page).toHaveURL(/\/.*image=1/);
+  });
+
+  test('should remove image parameter from URL when closing overlay', async ({ page }) => {
+    await page.goto('/?image=1');
+    await page.waitForLoadState('networkidle');
+
+    const closeButton = page.locator('button[aria-label="Close"]');
+    await expect(closeButton).toBeVisible();
+    await closeButton.click();
+
+    // After closing, image parameter should be gone from URL
+    await expect(page).toHaveURL(/\/$/);
+    await expect(closeButton).not.toBeVisible();
+  });
+});

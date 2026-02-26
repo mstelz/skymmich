@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/header";
 import { SearchFilters } from "@/components/search-filters";
@@ -6,10 +6,14 @@ import { ImageGallery } from "@/components/image-gallery";
 import { Sidebar } from "@/components/sidebar";
 import { ImageOverlay } from "@/components/image-overlay";
 import { usePlateSolvingUpdates, useImmichSyncUpdates } from "@/hooks/use-socket";
+import { useSearch, useLocation } from "wouter";
 import type { AstroImage, Equipment } from "@shared/schema";
 
 export default function Home() {
   const [selectedImage, setSelectedImage] = useState<AstroImage | null>(null);
+  const searchString = useSearch();
+  const [, setLocation] = useLocation();
+
   const [filters, setFilters] = useState({
     objectType: "",
     tags: [] as string[],
@@ -26,6 +30,20 @@ export default function Home() {
     queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved, filters.constellation],
     enabled: true,
   });
+
+  // Handle deep-linking to a specific image via ?image=ID
+  useEffect(() => {
+    if (images.length > 0 && searchString) {
+      const params = new URLSearchParams(searchString);
+      const imageId = params.get("image");
+      if (imageId) {
+        const image = images.find(img => img.id.toString() === imageId);
+        if (image) {
+          setSelectedImage(image);
+        }
+      }
+    }
+  }, [images, searchString]);
 
   const { data: stats, refetch: refetchStats } = useQuery<Stats>({
     queryKey: ["/api/stats"],
@@ -79,6 +97,18 @@ export default function Home() {
   const visibleImages = filteredImages.slice(0, visibleCount);
   const hasMoreImages = visibleCount < filteredImages.length;
 
+  const handleCloseOverlay = () => {
+    setSelectedImage(null);
+    // Remove the image parameter from the URL when overlay is closed
+    if (searchString.includes("image=")) {
+      const params = new URLSearchParams(searchString);
+      params.delete("image");
+      const newSearch = params.toString();
+      // Ensure we navigate back cleanly
+      setLocation(newSearch ? `/?${newSearch}` : "/", { replace: true });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden w-full">
       <Header />
@@ -94,7 +124,11 @@ export default function Home() {
             <ImageGallery
               images={visibleImages}
               equipment={equipment}
-              onImageClick={setSelectedImage}
+              onImageClick={(image) => {
+                setSelectedImage(image);
+                // Also update URL when clicking from gallery for bookmarkability
+                setLocation(`/?image=${image.id}`, { replace: true });
+              }}
               isLoading={imagesLoading}
               hasMoreImages={hasMoreImages}
               onLoadMore={handleLoadMore}
@@ -121,7 +155,7 @@ export default function Home() {
       {selectedImage && (
         <ImageOverlay
           image={selectedImage}
-          onClose={() => setSelectedImage(null)}
+          onClose={handleCloseOverlay}
         />
       )}
     </div>

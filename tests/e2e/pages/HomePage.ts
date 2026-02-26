@@ -44,6 +44,7 @@ export class HomePage extends BasePage {
     await expect(this.navigationLinks.gallery).toBeVisible();
     await expect(this.navigationLinks.equipment).toBeVisible();
     await expect(this.navigationLinks.plateSolving).toBeVisible();
+    await expect(this.navigationLinks.skyMap).toBeVisible();
     await expect(this.navigationLinks.admin).toBeVisible();
   }
 
