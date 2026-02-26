@@ -1,0 +1,32 @@
+name: Prune GHCR Images
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly at midnight on Sunday
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    
+    steps:
+      - name: Prune untagged images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'skymmich'
+          package-type: 'container'
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: 'true'
+
+      - name: Prune old timestamped and SHA tags
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'skymmich'
+          package-type: 'container'
+          min-versions-to-keep: 10
+          # Delete versions matching SHA or Date patterns, keeping the latest 10
+          # This regex matches sha-xxxxxxx and YYYYMMDD-HHmmss patterns
+          ignore-versions: '^(v[0-9]+\.[0-9]+\.[0-9]+|latest|main)$'
+          delete-only-pre-release-versions: 'false'
