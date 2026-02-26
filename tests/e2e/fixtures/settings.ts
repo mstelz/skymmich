@@ -16,6 +16,11 @@ export const mockSettings = {
     maxConcurrent: 3,
     autoResubmit: false,
   },
+  sidecar: {
+    enabled: true,
+    outputPath: './sidecars',
+    organizeByDate: true,
+  },
   app: {
     debugMode: false,
   },

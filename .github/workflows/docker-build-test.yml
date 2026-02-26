@@ -99,31 +99,7 @@ jobs:
 
       - name: Run container smoke test
         id: smoke-test
-        run: |
-          # Start container with minimal config
-          docker run -d \
-            --name skymmich-test \
-            -p 5000:5000 \
-            -e NODE_ENV=production \
-            -e DATABASE_URL=postgresql://test:test@localhost:5432/test \
-            skymmich:test-${{ github.event.pull_request.number }}
-          
-          # Give it time to start (or fail)
-          sleep 10
-          
-          # Check if container is still running
-          if docker ps | grep -q skymmich-test; then
-            echo "✅ Container started successfully" >> $GITHUB_STEP_SUMMARY
-            docker logs skymmich-test
-          else
-            echo "❌ Container failed to start" >> $GITHUB_STEP_SUMMARY
-            docker logs skymmich-test
-            exit 1
-          fi
-          
-          # Cleanup
-          docker stop skymmich-test || true
-          docker rm skymmich-test || true
+        run: ./docker/smoke-test.sh skymmich:test-${{ github.event.pull_request.number }}
 
       - name: Scan for vulnerabilities (SARIF)
         id: security-scan

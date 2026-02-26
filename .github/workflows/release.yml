@@ -92,6 +92,9 @@ jobs:
             VERSION=${{ github.ref_name }}
             REVISION=${{ github.sha }}
 
+      - name: Run container smoke test
+        run: ./docker/smoke-test.sh local-scan:${{ github.ref_name }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.34.1
         with:

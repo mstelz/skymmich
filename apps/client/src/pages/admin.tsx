@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Header } from '@/components/header';
-import { 
-  Settings, 
-  Database, 
-  Key, 
-  Globe, 
-  Album, 
+import {
+  Settings,
+  Database,
+  Key,
+  Globe,
+  Album,
   Save,
   TestTube,
   CheckCircle,
@@ -20,7 +20,8 @@ import {
   Loader2,
   AlertTriangle,
   Info,
-  Bell
+  Bell,
+  FileText
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
@@ -42,11 +43,16 @@ interface AdminSettings {
   astrometry: {
     apiKey: string;
     enabled: boolean;
-    autoEnabled: boolean; // Whether to enable automatic background plate solving
-    checkInterval: number; // Worker check interval in seconds
-    pollInterval: number; // Active polling interval in seconds
-    maxConcurrent: number; // Max concurrent jobs
-    autoResubmit: boolean; // Whether to auto-resubmit failed jobs
+    autoEnabled: boolean;
+    checkInterval: number;
+    pollInterval: number;
+    maxConcurrent: number;
+    autoResubmit: boolean;
+  };
+  sidecar: {
+    enabled: boolean;
+    outputPath: string;
+    organizeByDate: boolean;
   };
   app: {
     debugMode: boolean;
@@ -77,11 +83,16 @@ export default function AdminPage() {
     astrometry: {
       apiKey: '',
       enabled: true,
-      autoEnabled: false, // Disable automatic background processing by default
-      checkInterval: 30, // 30 seconds
-      pollInterval: 5, // 5 seconds
+      autoEnabled: false,
+      checkInterval: 30,
+      pollInterval: 5,
       maxConcurrent: 3,
-      autoResubmit: false, // Don't auto-resubmit failed jobs
+      autoResubmit: false,
+    },
+    sidecar: {
+      enabled: true,
+      outputPath: './sidecars',
+      organizeByDate: true,
     },
     app: {
       debugMode: false,
@@ -136,7 +147,11 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/settings');
       if (response.ok) {
         const data = await response.json();
-        setSettings(data);
+        setSettings(prev => ({
+          ...prev,
+          ...data,
+          sidecar: { ...prev.sidecar, ...data.sidecar },
+        }));
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -732,6 +747,73 @@ export default function AdminPage() {
                   Test Connection
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* XMP Sidecar Settings */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>XMP Sidecar Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Configure XMP sidecar file generation after plate solving
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="sidecarEnabled"
+                  checked={settings.sidecar.enabled}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    sidecar: { ...prev.sidecar, enabled: checked }
+                  }))}
+                />
+                <Label htmlFor="sidecarEnabled">Enable XMP sidecar generation</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                When enabled, an XMP sidecar file is generated alongside each plate-solved image containing astronomical metadata, annotations, and equipment info.
+              </p>
+
+              {settings.sidecar.enabled && (
+                <>
+                  <Separator />
+
+                  <div>
+                    <Label htmlFor="sidecarOutputPath">Output Path</Label>
+                    <Input
+                      id="sidecarOutputPath"
+                      placeholder="/app/sidecars"
+                      value={settings.sidecar.outputPath}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        sidecar: { ...prev.sidecar, outputPath: e.target.value }
+                      }))}
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Directory where XMP sidecar files are written. In Docker, this path must be a mounted volume.
+                      The <code className="text-xs bg-muted px-1 rounded">XMP_SIDECAR_PATH</code> environment variable overrides this setting.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="sidecarOrganizeByDate"
+                      checked={settings.sidecar.organizeByDate}
+                      onCheckedChange={(checked) => setSettings(prev => ({
+                        ...prev,
+                        sidecar: { ...prev.sidecar, organizeByDate: checked }
+                      }))}
+                    />
+                    <Label htmlFor="sidecarOrganizeByDate">Organize by capture date</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, sidecar files are organized into subdirectories by capture date (e.g., <code className="text-xs bg-muted px-1 rounded">2025-01/image.xmp</code>).
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 

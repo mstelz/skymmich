@@ -18,6 +18,11 @@ export interface AppConfig {
     maxConcurrent: number;
     autoResubmit: boolean;
   };
+  sidecar: {
+    enabled: boolean;
+    outputPath: string;
+    organizeByDate: boolean;
+  };
   app: {
     debugMode: boolean;
   };
@@ -55,6 +60,11 @@ class ConfigService {
         pollInterval: adminSettings.astrometry?.pollInterval ?? defaultConfig.astrometry.pollInterval,
         maxConcurrent: adminSettings.astrometry?.maxConcurrent ?? defaultConfig.astrometry.maxConcurrent,
         autoResubmit: adminSettings.astrometry?.autoResubmit ?? defaultConfig.astrometry.autoResubmit,
+      },
+      sidecar: {
+        enabled: adminSettings.sidecar?.enabled ?? defaultConfig.sidecar.enabled,
+        outputPath: process.env.XMP_SIDECAR_PATH || adminSettings.sidecar?.outputPath || defaultConfig.sidecar.outputPath,
+        organizeByDate: adminSettings.sidecar?.organizeByDate ?? defaultConfig.sidecar.organizeByDate,
       },
       app: {
         debugMode: adminSettings.app?.debugMode ?? defaultConfig.app.debugMode,
@@ -95,6 +105,11 @@ class ConfigService {
         maxConcurrent: 3,  // Reasonable default
         autoResubmit: false,  // Disabled by default
       },
+      sidecar: {
+        enabled: true,  // Generate XMP sidecars by default
+        outputPath: './sidecars',  // Default path, overridden by XMP_SIDECAR_PATH env
+        organizeByDate: true,  // Organize into yyyy-mm subdirectories
+      },
       app: {
         debugMode: false,  // Disabled by default
       },
@@ -127,6 +142,11 @@ class ConfigService {
   async getAstrometryConfig() {
     const config = await this.getConfig();
     return config.astrometry;
+  }
+
+  async getSidecarConfig() {
+    const config = await this.getConfig();
+    return config.sidecar;
   }
 
   async getAppConfig() {

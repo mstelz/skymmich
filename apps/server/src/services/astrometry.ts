@@ -335,10 +335,10 @@ export class AstrometryService {
 
         // Write XMP sidecar file with equipment information
         try {
-          if (job.astrometryJobId) {
-            // Fetch equipment used for this image
+          const sidecarConfig = await configService.getSidecarConfig();
+          if (sidecarConfig.enabled && job.astrometryJobId) {
             const equipment = await storage.getEquipmentForImage(job.imageId);
-            await xmpSidecarService.writeSidecar(image, result, job.astrometryJobId, equipment);
+            await xmpSidecarService.writeSidecar(image, result, job.astrometryJobId, equipment, sidecarConfig);
           }
         } catch (error) {
           console.error(`Failed to write XMP sidecar for image ${image.id}:`, error);

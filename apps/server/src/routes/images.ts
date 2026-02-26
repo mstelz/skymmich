@@ -1,6 +1,9 @@
 
 import { Router } from 'express';
+import { readFileSync } from 'fs';
 import { storage } from '../services/storage';
+import { xmpSidecarService } from '../services/xmp-sidecar';
+import { configService } from '../services/config';
 
 const router = Router();
 
@@ -237,6 +240,38 @@ router.put('/:imageId/equipment/:equipmentId', async (req, res) => {
     res.json(imageEquipment);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update equipment settings' });
+  }
+});
+
+// Get XMP sidecar for an image
+router.get('/:id/sidecar', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const image = await storage.getAstroImage(id);
+
+    if (!image) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    const sidecarConfig = await configService.getSidecarConfig();
+    const sidecarPath = xmpSidecarService.resolveSidecarPath(image, sidecarConfig);
+
+    if (!sidecarPath) {
+      return res.status(404).json({ message: 'No XMP sidecar found for this image' });
+    }
+
+    const content = readFileSync(sidecarPath, 'utf8');
+    const isDownload = req.query.download === 'true';
+
+    if (isDownload) {
+      res.setHeader('Content-Disposition', `attachment; filename="${image.filename}.xmp"`);
+    }
+
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(content);
+  } catch (error) {
+    console.error('Failed to fetch sidecar:', error);
+    res.status(500).json({ message: 'Failed to fetch sidecar' });
   }
 });
 
