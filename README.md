@@ -30,6 +30,7 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 
 ### 🖼️ **Self-Hosted Image Management**
 - **Immich Integration**: Seamless synchronization with your self-hosted Immich photo library
+- **Interactive Sky Map**: Explore your collection on a high-fidelity celestial atlas powered by Aladin Lite v3
 - **Astrophotography Filtering**: Filter by telescopes, cameras, targets, constellations, and acquisition details
 - **Deep Zoom Viewer**: High-resolution exploration of your deep-sky images with OpenSeaDragon
 - **Metadata Preservation**: Automatic EXIF and XMP sidecar handling for astrophotography workflows
@@ -380,6 +381,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ### Core Features
 - [ ] **Additional Photo Sources**: Support for photo libraries beyond Immich (direct uploads, other self-hosted solutions)
+- [x] **Interactive Sky Map**: Celestial atlas visualization for plate-solved image collections
 - [ ] Advanced image statistics and analytics for astrophotography sessions
 - [ ] Equipment usage reporting and session tracking
 - [x] XMP sidecar generation for astrophotography metadata
