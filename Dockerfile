@@ -35,13 +35,13 @@ FROM node:24-alpine AS runtime
 # Upgrade npm to fix tar (CVE-2026-26960) and minimatch (CVE-2026-26996)
 RUN npm install -g npm@11.10.1
 
-# Install curl for health checks
+# Install curl for health checks, su-exec for privilege dropping, and shadow for user management
 # hadolint ignore=DL3018
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl su-exec shadow
 
-# Create app user for security (non-root execution)
+# Create app user for security (will be remapped via PUID/PGID if provided)
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S skymmich -u 1001
+    adduser -S skymmich -u 1001 -G nodejs
 
 # Set working directory
 WORKDIR /app
@@ -55,16 +55,15 @@ RUN npm pkg delete dependencies.better-sqlite3 && npm ci --omit=dev && npm cache
 # Copy built application from builder stage (includes tools, config, and public assets)
 COPY --from=builder /build/dist ./dist
 
-# Create directories for runtime and set permissions
-RUN mkdir -p /app/config /app/logs /app/sidecars && \
-    chown -R skymmich:nodejs /app
+# Create directories for runtime
+RUN mkdir -p /app/config /app/logs /app/sidecars
 
 # Copy startup script
 COPY docker/startup.sh ./
 RUN chmod +x startup.sh
 
-# Switch to non-root user for security
-USER skymmich
+# Run as root initially to allow PUID/PGID remapping in startup.sh
+USER root
 
 # Expose port
 EXPOSE 5000

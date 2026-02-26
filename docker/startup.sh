@@ -3,6 +3,18 @@
 # Skymmich Container Startup Script
 set -e
 
+# Handle PUID and PGID for proper volume permissions
+PUID=${PUID:-1001}
+PGID=${PGID:-1001}
+
+echo "Updating skymmich user to PUID=$PUID and GID=$PGID..."
+groupmod -o -g "$PGID" nodejs || true
+usermod -o -u "$PUID" skymmich || true
+
+# Ensure proper ownership of application and data directories
+echo "Setting directory permissions..."
+chown -R skymmich:nodejs /app/config /app/logs /app/sidecars /app/dist
+
 echo "Starting Skymmich container..."
 echo "Node.js version: $(node --version)"
 echo "Environment: ${NODE_ENV:-development}"
@@ -37,13 +49,13 @@ else
     echo "No DATABASE_URL provided, using SQLite fallback"
 fi
 
-# Run database migrations
+# Run database migrations as skymmich user
 echo "Running database migrations..."
 if [ -n "$DATABASE_URL" ]; then
     # PostgreSQL migrations
     if [ -f "/app/dist/tools/scripts/apply-pg-migrations.js" ]; then
         echo "Running PostgreSQL migrations..."
-        node /app/dist/tools/scripts/apply-pg-migrations.js || {
+        su-exec skymmich node /app/dist/tools/scripts/apply-pg-migrations.js || {
             echo "PostgreSQL migration failed, but continuing..."
         }
     else
@@ -53,16 +65,13 @@ else
     # SQLite migrations for local development
     if [ -f "/app/dist/tools/scripts/apply-migrations.ts" ]; then
         echo "Running SQLite migrations..."
-        node --loader tsx /app/dist/tools/scripts/apply-migrations.ts || {
+        su-exec skymmich node --loader tsx /app/dist/tools/scripts/apply-migrations.ts || {
             echo "SQLite migration failed, but continuing..."
         }
     else
         echo "SQLite migration script not found"
     fi
 fi
-
-# Create necessary directories
-mkdir -p /app/config /app/logs /app/sidecars
 
 # Set up signal handlers for graceful shutdown
 cleanup() {
@@ -89,16 +98,16 @@ cleanup() {
 # Trap signals for graceful shutdown
 trap cleanup TERM INT
 
-# Start main application
+# Start main application as skymmich user
 echo "Starting main application..."
-node /app/dist/index.js &
+su-exec skymmich node /app/dist/index.js &
 MAIN_PID=$!
 echo "Main process started with PID: $MAIN_PID"
 
-# Start worker process if enabled
+# Start worker process if enabled as skymmich user
 if [ "${ENABLE_PLATE_SOLVING:-true}" = "true" ]; then
     echo "Starting worker process..."
-    node /app/dist/worker.js &
+    su-exec skymmich node /app/dist/worker.js &
     WORKER_PID=$!
     echo "Worker process started with PID: $WORKER_PID"
 else
@@ -118,7 +127,7 @@ check_processes() {
     if [ "${ENABLE_PLATE_SOLVING:-true}" = "true" ] && [ -n "$WORKER_PID" ]; then
         if ! kill -0 "$WORKER_PID" 2>/dev/null; then
             echo "WARNING: Worker process (PID: $WORKER_PID) has died, restarting..."
-            node /app/dist/worker.js &
+            su-exec skymmich node /app/dist/worker.js &
             WORKER_PID=$!
             echo "Worker process restarted with PID: $WORKER_PID"
         fi

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>Skymmich</Name>
-  <Repository>skymmich:latest</Repository>
-  <Registry>https://hub.docker.com/</Registry>
+  <Repository>ghcr.io/mstelz/skymmich:latest</Repository>
+  <Registry>https://ghcr.io/mstelz/skymmich</Registry>
   <Network>bridge</Network>
   <WebUI>http://[IP]:[PORT:2284]/</WebUI>
   <Icon>https://raw.githubusercontent.com/mstelz/skymmich/main/assets/images/skymmich-transparent.png</Icon>
@@ -123,5 +123,8 @@
   
   <Config Name="Auto-resubmit Failed Jobs" Target="ASTROMETRY_AUTO_RESUBMIT" Default="false" Mode="" Description="When enabled, failed jobs will be automatically retried. When disabled, failed jobs must be manually resubmitted [WORKER ONLY]" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID for file permissions (99 is nobody on Unraid)" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID for file permissions (100 is users on Unraid)" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
   
 </Container>
