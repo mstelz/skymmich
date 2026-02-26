@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Plus, X, Settings, Edit3, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Equipment } from "@shared/schema";
@@ -272,20 +280,22 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Type *</label>
-              <select
+              <Select
                 value={quickAddForm.type}
-                onChange={(e) => setQuickAddForm(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
-                required
+                onValueChange={(value) => setQuickAddForm(prev => ({ ...prev, type: value }))}
               >
-                <option value="">Choose type...</option>
-                <option value="telescope">Telescope</option>
-                <option value="camera">Camera</option>
-                <option value="mount">Mount</option>
-                <option value="filter">Filter</option>
-                <option value="accessory">Accessory</option>
-                <option value="software">Software</option>
-              </select>
+                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white h-10">
+                  <SelectValue placeholder="Choose type..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                  <SelectItem value="telescope">Telescope</SelectItem>
+                  <SelectItem value="camera">Camera</SelectItem>
+                  <SelectItem value="mount">Mount</SelectItem>
+                  <SelectItem value="filter">Filter</SelectItem>
+                  <SelectItem value="accessory">Accessory</SelectItem>
+                  <SelectItem value="software">Software</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -406,18 +416,23 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
           <div className="space-y-3 p-3 bg-black/20 rounded-lg border border-gray-700">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Select Equipment</label>
-              <select
-                value={selectedEquipmentId || ""}
-                onChange={(e) => setSelectedEquipmentId(Number(e.target.value) || null)}
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+              <Select
+                value={selectedEquipmentId?.toString() || ""}
+                onValueChange={(value) => setSelectedEquipmentId(Number(value) || null)}
               >
-                <option value="">Choose equipment...</option>
-                {availableEquipment.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.name} ({eq.type})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white h-10">
+                  <SelectValue placeholder="Choose equipment..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700 text-white max-h-[300px]">
+                  <ScrollArea className="h-full w-full">
+                    {availableEquipment.map((eq) => (
+                      <SelectItem key={eq.id} value={eq.id.toString()}>
+                        {eq.name} ({eq.type})
+                      </SelectItem>
+                    ))}
+                  </ScrollArea>
+                </SelectContent>
+              </Select>
             </div>
 
             {selectedEquipmentId && (

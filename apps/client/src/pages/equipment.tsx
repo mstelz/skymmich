@@ -3,6 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Header } from "@/components/header";
 import { Edit3, Trash2, X, Check } from "lucide-react";
 import type { Equipment } from "@shared/schema";
@@ -143,20 +150,22 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
 
           <div>
             <label className="block text-sm font-medium mb-2">Type *</label>
-            <select
+            <Select
               value={formData.type}
-              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-              required
-              className="input w-full"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
             >
-              <option value="">Choose type...</option>
-                              <option value="telescope">Telescope</option>
-              <option value="camera">Camera</option>
-              <option value="mount">Mount</option>
-              <option value="filter">Filter</option>
-              <option value="accessory">Accessory</option>
-              <option value="software">Software</option>
-            </select>
+              <SelectTrigger className="w-full bg-background border-input text-foreground h-10">
+                <SelectValue placeholder="Choose type..." />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                <SelectItem value="telescope">Telescope</SelectItem>
+                <SelectItem value="camera">Camera</SelectItem>
+                <SelectItem value="mount">Mount</SelectItem>
+                <SelectItem value="filter">Filter</SelectItem>
+                <SelectItem value="accessory">Accessory</SelectItem>
+                <SelectItem value="software">Software</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -333,20 +342,22 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                 Equipment Type *
               </label>
-              <select 
+              <Select 
                 value={type} 
-                onChange={e => setType(e.target.value)} 
-                required 
-                className="input w-full"
+                onValueChange={(value) => setType(value)}
               >
-                <option value="">Select equipment type...</option>
-                <option value="telescope">Telescope</option>
-                <option value="camera">Camera</option>
-                <option value="mount">Mount</option>
-                <option value="filter">Filter</option>
-                <option value="accessory">Accessory</option>
-                <option value="software">Software</option>
-              </select>
+                <SelectTrigger className="w-full bg-background border-input text-foreground h-10">
+                  <SelectValue placeholder="Select equipment type..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                  <SelectItem value="telescope">Telescope</SelectItem>
+                  <SelectItem value="camera">Camera</SelectItem>
+                  <SelectItem value="mount">Mount</SelectItem>
+                  <SelectItem value="filter">Filter</SelectItem>
+                  <SelectItem value="accessory">Accessory</SelectItem>
+                  <SelectItem value="software">Software</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -56,7 +56,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               <SelectTrigger className="w-[140px] sky-input">
                 <SelectValue placeholder="All Objects" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-900 border-gray-700 text-white">
                 <SelectItem value="all">All Objects</SelectItem>
                 <SelectItem value="Deep Sky">Deep Sky</SelectItem>
                 <SelectItem value="Planetary">Planetary</SelectItem>
@@ -75,7 +75,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               <SelectTrigger className="w-[140px] sky-input">
                 <SelectValue placeholder="All Constellations" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-900 border-gray-700 text-white">
                 <SelectItem value="all">All Constellations</SelectItem>
                 {constellations.map((constellation: string) => (
                   <SelectItem key={constellation} value={constellation}>
@@ -97,7 +97,7 @@ export function SearchFilters({ filters, onFiltersChange, stats }: SearchFilters
               <SelectTrigger className="w-[140px] sky-input">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-900 border-gray-700 text-white">
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="true">Plate Solved</SelectItem>
                 <SelectItem value="false">Not Solved</SelectItem>

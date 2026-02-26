@@ -5,6 +5,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
 import { Header } from '@/components/header';
 import {
@@ -500,30 +509,75 @@ export default function AdminPage() {
 
               {/* Album selection if syncByAlbum is enabled */}
               {settings.immich.syncByAlbum && (
-                <div>
-                  <Label htmlFor="immichAlbums">Select albums to sync</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="immichAlbums">Select albums to sync</Label>
+                    {albums.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          const allIds = albums.map(a => a.id);
+                          const isAllSelected = settings.immich.selectedAlbumIds.length === albums.length;
+                          setSettings(prev => ({
+                            ...prev,
+                            immich: { 
+                              ...prev.immich, 
+                              selectedAlbumIds: isAllSelected ? [] : allIds 
+                            }
+                          }));
+                        }}
+                      >
+                        {settings.immich.selectedAlbumIds.length === albums.length ? "Deselect All" : "Select All"}
+                      </Button>
+                    )}
+                  </div>
+                  
                   {albumsLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading albums...</div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground p-4 bg-muted/20 rounded-md border border-dashed">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading albums from Immich...
+                    </div>
                   ) : albumError ? (
-                    <div className="text-sm text-red-500">{albumError}</div>
+                    <div className="text-sm text-red-500 p-4 bg-red-500/10 rounded-md border border-red-500/20">
+                      {albumError}
+                    </div>
+                  ) : albums.length === 0 ? (
+                    <div className="text-sm text-muted-foreground p-4 bg-muted/20 rounded-md border border-dashed">
+                      No albums found on Immich server.
+                    </div>
                   ) : (
-                    <select
-                      id="immichAlbums"
-                      multiple
-                      className="input w-full mt-1"
-                      value={settings.immich.selectedAlbumIds}
-                      onChange={e => {
-                        const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
-                        setSettings(prev => ({
-                          ...prev,
-                          immich: { ...prev.immich, selectedAlbumIds: selected }
-                        }));
-                      }}
-                    >
-                      {albums.map(album => (
-                        <option key={album.id} value={album.id}>{album.albumName}</option>
-                      ))}
-                    </select>
+                    <ScrollArea className="h-[200px] w-full rounded-md border bg-gray-900 border-gray-700 p-4">
+                      <div className="space-y-3">
+                        {albums.map((album) => (
+                          <div key={album.id} className="flex items-center space-x-3">
+                            <Checkbox 
+                              id={`album-${album.id}`}
+                              checked={settings.immich.selectedAlbumIds.includes(album.id)}
+                              onCheckedChange={(checked) => {
+                                setSettings(prev => {
+                                  const selected = checked 
+                                    ? [...prev.immich.selectedAlbumIds, album.id]
+                                    : prev.immich.selectedAlbumIds.filter(id => id !== album.id);
+                                  return {
+                                    ...prev,
+                                    immich: { ...prev.immich, selectedAlbumIds: selected }
+                                  };
+                                });
+                              }}
+                            />
+                            <Label 
+                              htmlFor={`album-${album.id}`}
+                              className="text-sm font-normal text-gray-200 cursor-pointer"
+                            >
+                              {album.albumName}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
                   {/* Validation: must select at least one album */}
                   {settings.immich.syncByAlbum && settings.immich.selectedAlbumIds.length === 0 && (
