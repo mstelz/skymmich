@@ -11,7 +11,7 @@
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
   <Date>2025-01-27</Date>
   <Changes>
-    ### v1.3.0
+    ### v0.4.0
     - FEAT: Interactive Sky Map with Aladin Lite v3 integration
     - FEAT: Plate-solved images automatically plotted on full-sky atlas
     - FEAT: Deep-linking support (?image=ID) for direct navigation from map to gallery
@@ -19,7 +19,7 @@
     - IMPROVE: Refined loading states and WebGL2 support detection
     - FIX: Standardized coordinate formats for accurate marker placement
     
-    ### v1.2.0
+    ### v0.3.0
     - FEAT: Configurable plate solving behavior with admin interface controls
     - FEAT: Worker check interval configuration (10-300 seconds)
     - FEAT: Active polling interval configuration (1-60 seconds)
@@ -34,7 +34,7 @@
     - REFACTOR: Project renamed from Skymmich to Skymmich
     - DOCS: Enhanced security documentation and deployment guides
     
-    ### v1.1.0
+    ### v0.2.0
     - SECURITY: Comprehensive security fixes and secret management
     - FEAT: Complete Docker containerization with multi-stage builds
     - FEAT: PostgreSQL support for production environments
@@ -43,7 +43,7 @@
     - REFACTOR: Project renamed from Skymmich to Skymmich
     - DOCS: Enhanced security documentation and deployment guides
     
-    ### v1.0.0
+    ### v0.1.0
     - Initial release
     - Astrophotography image management
     - Plate solving integration
