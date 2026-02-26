@@ -5,131 +5,71 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.2] - 2025-07-23
-
-### Fixed
-- **SBOM Generation**: Fixed Software Bill of Materials generation in release workflow
-- **Registry Timing**: Added wait mechanism for Docker image propagation to registry
-- **Release Robustness**: Made SBOM generation non-critical to prevent release failures
-
-## [0.1.1] - 2025-07-23
-
-### Fixed
-- **Release Workflow**: Fixed Trivy vulnerability scanning by scanning local image before registry push
-- **CI/CD**: Resolved chicken-and-egg problem with Docker image scanning in release process
-
-## [0.1.0] - 2025-07-23
+## [0.4.1] - 2026-02-26
 
 ### Added
-- **🎉 Initial Release**: First public release of Skymmich
-- **Image Management**: Gallery interface for viewing and organizing astrophotography images
-- **Immich Integration**: Synchronization with Immich photo management server
-- **Plate Solving**: Astrometry.net integration for automatic celestial coordinate detection
-- **Equipment Catalog**: Manage telescopes, cameras, and other astrophotography equipment
-- **Admin Interface**: Web-based configuration for all application settings
-- **Docker Support**: Containerized deployment with multi-architecture support
+- **Visual Image Renaming**: Ability to set a custom display title for images without changing the underlying system filename.
+- **PUID/PGID Support**: Support for remapping the container user ID and group ID to match host volume permissions (standard for Unraid and Linux environments).
 
-### Security
-- **🔒 CRITICAL**: Updated axios from 1.10.0 to 1.11.0 to fix CVE-2025-7783 form-data vulnerability
-- **🔒 SSRF Protection**: Added URL validation to admin connection testing endpoints to prevent Server-Side Request Forgery attacks
-- **🔒 Protocol Validation**: Restricted connection testing to HTTP/HTTPS protocols only
+### Fixed
+- **Permissions**: Resolved `EACCES` errors when creating date-organized sidecar directories in Docker by supporting UID/GID remapping.
 
-### Technical
-- **Database Support**: SQLite for development, PostgreSQL for production
-- **Real-time Updates**: Socket.io integration for live status updates
-- **Cron Scheduling**: Automated synchronization and processing tasks
-- **API Documentation**: Comprehensive REST API for all functionality
-
-## [Unreleased] - Development History
+## [0.4.0] - 2026-02-26
 
 ### Added
-- **🎉 Open Source Release**: Skymmich is now available as an open source project under MIT license
-- **Enhanced plate solving configuration**: Added configurable worker check intervals, polling intervals, max concurrent jobs, and auto-resubmit options
-- **Improved admin interface**: Added detailed controls for plate solving worker configuration
-- **MIT License**: Added proper open source license file
+- **Interactive Sky Map**: A high-fidelity celestial atlas powered by Aladin Lite v3 for visualizing your plate-solved image collection.
+- **Image Deep Linking**: Added `?image=ID` URL parameter support to open specific image overlays directly from the sky map or shared links.
+- **Pleiades (M45) Test Data**: Added high-accuracy coordinate data for Pleiades to development seed scripts.
+- **Automatic GHCR Pruning**: Weekly GitHub Action to automatically clean up old or untagged Docker images from the container registry.
 
 ### Changed
-- **Enhanced configuration system**: Plate solving settings now support fine-grained control through admin interface
-- **Worker process improvements**: Added configurable intervals and concurrent job limits
-- **Documentation updates**: Updated README and contributing guidelines for open source community
+- **Aladin Lite v3**: Upgraded to the latest Aladin Lite engine for improved performance and WebGL2 support.
+- **Coordinate Precision**: Standardized internal coordinate storage to decimal degree strings for accurate map plotting.
+- **Navigation Cleanup**: Removed unimplemented "Collections" link from the sidebar.
 
 ### Fixed
-- **Configuration persistence**: Plate solving settings now properly persist and take effect without container restart
-- **Worker configuration reloading**: Worker process now dynamically reloads configuration changes
+- **WebGL Detection**: Added browser capability detection with user-friendly error messages for unsupported environments.
+- **Global UI Tweaks**: Added `cursor: pointer` to all button elements for better interactivity feedback.
 
-### Documentation
-- **Contributing guidelines**: Comprehensive guide for community contributions
-- **Open source preparation**: Updated all documentation for public release
-- **Configuration examples**: Enhanced environment variable documentation
-
-## [1.1.0] - 2025-07-06
+## [0.3.0] - 2026-02-25
 
 ### Added
-- **Docker containerization support** with multi-stage builds for production deployment
-- **UnRAID container templates** for easy deployment on home servers
-- **PostgreSQL database support** for production environments while maintaining SQLite for development
-- **Worker process management** with enable/disable functionality and crash recovery
-- **Health check endpoints** for container monitoring
-- **Comprehensive security model** with proper secret management
-- **Environment configuration examples** with `.env.example` for secure setup
+- **XMP Sidecar Generation**: Automatic generation of astronomical metadata sidecars for plate-solved images.
+- **Date-based Organization**: Option to organize sidecar files in `YYYY-MM/` subdirectories.
+- **Sidecar Download API**: Endpoint to download generated XMP files directly from the gallery.
+- **Admin Configuration**: New settings panel for XMP sidecar output paths and organization rules.
 
 ### Changed
-- **Project renamed** from "AstroRep" to "Skymmich" across all files and configurations
-- **Monorepo structure** - reorganized codebase into `/apps/` and `/packages/` directories
-- **Database configuration** now supports both SQLite (development) and PostgreSQL (production)
-- **Configuration service** enhanced to prioritize database settings over environment variables
-- **Tailwind CSS paths** updated for new monorepo structure
+- **EXIF Extraction**: Improved lens and telescope detection from Immich metadata to auto-populate equipment fields.
+- **Worker Robustness**: Enhanced plate solving worker with better error recovery and continuous polling logic.
 
-### Fixed
-- **Critical security vulnerability**: Removed hardcoded API keys and secrets from repository
-- **Client-side API key exposure**: Eliminated VITE_* environment variables that exposed secrets to browser
-- **Thumbnail proxy endpoint**: Fixed 500 Internal Server Error by using configuration service instead of undefined environment variables
-- **Vite configuration**: Updated client template path resolution for monorepo structure
-- **Development server**: Restored SQLite support for local development after containerization changes
-
-### Security
-- **🔒 CRITICAL**: All hardcoded secrets removed from `.env` and replaced with placeholders
-- **🔒 Enhanced .gitignore**: Added comprehensive patterns to prevent secret files from being committed
-- **🔒 Non-root container execution**: Docker containers now run as dedicated `skymmich` user
-- **🔒 API key logging**: Removed console.log statements that could leak secrets to logs
-- **🔒 Client-side protection**: Eliminated client-side environment variables containing API keys
-
-### Infrastructure
-- **Multi-stage Docker builds** with optimized Alpine Linux images
-- **Docker Compose configuration** with PostgreSQL service and health checks
-- **Container networking** with isolated internal communication
-- **Volume management** for persistent data and configuration
-- **Graceful shutdown handling** with proper SIGTERM/SIGINT signal management
-- **Startup scripts** with database connection waiting and automatic migrations
-
-### Developer Experience
-- **Improved error handling** with better debugging information
-- **Configuration documentation** with security best practices
-- **Development tooling** maintained compatibility while adding production capabilities
-- **Test script security** - redacted sensitive information in console outputs
-
-### Breaking Changes
-- **Environment variables**: Direct `IMMICH_URL` and `IMMICH_API_KEY` environment variables are no longer used by default - configuration should be set via admin interface or explicitly via config service
-- **File structure**: Old `/client/` and `/server/` directories moved to `/apps/client/` and `/apps/server/`
-
-### Migration Notes
-- **For existing users**: Copy your current `.env` values to `.env.local` using the new `.env.example` template
-- **API keys**: If you were using the exposed API keys, please rotate them immediately as they may have been compromised
-- **Database**: Development continues to use SQLite, but production deployments should use PostgreSQL
-
-### Deployment
-- **UnRAID users**: Use the provided container templates in `/docs/containerization-plan.md`
-- **Docker users**: Run `docker compose up` after setting environment variables
-- **Development**: Run `npm run dev` as before - SQLite database will be created automatically
-
-## [1.0.0] - 2025-01-XX
+## [0.2.0] - 2025-07-06
 
 ### Added
-- Initial release of AstroRep (now Skymmich)
-- Image management and gallery functionality
-- Immich integration for photo synchronization
-- Astrometry.net plate solving capabilities
-- Equipment catalog management
-- Real-time updates via Socket.io
-- Admin configuration interface
-- Cron job scheduling for automated tasks
+- **Docker Multi-stage Builds**: Optimized production-ready container images with multi-architecture support.
+- **UnRAID Integration**: Dedicated templates for easy deployment on home servers.
+- **PostgreSQL Support**: Full support for production-scale databases while maintaining SQLite for development.
+- **Worker Management**: Fine-grained control over the plate solving background process via the UI.
+- **Health Checks**: Added container health check endpoints for monitoring.
+
+### Changed
+- **Monorepo Structure**: Reorganized codebase into `/apps/` and `/packages/` for better maintainability.
+- **Configuration Service**: Enhanced to prioritize database settings over environment variables.
+
+### Fixed
+- **Thumbnail Proxy**: Fixed 500 errors by ensuring proper configuration service integration.
+- **Security Vitals**: Removed all hardcoded secrets and transitioned to secure environment variables.
+
+### Security
+- **SSRF Protection**: Added protocol and host validation for all external API integrations.
+- **Non-root Execution**: Transitioned Docker containers to run as a dedicated user.
+
+## [0.1.0] - 2025-01-27
+
+### Added
+- **🎉 Initial Release**: Core functionality including Immich synchronization and image management.
+- **Plate Solving**: Astrometry.net integration for automatic celestial coordinate detection.
+- **Equipment Catalog**: Manage telescopes, cameras, and accessories.
+- **Deep Zoom Viewer**: OpenSeaDragon integration for high-resolution exploration.
+- **Real-time Updates**: WebSocket (Socket.io) support for live processing status.
+- **Cron Scheduling**: Automated synchronization tasks.
