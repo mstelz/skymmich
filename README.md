@@ -181,6 +181,7 @@ npm run dev:worker:standalone
 | `ASTROMETRY_API_KEY` | _(optional)_ | Astrometry.net API key |
 | `ENABLE_PLATE_SOLVING` | `true` | Enable background worker |
 | `PLATE_SOLVE_MAX_CONCURRENT` | `3` | Max simultaneous jobs |
+| `XMP_SIDECAR_PATH` | `/app/sidecars` | Directory for XMP sidecar files |
 
 ### Admin Configuration
 
@@ -301,9 +302,7 @@ cp .env.example .env.local           # Main application settings
 cp .env.worker.example .env.worker   # Worker-only deployment
 # Configure your development settings
 
-# Initialize database
-npm run db:generate    # Generate migrations
-npm run db:migrate     # Apply migrations
+# Database schema is managed automatically on startup via Drizzle ORM
 ```
 
 ### Development Commands
@@ -318,11 +317,6 @@ npm run dev:worker:standalone    # Standalone worker (uses .env.worker)
 # Build for production
 npm run build          # Build frontend and backend
 npm run build:docker   # Build with Docker assets
-
-# Database operations
-npm run db:generate    # Generate new migrations
-npm run db:migrate     # Apply pending migrations
-npm run db:studio      # Open Drizzle Studio (database GUI)
 
 # Docker development
 docker compose up -d skymmich-db  # Database only
@@ -358,10 +352,6 @@ npm run test:e2e:headed # Run tests in headed browser mode
 ```bash
 # Type checking
 npm run check          # TypeScript compilation check
-
-# Code formatting
-npm run format         # Prettier formatting
-npm run lint           # ESLint checking
 ```
 
 ## 🚢 CI/CD & Deployment
@@ -392,6 +382,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [ ] **Additional Photo Sources**: Support for photo libraries beyond Immich (direct uploads, other self-hosted solutions)
 - [ ] Advanced image statistics and analytics for astrophotography sessions
 - [ ] Equipment usage reporting and session tracking
+- [x] XMP sidecar generation for astrophotography metadata
 - [ ] XMP sidecar viewer and editor for astrophotography metadata
 
 ### Advanced Features

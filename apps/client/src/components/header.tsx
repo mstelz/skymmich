@@ -119,10 +119,7 @@ export function Header() {
             >
               Equipment
             </Link>
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-              Collections
-            </a>
-            <Link 
+            <Link
               href="/plate-solving" 
               className={`transition-colors ${isActive('/plate-solving') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >

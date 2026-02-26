@@ -68,6 +68,10 @@
     color: hsl(var(--color-foreground));
   }
 
+  button, [role="button"] {
+    cursor: pointer;
+  }
+
   /* Force dark theme for astrophotography app */
   html {
     color-scheme: dark;
@@ -112,6 +116,7 @@
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     transition: background-color 0.3s;
+    cursor: pointer;
   }
 
   .sky-button-primary:hover {
@@ -124,6 +129,7 @@
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     transition: background-color 0.3s;
+    cursor: pointer;
   }
 
   .sky-button-secondary:hover {
