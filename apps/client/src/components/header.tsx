@@ -120,10 +120,16 @@ export function Header() {
               Equipment
             </Link>
             <Link
-              href="/plate-solving" 
+              href="/plate-solving"
               className={`transition-colors ${isActive('/plate-solving') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Plate Solving
+            </Link>
+            <Link
+              href="/sky-map"
+              className={`transition-colors ${isActive('/sky-map') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Sky Map
             </Link>
           </nav>
           

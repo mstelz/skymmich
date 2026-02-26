@@ -8,6 +8,7 @@ import equipmentRoutes from './equipment';
 import immichRoutes from './immich';
 import assetsRoutes from './assets';
 import systemRoutes from './system';
+import skyMapRoutes from './sky-map';
 
 export async function registerRoutes(app: Express, io?: SocketIOServer): Promise<Server> {
   app.use('/api/images', imageRoutes);
@@ -15,6 +16,7 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
   app.use('/api/equipment', equipmentRoutes);
   app.use('/api/immich', immichRoutes);
   app.use('/api/assets', assetsRoutes);
+  app.use('/api/sky-map', skyMapRoutes);
   app.use('/api', systemRoutes);
 
   const httpServer = createServer(app);
