@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star, MapPin, Monitor, ChevronDown, ChevronRight } from "lucide-react";
+import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star, MapPin, Monitor, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DeepZoomViewer } from "./deep-zoom-viewer";
 import { EquipmentManager } from "./equipment-manager";
@@ -19,6 +20,93 @@ interface ImageOverlayProps {
 interface EquipmentWithDetails extends Equipment {
   settings?: any;
   notes?: string;
+}
+
+interface ImageDetailsEditorModalProps {
+  image: AstroImage;
+  onClose: () => void;
+}
+
+function ImageDetailsEditorModal({ image, onClose }: ImageDetailsEditorModalProps) {
+  const [title, setTitle] = useState(image.title || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+    
+    setIsSaving(true);
+    try {
+      await apiRequest("PATCH", `/api/images/${image.id}`, {
+        title: title.trim()
+      });
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/images", image.id] });
+      onClose();
+    } catch (error) {
+      console.error("Failed to update image details:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
+      <div className="bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl border border-gray-800">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+            <Edit3 className="h-5 w-5 text-blue-400" />
+            Edit Image Title
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium text-gray-300">
+              Display Name
+            </Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter image title..."
+              className="bg-gray-800 border-gray-700 text-white focus:ring-blue-500 focus:border-blue-500"
+              autoFocus
+            />
+            <p className="text-xs text-gray-500">
+              This is a visual rename. The original filename <code className="bg-gray-800 px-1 rounded">{image.filename}</code> remains unchanged for system linking.
+            </p>
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-800 mt-6">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !title.trim() || title === image.title}
+              className="bg-blue-600 hover:bg-blue-700 text-white min-w-[100px]"
+            >
+              {isSaving ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "Save Title"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface DescriptionEditorModalProps {
@@ -108,6 +196,7 @@ function DescriptionEditorModal({ image, onClose }: DescriptionEditorModalProps)
 export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
   const [showAnnotations, setShowAnnotations] = useState(false);
   const [showEquipmentManager, setShowEquipmentManager] = useState(false);
+  const [showImageDetailsEditor, setShowImageDetailsEditor] = useState(false);
   const [showTechnicalDetailsEditor, setShowTechnicalDetailsEditor] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
   const [showDescriptionEditor, setShowDescriptionEditor] = useState(false);
@@ -242,7 +331,17 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
           <div className="flex flex-col gap-4 bg-card rounded-t-xl max-w-md mx-auto w-full p-4 mt-4">
             {/* Title and Date */}
             <div>
-              <h2 className="text-2xl font-bold mb-1 text-foreground">{currentImage.title}</h2>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <h2 className="text-2xl font-bold text-foreground leading-tight">{currentImage.title}</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowImageDetailsEditor(true)}
+                  className="h-8 w-8 text-muted-foreground"
+                >
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+              </div>
               <p className="text-sm text-muted-foreground mb-2">
                 Captured on {currentImage.captureDate ? new Date(currentImage.captureDate).toLocaleDateString() : "Unknown date"}
               </p>
@@ -496,7 +595,20 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
           </button>
           <div className="pt-20 px-8 pb-8 flex-1 flex flex-col gap-6 overflow-y-auto">
             <div>
-              <h2 className="text-2xl font-bold mb-1 text-white">{image.title}</h2>
+              <div className="flex items-center justify-between group/title mb-1">
+                <h2 className="text-2xl font-bold text-white leading-tight">
+                  {currentImage.title}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowImageDetailsEditor(true)}
+                  className="opacity-0 group-hover/title:opacity-100 transition-opacity text-gray-400 hover:text-white h-8 px-2"
+                  title="Rename image"
+                >
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+              </div>
               <p className="text-sm text-gray-300 mb-2">
                 Captured on {image.captureDate ? new Date(image.captureDate).toLocaleDateString() : "Unknown date"}
               </p>
@@ -852,6 +964,14 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
             />
           </div>
         </div>
+      )}
+
+      {/* Image Details Editor Modal */}
+      {showImageDetailsEditor && (
+        <ImageDetailsEditorModal
+          image={currentImage}
+          onClose={() => setShowImageDetailsEditor(false)}
+        />
       )}
 
       {/* Technical Details Editor Modal */}
