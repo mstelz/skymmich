@@ -252,7 +252,7 @@ export default function SkyMapPage() {
                 )}
 
                 <Link
-                  href={`/?search=${encodeURIComponent(selectedMarker.title)}`}
+                  href={`/?image=${selectedMarker.id}`}
                   className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
