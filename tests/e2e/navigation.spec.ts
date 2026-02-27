@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { HomePage, EquipmentPage, PlateSolvingPage, AdminPage } from './pages';
+import { HomePage, EquipmentPage, PlateSolvingPage, AdminPage, SkyMapPage } from './pages';
 
 test.describe('Navigation', () => {
   test('should navigate from home to equipment page', async ({ page }) => {
@@ -86,6 +86,7 @@ test.describe('Header - Consistent Across Pages', () => {
     { name: 'Equipment', url: '/equipment' },
     { name: 'Plate Solving', url: '/plate-solving' },
     { name: 'Admin', url: '/admin' },
+    { name: 'Sky Map', url: '/sky-map' },
   ];
 
   for (const p of pages) {

@@ -112,6 +112,19 @@ async function runMigrations() {
       );
     `;
 
+    await connection`
+      CREATE TABLE IF NOT EXISTS locations (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        altitude REAL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
     console.log('Database tables created successfully');
     
   } catch (error) {

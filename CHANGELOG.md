@@ -5,14 +5,37 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-27
+
+### Added
+- **Type-Specific Equipment Fields**: Equipment types now have known specification fields (e.g., focal length and aperture for telescopes, sensor type and pixel size for cameras) with the ability to add custom fields.
+- **Per-Filter Acquisition Tracking**: New acquisition editor for recording sub-exposure details per filter, including frame count, exposure time, gain/ISO, binning, sensor temp, and date.
+- **Auto-Computed Image Summaries**: Total integration time, frame count, and filter lists are automatically computed from acquisition entries and linked equipment.
+- **Locations API**: New endpoint for managing imaging locations.
+
+### Changed
+- **Equipment Manager**: Replaced generic key/value specs with structured fields per equipment type, plus custom field support.
+- **Technical Details**: Replaced the manual technical details editor with the acquisition editor for structured per-filter data entry.
+- **Database Migrations**: Migrations now always run on startup, allowing new tables to be added to existing databases automatically.
+
+### Fixed
+- **Equipment Settings Removal**: Fixed a bug where removing image-specific equipment settings would not persist after reload.
+- **Acquisition Save Errors**: Added visible error messages when saving acquisition entries fails.
+
 ## [0.4.1] - 2026-02-26
 
 ### Added
 - **Visual Image Renaming**: Ability to set a custom display title for images without changing the underlying system filename.
 - **PUID/PGID Support**: Support for remapping the container user ID and group ID to match host volume permissions (standard for Unraid and Linux environments).
 
+### Changed
+- **Themed UI Components**: Replaced native select and input elements with themed Shadcn components for a consistent visual identity.
+
 ### Fixed
 - **Permissions**: Resolved `EACCES` errors when creating date-organized sidecar directories in Docker by supporting UID/GID remapping.
+
+### Security
+- **Rollup Dependency**: Overrode Rollup version to v4.59.0 to address multiple security vulnerabilities.
 
 ## [0.4.0] - 2026-02-26
 

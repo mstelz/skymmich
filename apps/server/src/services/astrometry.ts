@@ -80,7 +80,7 @@ export class AstrometryService {
     const loginResponse = await axios.post("http://nova.astrometry.net/api/login", loginData, {
       headers: { 
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)'
+        'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)'
       }
     });
 
@@ -183,7 +183,7 @@ export class AstrometryService {
         const statusResponse = await axios.get(
           `https://nova.astrometry.net/api/submissions/${submissionId}`,
           {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
           }
         );
 
@@ -230,7 +230,7 @@ export class AstrometryService {
     const calibrationResponse = await axios.get(
       `https://nova.astrometry.net/api/jobs/${jobId}/calibration`,
       {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
       }
     );
     const calibration: AstrometryCalibration = calibrationResponse.data;
@@ -241,7 +241,7 @@ export class AstrometryService {
       const annotationsResponse = await axios.get(
         `https://nova.astrometry.net/api/jobs/${jobId}/annotations`,
         {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
         }
       );
       
@@ -271,7 +271,7 @@ export class AstrometryService {
       const tagsResponse = await axios.get(
         `http://nova.astrometry.net/api/jobs/${jobId}/machine_tags/`,
         {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
         }
       );
       if (Array.isArray(tagsResponse.data)) {
@@ -387,7 +387,7 @@ export class AstrometryService {
       const statusResponse = await axios.get(
         `https://nova.astrometry.net/api/submissions/${job.astrometrySubmissionId}`,
         {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
         }
       );
 
@@ -411,7 +411,7 @@ export class AstrometryService {
           const jobStatusResponse = await axios.get(
             `https://nova.astrometry.net/api/jobs/${job.astrometryJobId}`,
             {
-              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Astrorep/1.0)' }
+              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
             }
           );
           

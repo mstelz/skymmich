@@ -1,6 +1,6 @@
 import { db, schema } from '../db';
 import { eq, and, inArray, lte } from 'drizzle-orm';
-import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob } from "../../../../packages/shared/src/types";
+import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow } from "../../../../packages/shared/src/types";
 
 class DbStorage {
   // Astrophotography images
@@ -123,11 +123,13 @@ class DbStorage {
     if (!result[0]) {
       throw new Error('Failed to add equipment to image');
     }
+    await this.recomputeImageSummary(imageId);
     return result[0];
   }
 
   async removeEquipmentFromImage(imageId: number, equipmentId: number): Promise<boolean> {
     await db.delete(schema.imageEquipment).where(and(eq((schema.imageEquipment).imageId, imageId), eq((schema.imageEquipment).equipmentId, equipmentId))).execute();
+    await this.recomputeImageSummary(imageId);
     return true;
   }
 
@@ -224,6 +226,111 @@ class DbStorage {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
     await db.delete(schema.notifications).where(and(eq(schema.notifications.acknowledged, true), lte(schema.notifications.createdAt, cutoffDate))).execute();
+  }
+
+  // Locations
+  async getLocations(): Promise<Location[]> {
+    return await db.select().from(schema.locations).execute();
+  }
+
+  async getLocation(id: number): Promise<Location | undefined> {
+    const result = await db.select().from(schema.locations).where(eq(schema.locations.id, id)).execute();
+    return result[0] || undefined;
+  }
+
+  async createLocation(location: InsertLocation): Promise<Location> {
+    const result = await db.insert(schema.locations).values(location).returning().execute();
+    if (!result[0]) {
+      throw new Error('Failed to create location');
+    }
+    return result[0];
+  }
+
+  async updateLocation(id: number, updates: Partial<InsertLocation>): Promise<Location | undefined> {
+    const values = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    const result = await db.update(schema.locations).set(values).where(eq(schema.locations.id, id)).returning().execute();
+    return result[0] || undefined;
+  }
+
+  async deleteLocation(id: number): Promise<boolean> {
+    await db.delete(schema.locations).where(eq(schema.locations.id, id)).execute();
+    return true;
+  }
+
+  // Image Acquisition entries
+  async getImageAcquisitions(imageId: number): Promise<ImageAcquisitionRow[]> {
+    return await db.select().from(schema.imageAcquisition).where(eq(schema.imageAcquisition.imageId, imageId)).execute();
+  }
+
+  async createImageAcquisition(data: InsertImageAcquisitionRow): Promise<ImageAcquisitionRow> {
+    const result = await db.insert(schema.imageAcquisition).values(data).returning().execute();
+    if (!result[0]) {
+      throw new Error('Failed to create acquisition entry');
+    }
+    await this.recomputeImageSummary(data.imageId);
+    return result[0];
+  }
+
+  async updateImageAcquisition(id: number, updates: Partial<InsertImageAcquisitionRow>): Promise<ImageAcquisitionRow | undefined> {
+    const result = await db.update(schema.imageAcquisition).set(updates).where(eq(schema.imageAcquisition.id, id)).returning().execute();
+    if (result[0]) {
+      await this.recomputeImageSummary(result[0].imageId);
+    }
+    return result[0] || undefined;
+  }
+
+  async deleteImageAcquisition(id: number): Promise<boolean> {
+    const existing = await db.select().from(schema.imageAcquisition).where(eq(schema.imageAcquisition.id, id)).execute();
+    if (!existing[0]) return false;
+
+    await db.delete(schema.imageAcquisition).where(eq(schema.imageAcquisition.id, id)).execute();
+    await this.recomputeImageSummary(existing[0].imageId);
+    return true;
+  }
+
+  // Recompute flat summary fields from acquisition data + linked equipment
+  async recomputeImageSummary(imageId: number): Promise<void> {
+    const acquisitions = await this.getImageAcquisitions(imageId);
+    const linkedEquipment = await this.getEquipmentForImage(imageId);
+
+    const updates: Partial<InsertAstroImage> = {};
+
+    // Compute from acquisitions
+    if (acquisitions.length > 0) {
+      const totalFrames = acquisitions.reduce((sum, a) => sum + a.frameCount, 0);
+      const totalSeconds = acquisitions.reduce((sum, a) => sum + (a.frameCount * a.exposureTime), 0);
+      const filterNames = [...new Set(
+        acquisitions.map(a => a.filterName).filter(Boolean) as string[]
+      )];
+
+      updates.frameCount = totalFrames;
+      updates.totalIntegration = Math.round((totalSeconds / 3600) * 1000) / 1000;
+      updates.filters = filterNames.join(', ') || null;
+
+      const exposureTimes = [...new Set(acquisitions.map(a => a.exposureTime))];
+      if (exposureTimes.length === 1) {
+        updates.exposureTime = `${exposureTimes[0]}s`;
+      } else {
+        const min = Math.min(...exposureTimes);
+        const max = Math.max(...exposureTimes);
+        updates.exposureTime = `${min}s - ${max}s`;
+      }
+    }
+
+    // Compute from linked telescope equipment
+    const telescope = linkedEquipment.find(e => e.type === 'telescope');
+    if (telescope && telescope.specifications) {
+      const specs = telescope.specifications as Record<string, unknown>;
+      if (specs.focalLength) updates.focalLength = Number(specs.focalLength);
+      if (specs.focalRatio) updates.aperture = String(specs.focalRatio);
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await this.updateAstroImage(imageId, updates);
+    }
   }
 
   // Stats

@@ -13,8 +13,25 @@ export type {
   ImageEquipment,
   InsertImageEquipment,
   PlateSolvingJob,
-  InsertPlateSolvingJob
+  InsertPlateSolvingJob,
+  Location,
+  InsertLocation,
+  ImageAcquisitionRow,
+  InsertImageAcquisitionRow,
 } from './db/pg-schema';
+
+// Re-export equipment types and config
+export type {
+  EquipmentType,
+  EquipmentSpecifications,
+  TelescopeSpecifications,
+  CameraSpecifications,
+  MountSpecifications,
+  FilterSpecifications,
+  SpecFieldDefinition,
+} from './types/index';
+
+export { EQUIPMENT_SPEC_FIELDS } from './types/index';
 
 // Equipment with details type (for UI components)
 export type EquipmentWithDetails = Equipment;

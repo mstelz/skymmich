@@ -85,12 +85,41 @@ export const notifications = pgTable('notifications', {
     createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const imageAcquisition = pgTable('image_acquisition', {
+    id: serial('id').primaryKey(),
+    imageId: integer('image_id').notNull().references(() => astrophotographyImages.id, { onDelete: 'cascade' }),
+    filterId: integer('filter_id').references(() => equipment.id, { onDelete: 'set null' }),
+    filterName: text('filter_name'),
+    frameCount: integer('frame_count').notNull(),
+    exposureTime: real('exposure_time').notNull(),
+    gain: integer('gain'),
+    offset: integer('offset'),
+    binning: text('binning'),
+    sensorTemp: real('sensor_temp'),
+    date: timestamp('date'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const locations = pgTable('locations', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  latitude: real('latitude').notNull(),
+  longitude: real('longitude').notNull(),
+  altitude: real('altitude'),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 
 // Zod schemas for validation
 export const insertAstroImageSchema = createInsertSchema(astrophotographyImages);
 export const insertEquipmentSchema = createInsertSchema(equipment);
 export const insertImageEquipmentSchema = createInsertSchema(imageEquipment);
 export const insertPlateSolvingJobSchema = createInsertSchema(plateSolvingJobs);
+export const insertImageAcquisitionSchema = createInsertSchema(imageAcquisition);
+export const insertLocationSchema = createInsertSchema(locations);
 
 export type AstroImage = typeof astrophotographyImages.$inferSelect;
 export type InsertAstroImage = z.infer<typeof insertAstroImageSchema>;
@@ -100,3 +129,7 @@ export type ImageEquipment = typeof imageEquipment.$inferSelect;
 export type InsertImageEquipment = z.infer<typeof insertImageEquipmentSchema>;
 export type PlateSolvingJob = typeof plateSolvingJobs.$inferSelect;
 export type InsertPlateSolvingJob = z.infer<typeof insertPlateSolvingJobSchema>;
+export type ImageAcquisitionRow = typeof imageAcquisition.$inferSelect;
+export type InsertImageAcquisitionRow = z.infer<typeof insertImageAcquisitionSchema>;
+export type Location = typeof locations.$inferSelect;
+export type InsertLocation = z.infer<typeof insertLocationSchema>;

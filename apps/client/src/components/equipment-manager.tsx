@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Plus, X, Settings, Edit3, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -12,7 +15,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { Equipment } from "@shared/schema";
+import { EQUIPMENT_SPEC_FIELDS } from "@shared/schema";
+import type { Equipment, EquipmentType, SpecFieldDefinition } from "@shared/schema";
 
 interface EquipmentWithDetails extends Equipment {
   settings?: any;
@@ -24,23 +28,168 @@ interface EquipmentManagerProps {
   onClose?: () => void;
 }
 
+// Renders known specification fields for a given equipment type + custom key/value
+function EquipmentSpecFields({
+  equipmentType,
+  specifications,
+  onChange,
+  compact = false,
+}: {
+  equipmentType: string;
+  specifications: Record<string, any>;
+  onChange: (specs: Record<string, any>) => void;
+  compact?: boolean;
+}) {
+  const [customKey, setCustomKey] = useState("");
+  const [customValue, setCustomValue] = useState("");
+
+  const knownFields = EQUIPMENT_SPEC_FIELDS[equipmentType as EquipmentType] || [];
+  const knownKeys = new Set(knownFields.map(f => f.key));
+  const customEntries = Object.entries(specifications).filter(([k]) => !knownKeys.has(k));
+
+  const updateField = (key: string, value: unknown) => {
+    onChange({ ...specifications, [key]: value });
+  };
+
+  const removeField = (key: string) => {
+    const next = { ...specifications };
+    delete next[key];
+    onChange(next);
+  };
+
+  const addCustom = () => {
+    if (customKey && customValue) {
+      onChange({ ...specifications, [customKey]: customValue });
+      setCustomKey("");
+      setCustomValue("");
+    }
+  };
+
+  const inputSize = compact ? "h-8 text-xs" : "";
+  const labelSize = compact ? "text-xs" : "text-sm";
+
+  return (
+    <div className="space-y-3">
+      {knownFields.length > 0 && (
+        <div className="space-y-2">
+          {knownFields.map((field: SpecFieldDefinition) => (
+            <div key={field.key} className="space-y-1">
+              <Label className={`${labelSize} font-medium text-gray-300`}>
+                {field.label}{field.unit ? ` (${field.unit})` : ""}
+              </Label>
+              {field.type === "number" && (
+                <Input
+                  type="number"
+                  value={specifications[field.key] ?? ""}
+                  onChange={(e) => updateField(field.key, e.target.value ? Number(e.target.value) : undefined)}
+                  className={`bg-gray-800 border-gray-700 text-white ${inputSize}`}
+                />
+              )}
+              {field.type === "text" && (
+                <Input
+                  type="text"
+                  value={specifications[field.key] ?? ""}
+                  onChange={(e) => updateField(field.key, e.target.value || undefined)}
+                  className={`bg-gray-800 border-gray-700 text-white ${inputSize}`}
+                />
+              )}
+              {field.type === "select" && field.options && (
+                <Select
+                  value={specifications[field.key] || ""}
+                  onValueChange={(value) => updateField(field.key, value)}
+                >
+                  <SelectTrigger className={`w-full bg-gray-800 border-gray-600 text-white ${compact ? "h-8" : "h-10"}`}>
+                    <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                    {field.options.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {field.type === "boolean" && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={!!specifications[field.key]}
+                    onCheckedChange={(checked) => updateField(field.key, !!checked)}
+                    className="border-gray-600"
+                  />
+                  <span className={`${labelSize} text-gray-400`}>{specifications[field.key] ? "Yes" : "No"}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Custom key/value entries */}
+      <div className="space-y-2">
+        <Label className={`${labelSize} font-medium text-gray-300`}>
+          {knownFields.length > 0 ? "Additional Specifications" : "Specifications"}
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            value={customKey}
+            onChange={(e) => setCustomKey(e.target.value)}
+            placeholder="Name"
+            className={`flex-1 bg-gray-800 border-gray-700 text-white ${inputSize}`}
+          />
+          <Input
+            type="text"
+            value={customValue}
+            onChange={(e) => setCustomValue(e.target.value)}
+            placeholder="Value"
+            className={`flex-1 bg-gray-800 border-gray-700 text-white ${inputSize}`}
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={addCustom}
+            className={`bg-blue-600 hover:bg-blue-700 ${compact ? "h-8 text-xs" : ""}`}
+          >
+            Add
+          </Button>
+        </div>
+        {customEntries.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {customEntries.map(([k, v]) => (
+              <Badge
+                key={k}
+                variant="secondary"
+                className="text-xs cursor-pointer hover:bg-destructive/20"
+                onClick={() => removeField(k)}
+              >
+                {k}: {String(v)} <X className="h-3 w-3 ml-1 inline" />
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [isQuickAdding, setIsQuickAdding] = useState(false);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | null>(null);
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [notes, setNotes] = useState("");
-  
+
   // Quick add form state
   const [quickAddForm, setQuickAddForm] = useState({
     name: "",
     type: "",
     description: "",
-    specifications: {} as Record<string, string>,
+    specifications: {} as Record<string, any>,
   });
-  const [specKey, setSpecKey] = useState("");
-  const [specValue, setSpecValue] = useState("");
-  
+
+  // Settings key/value inputs
+  const [settingsKey, setSettingsKey] = useState("");
+  const [settingsValue, setSettingsValue] = useState("");
+
   const queryClient = useQueryClient();
 
   // Fetch current equipment for this image
@@ -53,7 +202,7 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
   });
 
   // Fetch all available equipment
-  const { data: allEquipment = [], isLoading: allEquipmentLoading } = useQuery<Equipment[]>({
+  const { data: allEquipment = [] } = useQuery<Equipment[]>({
     queryKey: ["/api/equipment"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/equipment");
@@ -64,42 +213,30 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
   // Add equipment to image
   const addEquipmentMutation = useMutation({
     mutationFn: async ({ equipmentId, settings, notes }: { equipmentId: number; settings?: any; notes?: string }) => {
-      console.log('addEquipmentMutation.mutationFn called with:', { equipmentId, settings, notes });
-      try {
-        const response = await apiRequest("POST", `/api/images/${imageId}/equipment`, {
-          equipmentId,
-          settings,
-          notes,
-        });
-        console.log('API response:', response);
-        return response.json();
-      } catch (error) {
-        console.error('API error:', error);
-        throw error;
-      }
+      const response = await apiRequest("POST", `/api/images/${imageId}/equipment`, {
+        equipmentId,
+        settings,
+        notes,
+      });
+      return response.json();
     },
-    onSuccess: (data) => {
-      console.log('addEquipmentMutation.onSuccess called with:', data);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/images", imageId, "equipment"] });
-      // Keep the form open for adding more equipment, but reset the form fields
+      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
       setSelectedEquipmentId(null);
       setSettings({});
       setNotes("");
-    },
-    onError: (error) => {
-      console.error('addEquipmentMutation.onError called with:', error);
     },
   });
 
   // Quick add equipment mutation
   const quickAddEquipmentMutation = useMutation({
-    mutationFn: async (data: { name: string; type: string; description: string; specifications: Record<string, string> }) => {
+    mutationFn: async (data: { name: string; type: string; description: string; specifications: Record<string, any> }) => {
       const response = await apiRequest("POST", "/api/equipment", data);
       return response.json();
     },
     onSuccess: (newEquipment) => {
       queryClient.invalidateQueries({ queryKey: ["/api/equipment"] });
-      // Automatically add the new equipment to the image
       addEquipmentMutation.mutate({
         equipmentId: newEquipment.id,
         settings: Object.keys(settings).length > 0 ? settings : undefined,
@@ -107,8 +244,6 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
       });
       setIsQuickAdding(false);
       setQuickAddForm({ name: "", type: "", description: "", specifications: {} });
-      setSpecKey("");
-      setSpecValue("");
     },
   });
 
@@ -120,6 +255,7 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/images", imageId, "equipment"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
     },
   });
 
@@ -138,35 +274,29 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
   });
 
   const handleAddEquipment = () => {
-    console.log('handleAddEquipment called');
-    console.log('selectedEquipmentId:', selectedEquipmentId);
-    console.log('settings:', settings);
-    console.log('notes:', notes);
-    
     if (selectedEquipmentId) {
-      console.log('Calling addEquipmentMutation with:', {
-        equipmentId: selectedEquipmentId,
-        settings: Object.keys(settings).length > 0 ? settings : undefined,
-        notes: notes.trim() || undefined,
-      });
-      
       addEquipmentMutation.mutate({
         equipmentId: selectedEquipmentId,
         settings: Object.keys(settings).length > 0 ? settings : undefined,
         notes: notes.trim() || undefined,
       });
-    } else {
-      console.log('No equipment selected');
     }
   };
 
   const handleQuickAddEquipment = () => {
     if (quickAddForm.name && quickAddForm.type) {
+      // Clean specifications: remove undefined/empty values
+      const cleanSpecs: Record<string, any> = {};
+      for (const [k, v] of Object.entries(quickAddForm.specifications)) {
+        if (v !== undefined && v !== "" && v !== null) {
+          cleanSpecs[k] = v;
+        }
+      }
       quickAddEquipmentMutation.mutate({
         name: quickAddForm.name,
         type: quickAddForm.type,
         description: quickAddForm.description,
-        specifications: quickAddForm.specifications,
+        specifications: cleanSpecs,
       });
     }
   };
@@ -178,22 +308,31 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
   const handleUpdateSettings = (equipmentId: number, newSettings: any, newNotes: string) => {
     updateEquipmentMutation.mutate({
       equipmentId,
-      settings: Object.keys(newSettings).length > 0 ? newSettings : undefined,
+      settings: Object.keys(newSettings).length > 0 ? newSettings : null,
       notes: newNotes.trim() || undefined,
     });
   };
 
+  const addSetting = () => {
+    if (settingsKey && settingsValue) {
+      setSettings((prev: Record<string, any>) => ({ ...prev, [settingsKey]: settingsValue }));
+      setSettingsKey("");
+      setSettingsValue("");
+    }
+  };
+
+  const removeSetting = (key: string) => {
+    setSettings((prev: Record<string, any>) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   // Filter out equipment that's already assigned
-  const availableEquipment = allEquipment.filter(eq => 
+  const availableEquipment = allEquipment.filter(eq =>
     !currentEquipment.some(ce => ce.id === eq.id)
   );
-
-  console.log('Equipment debugging:');
-  console.log('allEquipment:', allEquipment);
-  console.log('currentEquipment:', currentEquipment);
-  console.log('availableEquipment:', availableEquipment);
-  console.log('isAddingEquipment:', isAddingEquipment);
-  console.log('selectedEquipmentId:', selectedEquipmentId);
 
   return (
     <div className="space-y-4">
@@ -230,16 +369,7 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
       {/* Add Equipment */}
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-gray-300">Add Equipment</h4>
-        
-        {/* Debug info */}
-        <div className="text-xs text-gray-400 bg-black/20 p-2 rounded">
-          <div>All Equipment: {allEquipment.length}</div>
-          <div>Current Equipment: {currentEquipment.length}</div>
-          <div>Available Equipment: {availableEquipment.length}</div>
-          <div>Adding Equipment: {isAddingEquipment ? 'Yes' : 'No'}</div>
-          <div>Selected ID: {selectedEquipmentId || 'None'}</div>
-        </div>
-        
+
         {!isAddingEquipment && !isQuickAdding ? (
           <div className="flex gap-2">
             <Button
@@ -265,24 +395,24 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
         ) : isQuickAdding ? (
           <div className="space-y-3 p-3 bg-black/20 rounded-lg border border-gray-700">
             <h5 className="text-sm font-medium text-gray-300">Quick Add New Equipment</h5>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Name *</label>
-              <input
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-300">Name *</Label>
+              <Input
                 type="text"
                 value={quickAddForm.name}
                 onChange={(e) => setQuickAddForm(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g., William Optics RedCat 51"
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                className="bg-gray-800 border-gray-700 text-white"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Type *</label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-300">Type *</Label>
               <Select
                 value={quickAddForm.type}
-                onValueChange={(value) => setQuickAddForm(prev => ({ ...prev, type: value }))}
+                onValueChange={(value) => setQuickAddForm(prev => ({ ...prev, type: value, specifications: {} }))}
               >
                 <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white h-10">
                   <SelectValue placeholder="Choose type..." />
@@ -298,90 +428,74 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
               </Select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-300">Description (optional)</Label>
               <textarea
                 value={quickAddForm.description}
                 onChange={(e) => setQuickAddForm(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Brief description of the equipment..."
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white text-sm"
                 rows={2}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Specifications (optional)</label>
+            {quickAddForm.type && (
+              <EquipmentSpecFields
+                equipmentType={quickAddForm.type}
+                specifications={quickAddForm.specifications}
+                onChange={(specs) => setQuickAddForm(prev => ({ ...prev, specifications: specs }))}
+              />
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-300">Settings for this image (optional)</Label>
               <div className="flex gap-2 mb-2">
-                <input
+                <Input
                   type="text"
-                  value={specKey}
-                  onChange={(e) => setSpecKey(e.target.value)}
+                  value={settingsKey}
+                  onChange={(e) => setSettingsKey(e.target.value)}
                   placeholder="e.g., focalLength"
-                  className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                  className="flex-1 bg-gray-800 border-gray-700 text-white"
                 />
-                <input
+                <Input
                   type="text"
-                  value={specValue}
-                  onChange={(e) => setSpecValue(e.target.value)}
-                  placeholder="e.g., 250mm"
-                  className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                  value={settingsValue}
+                  onChange={(e) => setSettingsValue(e.target.value)}
+                  placeholder="e.g., 600mm"
+                  className="flex-1 bg-gray-800 border-gray-700 text-white"
                 />
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => {
-                    if (specKey && specValue) {
-                      setQuickAddForm(prev => ({
-                        ...prev,
-                        specifications: { ...prev.specifications, [specKey]: specValue }
-                      }));
-                      setSpecKey("");
-                      setSpecValue("");
-                    }
-                  }}
+                  onClick={addSetting}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   Add
                 </Button>
               </div>
-              {Object.keys(quickAddForm.specifications).length > 0 && (
+              {Object.keys(settings).length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(quickAddForm.specifications).map(([k, v]) => (
-                    <Badge key={k} variant="secondary" className="text-xs">
-                      {k}: {v}
+                  {Object.entries(settings).map(([k, v]) => (
+                    <Badge
+                      key={k}
+                      variant="secondary"
+                      className="text-xs cursor-pointer hover:bg-destructive/20"
+                      onClick={() => removeSetting(k)}
+                    >
+                      {k}: {String(v)} <X className="h-3 w-3 ml-1 inline" />
                     </Badge>
                   ))}
                 </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Settings for this image (optional)</label>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="e.g., focalLength: 600"
-                  value={settings.focalLength || ""}
-                  onChange={(e) => setSettings((prev: Record<string, any>) => ({ ...prev, focalLength: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
-                />
-                <input
-                  type="text"
-                  placeholder="e.g., aperture: f/6.3"
-                  value={settings.aperture || ""}
-                  onChange={(e) => setSettings((prev: Record<string, any>) => ({ ...prev, aperture: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Notes for this image (optional)</label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-300">Notes for this image (optional)</Label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any specific notes about how this equipment was used..."
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white text-sm"
                 rows={2}
               />
             </div>
@@ -401,9 +515,9 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
                 onClick={() => {
                   setIsQuickAdding(false);
                   setQuickAddForm({ name: "", type: "", description: "", specifications: {} });
-                  setSpecKey("");
-                  setSpecValue("");
                   setSettings({});
+                  setSettingsKey("");
+                  setSettingsValue("");
                   setNotes("");
                 }}
                 className="border-gray-600 text-gray-300 hover:bg-gray-800"
@@ -414,8 +528,8 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
           </div>
         ) : (
           <div className="space-y-3 p-3 bg-black/20 rounded-lg border border-gray-700">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Select Equipment</label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-300">Select Equipment</Label>
               <Select
                 value={selectedEquipmentId?.toString() || ""}
                 onValueChange={(value) => setSelectedEquipmentId(Number(value) || null)}
@@ -437,33 +551,55 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
 
             {selectedEquipmentId && (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Settings (optional)</label>
-                  <div className="space-y-2">
-                    <input
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-300">Settings (optional)</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Input
                       type="text"
-                      placeholder="e.g., focalLength: 600"
-                      value={settings.focalLength || ""}
-                      onChange={(e) => setSettings((prev: Record<string, any>) => ({ ...prev, focalLength: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                      value={settingsKey}
+                      onChange={(e) => setSettingsKey(e.target.value)}
+                      placeholder="e.g., focalLength"
+                      className="flex-1 bg-gray-800 border-gray-700 text-white"
                     />
-                    <input
+                    <Input
                       type="text"
-                      placeholder="e.g., aperture: f/6.3"
-                      value={settings.aperture || ""}
-                      onChange={(e) => setSettings((prev: Record<string, any>) => ({ ...prev, aperture: e.target.value }))}
-                      className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                      value={settingsValue}
+                      onChange={(e) => setSettingsValue(e.target.value)}
+                      placeholder="e.g., 600mm"
+                      className="flex-1 bg-gray-800 border-gray-700 text-white"
                     />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={addSetting}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add
+                    </Button>
                   </div>
+                  {Object.keys(settings).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(settings).map(([k, v]) => (
+                        <Badge
+                          key={k}
+                          variant="secondary"
+                          className="text-xs cursor-pointer hover:bg-destructive/20"
+                          onClick={() => removeSetting(k)}
+                        >
+                          {k}: {String(v)} <X className="h-3 w-3 ml-1 inline" />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Notes (optional)</label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-300">Notes (optional)</Label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Any specific notes about how this equipment was used..."
-                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white text-sm"
                     rows={2}
                   />
                 </div>
@@ -486,6 +622,8 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
                   setIsAddingEquipment(false);
                   setSelectedEquipmentId(null);
                   setSettings({});
+                  setSettingsKey("");
+                  setSettingsValue("");
                   setNotes("");
                 }}
                 className="border-gray-600 text-gray-300 hover:bg-gray-800"
@@ -510,6 +648,8 @@ function EquipmentCard({ equipment, onRemove, onUpdate }: EquipmentCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [settings, setSettings] = useState(equipment.settings || {});
   const [notes, setNotes] = useState(equipment.notes || "");
+  const [editSettingsKey, setEditSettingsKey] = useState("");
+  const [editSettingsValue, setEditSettingsValue] = useState("");
 
   const handleSave = () => {
     onUpdate(settings, notes);
@@ -519,8 +659,30 @@ function EquipmentCard({ equipment, onRemove, onUpdate }: EquipmentCardProps) {
   const handleCancel = () => {
     setSettings(equipment.settings || {});
     setNotes(equipment.notes || "");
+    setEditSettingsKey("");
+    setEditSettingsValue("");
     setIsEditing(false);
   };
+
+  const addEditSetting = () => {
+    if (editSettingsKey && editSettingsValue) {
+      setSettings((prev: Record<string, any>) => ({ ...prev, [editSettingsKey]: editSettingsValue }));
+      setEditSettingsKey("");
+      setEditSettingsValue("");
+    }
+  };
+
+  const removeEditSetting = (key: string) => {
+    setSettings((prev: Record<string, any>) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  // Show equipment specs in a compact format
+  const specs = equipment.specifications as Record<string, any> | null;
+  const specEntries = specs ? Object.entries(specs).filter(([, v]) => v !== undefined && v !== null && v !== "") : [];
 
   return (
     <div className="bg-black/30 rounded-lg p-3 border border-gray-700">
@@ -533,16 +695,30 @@ function EquipmentCard({ equipment, onRemove, onUpdate }: EquipmentCardProps) {
               {equipment.type}
             </Badge>
           </div>
-          
+
           {equipment.description && (
             <p className="text-xs text-gray-400 mt-1">{equipment.description}</p>
+          )}
+
+          {/* Equipment specifications (from the equipment catalog) */}
+          {specEntries.length > 0 && (
+            <div className="mt-2 text-xs text-gray-300">
+              <span className="font-medium text-gray-400">Specs:</span>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {specEntries.map(([key, value]) => (
+                  <span key={key} className="bg-gray-800/50 rounded px-1.5 py-0.5 text-gray-300">
+                    {key}: {String(value)}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
 
           {!isEditing ? (
             <>
               {equipment.settings && Object.keys(equipment.settings).length > 0 && (
                 <div className="mt-2 text-xs text-gray-300">
-                  <span className="font-medium">Settings:</span>
+                  <span className="font-medium">Image Settings:</span>
                   <div className="mt-1 space-y-1">
                     {Object.entries(equipment.settings).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
@@ -559,29 +735,53 @@ function EquipmentCard({ equipment, onRemove, onUpdate }: EquipmentCardProps) {
             </>
           ) : (
             <div className="mt-3 space-y-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Settings</label>
-                <input
-                  type="text"
-                  placeholder="focalLength"
-                  value={settings.focalLength || ""}
-                  onChange={(e) => setSettings((prev: Record<string, any>) => ({ ...prev, focalLength: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs"
-                />
-                <input
-                  type="text"
-                  placeholder="aperture"
-                  value={settings.aperture || ""}
-                  onChange={(e) => setSettings((prev: Record<string, any>) => ({ ...prev, aperture: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs mt-1"
-                />
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-gray-300">Image Settings</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    type="text"
+                    value={editSettingsKey}
+                    onChange={(e) => setEditSettingsKey(e.target.value)}
+                    placeholder="e.g., focalLength"
+                    className="flex-1 bg-gray-800 border-gray-700 text-white h-8 text-xs"
+                  />
+                  <Input
+                    type="text"
+                    value={editSettingsValue}
+                    onChange={(e) => setEditSettingsValue(e.target.value)}
+                    placeholder="e.g., 600mm"
+                    className="flex-1 bg-gray-800 border-gray-700 text-white h-8 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={addEditSetting}
+                    className="bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {Object.keys(settings).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(settings).map(([k, v]) => (
+                      <Badge
+                        key={k}
+                        variant="secondary"
+                        className="text-xs cursor-pointer hover:bg-destructive/20"
+                        onClick={() => removeEditSetting(k)}
+                      >
+                        {k}: {String(v)} <X className="h-3 w-3 ml-1 inline" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Notes</label>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-300">Notes</Label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-white text-xs"
                   rows={2}
                 />
               </div>
@@ -633,4 +833,4 @@ function EquipmentCard({ equipment, onRemove, onUpdate }: EquipmentCardProps) {
       </div>
     </div>
   );
-} 
+}

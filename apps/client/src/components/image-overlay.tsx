@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star, MapPin, Monitor, ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star, MapPin, Monitor, ChevronDown, ChevronRight, FileText, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { DeepZoomViewer } from "./deep-zoom-viewer";
 import { EquipmentManager } from "./equipment-manager";
+import { AcquisitionEditor } from "./acquisition-editor";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { AstroImage, Equipment } from "@shared/schema";
+import type { AstroImage, Equipment, Location, ImageAcquisitionRow } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ImageOverlayProps {
@@ -25,6 +27,217 @@ interface EquipmentWithDetails extends Equipment {
 interface ImageDetailsEditorModalProps {
   image: AstroImage;
   onClose: () => void;
+}
+
+interface ImageDetailsEditorModalProps {
+  image: AstroImage;
+  onClose: () => void;
+}
+
+function LocationEditorModal({ image, onClose }: ImageDetailsEditorModalProps) {
+  const [latitude, setLatitude] = useState(image.latitude?.toString() || "");
+  const [longitude, setLongitude] = useState(image.longitude?.toString() || "");
+  const [altitude, setAltitude] = useState(image.altitude?.toString() || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveAsNew, setSaveAsNew] = useState(false);
+  const [locationName, setLocationName] = useState("");
+  
+  const queryClient = useQueryClient();
+
+  const { data: savedLocations = [] } = useQuery<Location[]>({
+    queryKey: ["/api/locations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/locations");
+      return response.json();
+    }
+  });
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const lat = parseFloat(latitude);
+      const lon = parseFloat(longitude);
+      const alt = altitude ? parseFloat(altitude) : null;
+
+      if (isNaN(lat) || isNaN(lon)) {
+        throw new Error("Invalid coordinates");
+      }
+
+      // Update image location
+      await apiRequest("PATCH", `/api/images/${image.id}`, {
+        latitude: lat,
+        longitude: lon,
+        altitude: alt
+      });
+
+      // Save as new location if requested
+      if (saveAsNew && locationName.trim()) {
+        await apiRequest("POST", "/api/locations", {
+          name: locationName.trim(),
+          latitude: lat,
+          longitude: lon,
+          altitude: alt
+        });
+        await queryClient.invalidateQueries({ queryKey: ["/api/locations"] });
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/images", image.id] });
+      onClose();
+    } catch (error) {
+      console.error("Failed to update location:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSelectLocation = (loc: Location) => {
+    setLatitude(loc.latitude.toString());
+    setLongitude(loc.longitude.toString());
+    setAltitude(loc.altitude?.toString() || "");
+  };
+
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
+      <div className="bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl border border-gray-800 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-green-400" />
+            Edit Location
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        
+        <div className="space-y-6">
+          {/* Saved Locations */}
+          {savedLocations.length > 0 && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-300">Saved Locations</Label>
+              <div className="grid grid-cols-1 gap-2">
+                {savedLocations.map((loc) => (
+                  <button
+                    key={loc.id}
+                    onClick={() => handleSelectLocation(loc)}
+                    className="flex items-center justify-between p-3 bg-gray-800/50 border border-gray-700 rounded-md hover:bg-gray-800 transition-colors text-left"
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-white">{loc.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {loc.latitude.toFixed(4)}°, {loc.longitude.toFixed(4)}°
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="latitude" className="text-sm font-medium text-gray-300">
+                Latitude
+              </Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+                placeholder="e.g. 34.0522"
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude" className="text-sm font-medium text-gray-300">
+                Longitude
+              </Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+                placeholder="e.g. -118.2437"
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="altitude" className="text-sm font-medium text-gray-300">
+              Altitude (meters)
+            </Label>
+            <Input
+              id="altitude"
+              type="number"
+              value={altitude}
+              onChange={(e) => setAltitude(e.target.value)}
+              placeholder="e.g. 350"
+              className="bg-gray-800 border-gray-700 text-white"
+            />
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="saveAsNew"
+                checked={saveAsNew}
+                onCheckedChange={setSaveAsNew}
+              />
+              <Label htmlFor="saveAsNew" className="text-sm text-gray-300">Save as a reusable location</Label>
+            </div>
+
+            {saveAsNew && (
+              <div className="space-y-2">
+                <Label htmlFor="locationName" className="text-sm font-medium text-gray-300">
+                  Location Name
+                </Label>
+                <Input
+                  id="locationName"
+                  value={locationName}
+                  onChange={(e) => setLocationName(e.target.value)}
+                  placeholder="e.g. Backyard Observatory"
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="text-xs text-gray-500 bg-blue-900/20 p-3 rounded border border-blue-800/30 flex gap-2">
+            <Info className="h-4 w-4 text-blue-400 shrink-0" />
+            <p>
+              Updating coordinates here will also sync them back to the original asset in Immich.
+            </p>
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-800">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !latitude || !longitude}
+              className="bg-green-600 hover:bg-green-700 text-white min-w-[100px]"
+            >
+              {isSaving ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "Save Location"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ImageDetailsEditorModal({ image, onClose }: ImageDetailsEditorModalProps) {
@@ -238,6 +451,16 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
     queryKey: ["/api/images", currentImage.id, "equipment"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/images/${currentImage.id}/equipment`);
+      return response.json();
+    },
+    enabled: !!currentImage.id,
+  });
+
+  // Fetch acquisition entries for this image
+  const { data: acquisitions = [] } = useQuery<ImageAcquisitionRow[]>({
+    queryKey: ["/api/images", currentImage.id, "acquisitions"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/images/${currentImage.id}/acquisitions`);
       return response.json();
     },
     enabled: !!currentImage.id,
@@ -695,17 +918,35 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                 </div>
               </div>
               {!collapsedSections['technicalDetails'] && (
-                <div className="text-xs text-gray-300 space-y-1 font-mono">
-                  {currentImage.telescope && <div>Telescope: {currentImage.telescope}</div>}
-                  {currentImage.camera && <div>Camera: {currentImage.camera}</div>}
-                  {currentImage.mount && <div>Mount: {currentImage.mount}</div>}
-                  {currentImage.focalLength && <div>Focal Length: {currentImage.focalLength}mm</div>}
-                  {currentImage.aperture && <div>Aperture: {currentImage.aperture}</div>}
-                  {currentImage.exposureTime && <div>Exposure: {currentImage.exposureTime}</div>}
-                  {currentImage.iso && <div>ISO/Gain: {currentImage.iso}</div>}
-                  {currentImage.frameCount && <div>Frame Count: {currentImage.frameCount}</div>}
-                  {currentImage.totalIntegration && <div>Total Integration: {currentImage.totalIntegration}h</div>}
-                  {currentImage.filters && <div>Filters: {currentImage.filters}</div>}
+                <div className="text-xs text-gray-300 space-y-1">
+                  {/* Show acquisition entries if available */}
+                  {acquisitions.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="space-y-1 font-mono">
+                        {acquisitions.map((acq) => (
+                          <div key={acq.id}>
+                            {acq.filterName || "No filter"}: {acq.frameCount}x{acq.exposureTime}s
+                            {acq.gain != null && ` (gain ${acq.gain})`}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-gray-700 pt-1 font-mono">
+                        {currentImage.frameCount && <div>Total Frames: {currentImage.frameCount}</div>}
+                        {currentImage.totalIntegration && <div>Total Integration: {currentImage.totalIntegration}h</div>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="font-mono space-y-1">
+                      {currentImage.exposureTime && <div>Exposure: {currentImage.exposureTime}</div>}
+                      {currentImage.iso && <div>ISO/Gain: {currentImage.iso}</div>}
+                      {currentImage.frameCount && <div>Frame Count: {currentImage.frameCount}</div>}
+                      {currentImage.totalIntegration && <div>Total Integration: {currentImage.totalIntegration}h</div>}
+                      {currentImage.filters && <div>Filters: {currentImage.filters}</div>}
+                    </div>
+                  )}
+                  {/* Always show equipment-derived fields */}
+                  {currentImage.focalLength && <div className="font-mono">Focal Length: {currentImage.focalLength}mm</div>}
+                  {currentImage.aperture && <div className="font-mono">Aperture: {currentImage.aperture}</div>}
                 </div>
               )}
             </section>
@@ -974,50 +1215,20 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
         />
       )}
 
-      {/* Technical Details Editor Modal */}
+      {/* Acquisition Editor Modal */}
       {showTechnicalDetailsEditor && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
-          <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Edit Technical Details</h2>
-              <button
-                onClick={() => setShowTechnicalDetailsEditor(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="text-white">
-              <p>Technical Details Editor - Coming Soon</p>
-              <p className="text-sm text-gray-400 mt-2">
-                This will allow editing of telescope, camera, mount, focal length, aperture, exposure time, ISO/gain, frame count, total integration, and filters.
-              </p>
-            </div>
-          </div>
-        </div>
+        <AcquisitionEditor
+          imageId={currentImage.id}
+          onClose={() => setShowTechnicalDetailsEditor(false)}
+        />
       )}
 
       {/* Location Editor Modal */}
       {showLocationEditor && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80">
-          <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Edit Location</h2>
-              <button
-                onClick={() => setShowLocationEditor(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="text-white">
-              <p>Location Editor - Coming Soon</p>
-              <p className="text-sm text-gray-400 mt-2">
-                This will allow editing of latitude, longitude, and altitude coordinates.
-              </p>
-            </div>
-          </div>
-        </div>
+        <LocationEditorModal
+          image={currentImage}
+          onClose={() => setShowLocationEditor(false)}
+        />
       )}
 
       {/* Description Editor Modal */}

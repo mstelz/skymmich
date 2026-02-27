@@ -82,3 +82,30 @@ export const notifications = sqliteTable('notifications', {
     acknowledged: integer('acknowledged', { mode: 'boolean' }).default(false),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
+
+export const imageAcquisition = sqliteTable('image_acquisition', {
+    id: integer('id').primaryKey(),
+    imageId: integer('image_id').notNull(),
+    filterId: integer('filter_id'),
+    filterName: text('filter_name'),
+    frameCount: integer('frame_count').notNull(),
+    exposureTime: real('exposure_time').notNull(),
+    gain: integer('gain'),
+    offset: integer('offset'),
+    binning: text('binning'),
+    sensorTemp: real('sensor_temp'),
+    date: integer('date', { mode: 'timestamp' }),
+    notes: text('notes'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
+export const locations = sqliteTable('locations', {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull(),
+    latitude: real('latitude').notNull(),
+    longitude: real('longitude').notNull(),
+    altitude: real('altitude'),
+    description: text('description'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});

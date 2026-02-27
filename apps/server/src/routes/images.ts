@@ -5,7 +5,36 @@ import { storage } from '../services/storage';
 import { xmpSidecarService } from '../services/xmp-sidecar';
 import { configService } from '../services/config';
 
+import axios from 'axios';
+
 const router = Router();
+
+// Helper to update Immich asset metadata
+async function updateImmichAssetMetadata(immichId: string, metadata: { latitude?: number; longitude?: number }) {
+  try {
+    const config = await configService.getImmichConfig();
+    if (!config.host || !config.apiKey) {
+      console.warn('Immich config missing, skipping metadata sync');
+      return;
+    }
+
+    // Immich PUT /assets expects an array of ids and the changes
+    await axios.put(
+      `${config.host}/api/assets`,
+      {
+        ids: [immichId],
+        latitude: metadata.latitude,
+        longitude: metadata.longitude,
+      },
+      {
+        headers: { 'X-API-Key': config.apiKey },
+      }
+    );
+    console.log(`Synced metadata to Immich for asset ${immichId}`);
+  } catch (error: any) {
+    console.error(`Failed to sync metadata to Immich for asset ${immichId}:`, error.response?.data || error.message);
+  }
+}
 
 // Get all astrophotography images with optional filters
 router.get('/', async (req, res) => {
@@ -49,6 +78,14 @@ router.patch('/:id', async (req, res) => {
     const updatedImage = await storage.updateAstroImage(id, updates);
     if (!updatedImage) {
       return res.status(404).json({ message: 'Image not found' });
+    }
+
+    // Sync to Immich if coordinates were updated
+    if (updatedImage.immichId && (updates.latitude !== undefined || updates.longitude !== undefined)) {
+      await updateImmichAssetMetadata(updatedImage.immichId, {
+        latitude: updatedImage.latitude || undefined,
+        longitude: updatedImage.longitude || undefined,
+      });
     }
 
     res.json(updatedImage);
@@ -240,6 +277,84 @@ router.put('/:imageId/equipment/:equipmentId', async (req, res) => {
     res.json(imageEquipment);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update equipment settings' });
+  }
+});
+
+// --- Image Acquisition Routes ---
+
+// Get acquisition entries for an image
+router.get('/:id/acquisitions', async (req, res) => {
+  try {
+    const imageId = parseInt(req.params.id);
+    const acquisitions = await storage.getImageAcquisitions(imageId);
+    res.json(acquisitions);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch acquisition entries' });
+  }
+});
+
+// Add acquisition entry to an image
+router.post('/:id/acquisitions', async (req, res) => {
+  try {
+    const imageId = parseInt(req.params.id);
+    const { filterId, filterName, frameCount, exposureTime, gain, offset, binning, sensorTemp, date, notes } = req.body;
+
+    if (!frameCount || !exposureTime) {
+      return res.status(400).json({ message: 'frameCount and exposureTime are required' });
+    }
+
+    const acquisition = await storage.createImageAcquisition({
+      imageId,
+      filterId: filterId || null,
+      filterName: filterName || null,
+      frameCount,
+      exposureTime,
+      gain: gain ?? null,
+      offset: offset ?? null,
+      binning: binning || null,
+      sensorTemp: sensorTemp ?? null,
+      date: date ? new Date(date) : null,
+      notes: notes || null,
+    });
+    res.json(acquisition);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create acquisition entry' });
+  }
+});
+
+// Update an acquisition entry
+router.put('/:imageId/acquisitions/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { filterId, filterName, frameCount, exposureTime, gain, offset, binning, sensorTemp, date, notes } = req.body;
+
+    const acquisition = await storage.updateImageAcquisition(id, {
+      filterId, filterName, frameCount, exposureTime,
+      gain, offset, binning, sensorTemp,
+      date: date ? new Date(date) : null,
+      notes,
+    });
+
+    if (!acquisition) {
+      return res.status(404).json({ message: 'Acquisition entry not found' });
+    }
+    res.json(acquisition);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update acquisition entry' });
+  }
+});
+
+// Delete an acquisition entry
+router.delete('/:imageId/acquisitions/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const success = await storage.deleteImageAcquisition(id);
+    if (!success) {
+      return res.status(404).json({ message: 'Acquisition entry not found' });
+    }
+    res.json({ message: 'Acquisition entry deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete acquisition entry' });
   }
 });
 

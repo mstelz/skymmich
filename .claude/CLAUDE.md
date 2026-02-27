@@ -1,6 +1,6 @@
-# Astrorep Project
+# Skymmich Project
 
-This file provides context for working with the Astrorep project.
+This file provides context for working with the Skymmich project.
 
 ## Common Commands
 

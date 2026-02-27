@@ -7,10 +7,18 @@
   <WebUI>http://[IP]:[PORT:2284]/</WebUI>
   <Icon>https://raw.githubusercontent.com/mstelz/skymmich/main/assets/images/skymmich-transparent.png</Icon>
   <TemplateURL>https://raw.githubusercontent.com/mstelz/skymmich/main/docker/unraid-templates/skymmich.xml</TemplateURL>
+  <Support>https://github.com/mstelz/skymmich/issues</Support>
+  <Project>https://github.com/mstelz/skymmich</Project>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
-  <Date>2025-01-27</Date>
+  <Date>2026-02-26</Date>
   <Changes>
+    ### v0.4.1
+    - FEAT: Visual Image Renaming (custom display titles)
+    - FEAT: PUID/PGID support for proper volume permissions
+    - FIX: Standardized coordinate formats for accurate marker placement
+    - FIX: Resolved EACCES errors in date-organized sidecar directories
+    
     ### v0.4.0
     - FEAT: Interactive Sky Map with Aladin Lite v3 integration
     - FEAT: Plate-solved images automatically plotted on full-sky atlas

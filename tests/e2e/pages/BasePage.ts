@@ -7,6 +7,7 @@ export class BasePage {
     gallery: Locator;
     equipment: Locator;
     plateSolving: Locator;
+    skyMap: Locator;
     admin: Locator;
   };
   readonly syncButton: Locator;
@@ -18,6 +19,7 @@ export class BasePage {
       gallery: page.getByRole('link', { name: /gallery/i }),
       equipment: page.getByRole('link', { name: /equipment/i }),
       plateSolving: page.getByRole('link', { name: /plate solving/i }),
+      skyMap: page.getByRole('link', { name: /sky map/i }),
       admin: page.locator('header a[href="/admin"]'),
     };
     this.syncButton = page.getByRole('button', { name: /sync immich/i });
@@ -38,6 +40,7 @@ export class BasePage {
       gallery: '/',
       equipment: '/equipment',
       plateSolving: '/plate-solving',
+      skyMap: '/sky-map',
       admin: '/admin',
     };
 

@@ -33,21 +33,13 @@ async function initializeDatabase() {
       schema = sqliteSchema;
       db = sqliteDrizzle(sqlite, { schema });
       
-      // Check if tables exist and run migrations if needed
-      const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__drizzle_migrations'").all();
-      const hasUserTables = tables.length > 0;
-      
-      if (!hasUserTables) {
-        console.log('No tables found, running migrations...');
-        try {
-          migrate(db, { migrationsFolder: './tools/migrations/sqlite' });
-          console.log('Migrations completed successfully');
-        } catch (migrationError) {
-          console.error('Migration error:', migrationError);
-          throw migrationError;
-        }
-      } else {
-        console.log(`Found ${tables.length} existing tables, skipping migrations`);
+      // Run migrations (Drizzle tracks which have been applied and only runs new ones)
+      try {
+        migrate(db, { migrationsFolder: './tools/migrations/sqlite' });
+        console.log('Migrations completed successfully');
+      } catch (migrationError) {
+        console.error('Migration error:', migrationError);
+        throw migrationError;
       }
     } catch (error) {
       throw new Error(

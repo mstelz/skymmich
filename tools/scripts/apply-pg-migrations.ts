@@ -121,6 +121,37 @@ async function runMigrations() {
       );
     `;
 
+    await connection`
+      CREATE TABLE IF NOT EXISTS image_acquisition (
+        id SERIAL PRIMARY KEY,
+        image_id INTEGER NOT NULL REFERENCES astrophotography_images(id) ON DELETE CASCADE,
+        filter_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL,
+        filter_name TEXT,
+        frame_count INTEGER NOT NULL,
+        exposure_time REAL NOT NULL,
+        gain INTEGER,
+        "offset" INTEGER,
+        binning TEXT,
+        sensor_temp REAL,
+        date TIMESTAMP,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS locations (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        altitude REAL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
     console.log('Database tables created successfully');
     
   } catch (error) {
