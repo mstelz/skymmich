@@ -4,7 +4,7 @@ import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEqu
 
 class DbStorage {
   // Astrophotography images
-  async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean; constellation?: string }): Promise<AstroImage[]> {
+  async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean; constellation?: string; equipmentId?: number }): Promise<AstroImage[]> {
     const query = db.select().from(schema.astrophotographyImages);
 
     if (filters) {
@@ -19,13 +19,21 @@ class DbStorage {
       }
     }
 
-    const images = await query.execute();
+    let images = await query.execute();
 
     if (filters && filters.tags && filters.tags.length > 0) {
-        return images.filter((image: AstroImage) => {
-            const tags = image.tags;
-            return filters.tags?.some(tag => tags?.includes(tag));
-        });
+      images = images.filter((image: AstroImage) => {
+        const tags = image.tags;
+        return filters.tags?.some(tag => tags?.includes(tag));
+      });
+    }
+
+    // Filter by equipment (post-query via image_equipment join)
+    if (filters?.equipmentId) {
+      const imageEquipmentRows = await db.select().from(schema.imageEquipment)
+        .where(eq(schema.imageEquipment.equipmentId, filters.equipmentId)).execute();
+      const imageIds = new Set(imageEquipmentRows.map((r: any) => r.imageId));
+      images = images.filter((img: AstroImage) => imageIds.has(img.id));
     }
 
     return images;
@@ -357,11 +365,15 @@ class DbStorage {
         objectTypeCounts[type] = (objectTypeCounts[type] || 0) + 1;
       });
       
+      // Count unique targets (distinct non-empty image titles)
+      const uniqueTitles = new Set(images.map(img => img.title).filter(Boolean));
+
       return {
         totalImages: images.length,
-        plateSolvedImages,
+        plateSolved: plateSolvedImages,
+        totalHours: Math.round(totalIntegrationHours * 100) / 100,
+        uniqueTargets: uniqueTitles.size,
         totalEquipment: equipment.length,
-        totalIntegrationHours: Math.round(totalIntegrationHours * 100) / 100,
         objectTypeCounts,
         plateSolvingStats: {
           total: plateSolvingJobs.length,

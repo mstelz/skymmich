@@ -25,6 +25,7 @@ async function runMigrations() {
         filename TEXT NOT NULL,
         thumbnail_url TEXT,
         full_url TEXT,
+        original_path TEXT,
         capture_date TIMESTAMP,
         focal_length REAL,
         aperture TEXT,
@@ -125,7 +126,35 @@ async function runMigrations() {
       );
     `;
 
-    console.log('Database tables created successfully');
+    await connection`
+      CREATE TABLE IF NOT EXISTS image_acquisition (
+        id SERIAL PRIMARY KEY,
+        image_id INTEGER NOT NULL REFERENCES astrophotography_images(id) ON DELETE CASCADE,
+        filter_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL,
+        filter_name TEXT,
+        frame_count INTEGER NOT NULL,
+        exposure_time REAL NOT NULL,
+        gain INTEGER,
+        "offset" INTEGER,
+        binning TEXT,
+        sensor_temp REAL,
+        date TIMESTAMP,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    // Migration: Add original_path to astrophotography_images if it doesn't exist
+    try {
+      await connection`
+        ALTER TABLE astrophotography_images ADD COLUMN IF NOT EXISTS original_path TEXT;
+      `;
+      console.log('Migration: Checked/Added original_path column to astrophotography_images');
+    } catch (err) {
+      console.error('Migration failed for original_path column:', err.message);
+    }
+
+    console.log('Database tables and migrations completed successfully');
     
   } catch (error) {
     console.error('Migration failed:', error);

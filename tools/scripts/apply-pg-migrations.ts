@@ -34,6 +34,7 @@ async function runMigrations() {
         filename TEXT NOT NULL,
         thumbnail_url TEXT,
         full_url TEXT,
+        original_path TEXT,
         capture_date TIMESTAMP,
         focal_length REAL,
         aperture TEXT,
