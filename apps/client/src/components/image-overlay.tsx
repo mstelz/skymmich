@@ -1196,7 +1196,13 @@ export function ImageOverlay({ image, onClose, onFilterByEquipment }: ImageOverl
                         setImmichSyncMessage({ type: 'error', text: data.message || 'Sync failed' });
                       }
                     } catch (error: any) {
-                      setImmichSyncMessage({ type: 'error', text: 'Failed to sync metadata' });
+                      let errorText = 'Failed to sync metadata';
+                      try {
+                        const body = error.message?.replace(/^\d+:\s*/, '');
+                        const parsed = JSON.parse(body);
+                        if (parsed.message) errorText = parsed.message;
+                      } catch { /* use default */ }
+                      setImmichSyncMessage({ type: 'error', text: errorText });
                     } finally {
                       setImmichSyncing(false);
                     }

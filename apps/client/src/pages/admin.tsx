@@ -200,6 +200,7 @@ export default function AdminPage() {
       if (response.ok) {
         setNotifications([]);
         setShowAllNotifications(false);
+        window.dispatchEvent(new Event('notifications-updated'));
         toast({
           title: "Success",
           description: "All notifications acknowledged",
@@ -222,6 +223,7 @@ export default function AdminPage() {
       });
       if (response.ok) {
         setNotifications(prev => prev.filter(n => n.id !== id));
+        window.dispatchEvent(new Event('notifications-updated'));
         toast({
           title: "Success",
           description: "Notification acknowledged",

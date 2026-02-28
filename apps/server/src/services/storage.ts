@@ -67,6 +67,10 @@ class DbStorage {
   }
 
   async deleteAstroImage(id: number): Promise<boolean> {
+    // Clean up related data (explicit for SQLite which lacks cascade, safe no-op if already cascaded in PG)
+    await db.delete(schema.plateSolvingJobs).where(eq(schema.plateSolvingJobs.imageId, id)).execute();
+    await db.delete(schema.imageEquipment).where(eq(schema.imageEquipment.imageId, id)).execute();
+    await db.delete(schema.imageAcquisition).where(eq(schema.imageAcquisition.imageId, id)).execute();
     await db.delete(schema.astrophotographyImages).where(eq(schema.astrophotographyImages.id, id)).execute();
     return true;
   }

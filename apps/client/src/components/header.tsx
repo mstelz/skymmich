@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/use-socket";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 interface Notification {
   id: number;
@@ -42,27 +43,31 @@ export function Header() {
     loadNotifications();
   }, []);
 
+  const refreshNotifications = () => {
+    fetch('/api/notifications')
+      .then(response => response.json())
+      .then(data => setNotifications(data))
+      .catch(error => console.error('Failed to refresh notifications:', error));
+  };
+
   // Listen for real-time notification updates via Socket.io
   useEffect(() => {
     if (!socket) return;
 
-    const handleNotificationUpdate = () => {
-      // Refresh notifications when we receive an update
-      fetch('/api/notifications')
-        .then(response => response.json())
-        .then(data => setNotifications(data))
-        .catch(error => console.error('Failed to refresh notifications:', error));
-    };
-
-    // Listen for various events that might affect notifications
-    socket.on('plate-solving-update', handleNotificationUpdate);
-    socket.on('immich-sync-complete', handleNotificationUpdate);
+    socket.on('plate-solving-update', refreshNotifications);
+    socket.on('immich-sync-complete', refreshNotifications);
 
     return () => {
-      socket.off('plate-solving-update', handleNotificationUpdate);
-      socket.off('immich-sync-complete', handleNotificationUpdate);
+      socket.off('plate-solving-update', refreshNotifications);
+      socket.off('immich-sync-complete', refreshNotifications);
     };
   }, [socket]);
+
+  // Listen for notification changes from other components (e.g. admin page)
+  useEffect(() => {
+    window.addEventListener('notifications-updated', refreshNotifications);
+    return () => window.removeEventListener('notifications-updated', refreshNotifications);
+  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -73,7 +78,11 @@ export function Header() {
       });
 
       if (response.ok) {
-        toast({ title: 'Sync completed', description: 'Successfully synced images from Immich' });
+        const data = await response.json().catch(() => ({}));
+        toast({ title: 'Sync completed', description: data.message || 'Successfully synced images from Immich' });
+        // Refresh gallery and stats so new images appear without a page reload
+        queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       } else {
         const errorData = await response.json().catch(() => ({}));
         toast({
