@@ -131,6 +131,12 @@ export function Header() {
             >
               Sky Map
             </Link>
+            <Link
+              href="/locations"
+              className={`transition-colors ${isActive('/locations') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Locations
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-3">

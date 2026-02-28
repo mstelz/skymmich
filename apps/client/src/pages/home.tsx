@@ -20,6 +20,8 @@ export default function Home() {
     plateSolved: undefined as boolean | undefined,
     constellation: "",
     search: "",
+    equipmentId: undefined as number | undefined,
+    equipmentName: undefined as string | undefined,
   });
   const [visibleCount, setVisibleCount] = useState(12); // Show 12 images initially
 
@@ -27,7 +29,7 @@ export default function Home() {
   type Tag = { tag: string; count: number };
 
   const { data: images = [], isLoading: imagesLoading, refetch: refetchImages } = useQuery<AstroImage[]>({
-    queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved, filters.constellation],
+    queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved, filters.constellation, filters.equipmentId],
     enabled: true,
   });
 
@@ -80,6 +82,17 @@ export default function Home() {
     if (filters.search && !image.title.toLowerCase().includes(filters.search.toLowerCase())) {
       return false;
     }
+    // Advanced filters (client-side)
+    const f = filters as any;
+    if (f.dateFrom && image.captureDate) {
+      if (new Date(image.captureDate) < new Date(f.dateFrom)) return false;
+    }
+    if (f.dateTo && image.captureDate) {
+      if (new Date(image.captureDate) > new Date(f.dateTo + "T23:59:59")) return false;
+    }
+    if (f.minIntegration !== undefined && (image.totalIntegration || 0) < f.minIntegration) {
+      return false;
+    }
     return true;
   });
 
@@ -112,10 +125,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden w-full">
       <Header />
-      <SearchFilters 
+      <SearchFilters
         filters={filters}
         onFiltersChange={handleFiltersChange}
         stats={stats}
+        totalCount={images.length}
+        filteredCount={filteredImages.length}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full overflow-x-hidden">
@@ -156,6 +171,10 @@ export default function Home() {
         <ImageOverlay
           image={selectedImage}
           onClose={handleCloseOverlay}
+          onFilterByEquipment={(equipmentId, equipmentName) => {
+            setFilters(prev => ({ ...prev, equipmentId, equipmentName }));
+            setSelectedImage(null);
+          }}
         />
       )}
     </div>

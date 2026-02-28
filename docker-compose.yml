@@ -13,10 +13,13 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://skymmich:${POSTGRES_PASSWORD}@skymmich-db:5432/skymmich
       - XMP_SIDECAR_PATH=/app/sidecars
+      - IMMICH_MAPPING_PATH=/usr/src/app/upload
+      - LOCAL_MAPPING_PATH=/immich-upload
     volumes:
       - skymmich-config:/app/config
       - skymmich-logs:/app/logs
       - skymmich-sidecars:/app/sidecars
+      - skymmich_immich-upload:/immich-upload
     depends_on:
       skymmich-db:
         condition: service_healthy
@@ -63,3 +66,5 @@ volumes:
     driver: local
   skymmich-sidecars:
     driver: local
+  skymmich_immich-upload:
+    external: true

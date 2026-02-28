@@ -85,6 +85,8 @@ temp/
 
 # Docker
 docker-compose.override.yml
+docker-compose.immich.yml
+.env.immich
 .docker/
 
 # Skymmich specific

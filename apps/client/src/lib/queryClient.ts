@@ -29,8 +29,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const [url, objectType, tags, plateSolved, constellation] = queryKey as [string, string, string[], boolean | undefined, string];
-    
+    const [url, objectType, tags, plateSolved, constellation, equipmentId] = queryKey as [string, string, string[], boolean | undefined, string, number | undefined];
+
     // Build query parameters
     const params = new URLSearchParams();
     if (objectType) params.append('objectType', objectType);
@@ -39,6 +39,7 @@ export const getQueryFn: <T>(options: {
     }
     if (plateSolved !== undefined) params.append('plateSolved', plateSolved.toString());
     if (constellation) params.append('constellation', constellation);
+    if (equipmentId) params.append('equipmentId', equipmentId.toString());
     
     const fullUrl = params.toString() ? `${url}?${params.toString()}` : url;
     

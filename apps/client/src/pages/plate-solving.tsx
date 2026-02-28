@@ -7,16 +7,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Crosshair, 
-  Upload, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  Crosshair,
+  Upload,
+  CheckCircle,
+  XCircle,
+  Clock,
   Search,
   Loader,
   AlertCircle,
-  Info
+  Info,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Header } from "@/components/header";
 import type { AstroImage, PlateSolvingJob } from "@shared/schema";
@@ -33,6 +35,7 @@ export default function PlateSolvingPage() {
   const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(true);
+  const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch images
@@ -365,7 +368,7 @@ export default function PlateSolvingPage() {
                         </Badge>
                       )}
                       {job && (
-                        <Badge 
+                        <Badge
                           variant={
                             job.status === "success" ? "default" :
                             job.status === "failed" ? "destructive" :
@@ -381,12 +384,66 @@ export default function PlateSolvingPage() {
                         </Badge>
                       )}
                     </div>
-                    
+
                     {/* Selection indicator - always visible when selected */}
                     {isSelected && (
                       <div className="absolute inset-0 bg-primary/20 border-2 border-primary pointer-events-none" />
                     )}
                   </div>
+
+                  {/* Result details toggle */}
+                  {job && (job.status === "success" || job.status === "failed") && (
+                    <div className="border-t border-border">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedJobId(expandedJobId === job.id ? null : job.id);
+                        }}
+                        className="w-full flex items-center justify-center gap-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {expandedJobId === job.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        Details
+                      </button>
+                      {expandedJobId === job.id && (
+                        <div className="px-2 pb-2 text-xs space-y-1" onClick={(e) => e.stopPropagation()}>
+                          {job.status === "failed" && (
+                            <div className="text-red-400 bg-red-900/20 rounded p-1.5">
+                              {(job.result as any)?.error || "Unknown error"}
+                            </div>
+                          )}
+                          {job.status === "success" && (
+                            <div className="text-muted-foreground space-y-0.5 font-mono">
+                              {(job.result as any)?.ra !== undefined && (
+                                <div>RA: {Number((job.result as any).ra).toFixed(4)}</div>
+                              )}
+                              {(job.result as any)?.dec !== undefined && (
+                                <div>Dec: {Number((job.result as any).dec).toFixed(4)}</div>
+                              )}
+                              {(job.result as any)?.pixscale && (
+                                <div>Scale: {Number((job.result as any).pixscale).toFixed(2)}"/px</div>
+                              )}
+                              {(job.result as any)?.radius && (
+                                <div>Radius: {Number((job.result as any).radius).toFixed(2)}&deg;</div>
+                              )}
+                              {(job.result as any)?.orientation !== undefined && (
+                                <div>Orientation: {Number((job.result as any).orientation).toFixed(1)}&deg;</div>
+                              )}
+                            </div>
+                          )}
+                          {job.submittedAt && (
+                            <div className="text-muted-foreground">
+                              Submitted: {new Date(job.submittedAt).toLocaleString()}
+                            </div>
+                          )}
+                          {job.completedAt && (
+                            <div className="text-muted-foreground">
+                              Completed: {new Date(job.completedAt).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

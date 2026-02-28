@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star, MapPin, Monitor, ChevronDown, ChevronRight, FileText, Info } from "lucide-react";
+import { X, Eye, Loader, Crosshair, Telescope, Camera, Settings, Edit3, Maximize2, Minimize2, Star, MapPin, Monitor, ChevronDown, ChevronRight, FileText, Info, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,10 +13,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { AstroImage, Equipment, Location, ImageAcquisitionRow } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { MapPicker } from "./map-picker";
 
 interface ImageOverlayProps {
   image: AstroImage;
   onClose: () => void;
+  onFilterByEquipment?: (equipmentId: number, equipmentName: string) => void;
 }
 
 interface EquipmentWithDetails extends Equipment {
@@ -134,6 +136,20 @@ function LocationEditorModal({ image, onClose }: ImageDetailsEditorModalProps) {
               </div>
             </div>
           )}
+
+          {/* Map Picker */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-300">Pick on Map</Label>
+            <MapPicker
+              latitude={latitude ? parseFloat(latitude) : null}
+              longitude={longitude ? parseFloat(longitude) : null}
+              onChange={(lat, lng) => {
+                setLatitude(lat.toFixed(6));
+                setLongitude(lng.toFixed(6));
+              }}
+              height="200px"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -406,7 +422,7 @@ function DescriptionEditorModal({ image, onClose }: DescriptionEditorModalProps)
   );
 }
 
-export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
+export function ImageOverlay({ image, onClose, onFilterByEquipment }: ImageOverlayProps) {
   const [showAnnotations, setShowAnnotations] = useState(false);
   const [showEquipmentManager, setShowEquipmentManager] = useState(false);
   const [showImageDetailsEditor, setShowImageDetailsEditor] = useState(false);
@@ -415,6 +431,8 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
   const [showDescriptionEditor, setShowDescriptionEditor] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [immichSyncing, setImmichSyncing] = useState(false);
+  const [immichSyncMessage, setImmichSyncMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const isMobile = useIsMobile();
 
   // Fetch the latest image data to ensure we have the most up-to-date information
@@ -600,7 +618,16 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                         <div key={item.id} className="bg-muted/20 rounded-lg p-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h5 className="text-sm font-medium text-foreground">{item.name}</h5>
+                              <h5
+                                className={`text-sm font-medium text-foreground ${onFilterByEquipment ? "cursor-pointer hover:text-primary underline-offset-2 hover:underline" : ""}`}
+                                onClick={() => {
+                                  if (onFilterByEquipment) {
+                                    onFilterByEquipment(item.id, item.name);
+                                    onClose();
+                                  }
+                                }}
+                                title={onFilterByEquipment ? `Filter gallery by ${item.name}` : undefined}
+                              >{item.name}</h5>
                               {item.description && (
                                 <p className="text-xs text-gray-500 mt-1">{item.description}</p>
                               )}
@@ -1147,6 +1174,47 @@ export function ImageOverlay({ image, onClose }: ImageOverlayProps) {
                   </div>
                 )}
               </section>
+            )}
+
+            {/* Sync to Immich Button */}
+            {currentImage.immichId && (
+              <div className="mt-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full bg-black/30 border-black/40 text-gray-300 hover:text-white hover:bg-black/50"
+                  disabled={immichSyncing}
+                  onClick={async () => {
+                    setImmichSyncing(true);
+                    setImmichSyncMessage(null);
+                    try {
+                      const response = await apiRequest("POST", `/api/immich/sync-metadata/${currentImage.id}`);
+                      const data = await response.json();
+                      if (data.success) {
+                        setImmichSyncMessage({ type: 'success', text: 'Metadata synced to Immich' });
+                      } else {
+                        setImmichSyncMessage({ type: 'error', text: data.message || 'Sync failed' });
+                      }
+                    } catch (error: any) {
+                      setImmichSyncMessage({ type: 'error', text: 'Failed to sync metadata' });
+                    } finally {
+                      setImmichSyncing(false);
+                    }
+                  }}
+                >
+                  {immichSyncing ? (
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-2 h-4 w-4" />
+                  )}
+                  Sync to Immich
+                </Button>
+                {immichSyncMessage && (
+                  <p className={`text-xs mt-1 ${immichSyncMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                    {immichSyncMessage.text}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </aside>
