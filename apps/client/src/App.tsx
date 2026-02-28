@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import AdminPage from "./pages/admin";
 import PlateSolvingPage from "./pages/plate-solving";
 import SkyMapPage from "./pages/sky-map";
+import LocationsPage from "./pages/locations";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/equipment" component={EquipmentCatalog} />
       <Route path="/plate-solving" component={PlateSolvingPage} />
       <Route path="/sky-map" component={SkyMapPage} />
+      <Route path="/locations" component={LocationsPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
