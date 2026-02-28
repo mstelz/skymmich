@@ -129,15 +129,15 @@ class ImmichSyncService {
   async syncImageMetadata(imageId: number): Promise<{ success: boolean; error?: string }> {
     const config = await configService.getImmichConfig();
     if (!config.host || !config.apiKey) {
-      return { success: false, error: 'Immich not configured' };
+      return { success: false, error: 'Immich is not configured. Please set the host URL and API key in Admin Settings.' };
     }
     if (!config.metadataSyncEnabled) {
-      return { success: false, error: 'Metadata sync is disabled' };
+      return { success: false, error: 'Metadata sync is disabled. Enable it in Admin Settings under "Metadata Sync".' };
     }
 
     const image = await storage.getAstroImage(imageId);
     if (!image || !image.immichId) {
-      return { success: false, error: 'Image not found or not linked to Immich' };
+      return { success: false, error: 'Image not found or not linked to Immich. Try syncing from Immich first.' };
     }
 
     try {
