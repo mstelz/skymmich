@@ -3,8 +3,9 @@
 # All sensitive configuration is provided via environment variables at runtime
 FROM node:24-alpine AS builder
 
-# Upgrade npm to fix tar (CVE-2026-26960) and minimatch (CVE-2026-26996)
-RUN npm install -g npm@11.10.1
+# Upgrade npm and patch its bundled minimatch to fix known CVEs
+RUN npm install -g npm@11.11.0 && \
+    npm install --prefix /usr/local/lib/node_modules/npm minimatch@10.2.4
 
 # Set working directory
 WORKDIR /build
@@ -32,8 +33,9 @@ RUN npm run build:docker
 # Production stage
 FROM node:24-alpine AS runtime
 
-# Upgrade npm to fix tar (CVE-2026-26960) and minimatch (CVE-2026-26996)
-RUN npm install -g npm@11.10.1
+# Upgrade npm and patch its bundled minimatch to fix known CVEs
+RUN npm install -g npm@11.11.0 && \
+    npm install --prefix /usr/local/lib/node_modules/npm minimatch@10.2.4
 
 # Install curl for health checks, su-exec for privilege dropping, and shadow for user management
 # hadolint ignore=DL3018
