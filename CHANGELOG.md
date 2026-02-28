@@ -5,22 +5,32 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - 2026-02-27
+## [0.5.0] - 2026-02-28
 
 ### Added
-- **Type-Specific Equipment Fields**: Equipment types now have known specification fields (e.g., focal length and aperture for telescopes, sensor type and pixel size for cameras) with the ability to add custom fields.
+- **Equipment Catalog & Management**: Full equipment system with type-specific specification fields (focal length/aperture for telescopes, sensor type/pixel size for cameras, etc.) and custom field support.
 - **Per-Filter Acquisition Tracking**: New acquisition editor for recording sub-exposure details per filter, including frame count, exposure time, gain/ISO, binning, sensor temp, and date.
 - **Auto-Computed Image Summaries**: Total integration time, frame count, and filter lists are automatically computed from acquisition entries and linked equipment.
-- **Locations API**: New endpoint for managing imaging locations.
+- **Location Management**: Interactive map picker for managing imaging locations.
+- **Advanced Search Filters**: New search and filtering capabilities in the UI.
 
 ### Changed
+- **Immich Sync**: Replaced multi-endpoint fallback sync with paginated `/api/search/metadata` for reliable full-library sync across all Immich versions.
+- **Tag Filtering**: Extracted shared tag filtering logic into a reusable module; plate solving tags are now filtered consistently across sync, XMP sidecars, and the tags API.
 - **Equipment Manager**: Replaced generic key/value specs with structured fields per equipment type, plus custom field support.
 - **Technical Details**: Replaced the manual technical details editor with the acquisition editor for structured per-filter data entry.
-- **Database Migrations**: Migrations now always run on startup, allowing new tables to be added to existing databases automatically.
+- **Database Schema**: Updated to support locations, acquisitions, and enhanced metadata; migrations run automatically on startup.
+- **Themed UI Components**: Replaced native select elements with themed Shadcn components.
 
 ### Fixed
+- **Immich Sync Pagination**: Library sync no longer silently caps at 5000 assets; properly paginates through all results.
+- **Immich Non-Album Sync**: Resolved sync issues when not using album-based sync.
 - **Equipment Settings Removal**: Fixed a bug where removing image-specific equipment settings would not persist after reload.
 - **Acquisition Save Errors**: Added visible error messages when saving acquisition entries fails.
+
+### Security
+- **Rollup Dependency**: Overrode Rollup to v4.59.0 to address security vulnerabilities.
+- **Minimatch ReDoS**: Overrode minimatch to >=10.2.3 to fix ReDoS vulnerability from combinatorial backtracking.
 
 ## [0.4.1] - 2026-02-26
 
