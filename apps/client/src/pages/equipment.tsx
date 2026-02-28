@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -11,7 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Header } from "@/components/header";
-import { Edit3, Trash2, X, Check } from "lucide-react";
+import { EquipmentSpecFields } from "@/components/equipment-spec-fields";
+import { Edit3, Trash2, X } from "lucide-react";
 import type { Equipment } from "@shared/schema";
 import type { ReactNode } from "react";
 
@@ -104,8 +104,6 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
     description: equipment.description || "",
     specifications: equipment.specifications as Record<string, string> || {},
   });
-  const [specKey, setSpecKey] = useState("");
-  const [specValue, setSpecValue] = useState("");
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
@@ -152,7 +150,7 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
             <label className="block text-sm font-medium mb-2">Type *</label>
             <Select
               value={formData.type}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, type: value, specifications: {} }))}
             >
               <SelectTrigger className="w-full bg-background border-input text-foreground h-10">
                 <SelectValue placeholder="Choose type..." />
@@ -179,62 +177,13 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Specifications</label>
-            <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <div className="flex gap-3">
-                <input 
-                  value={specKey} 
-                  onChange={e => setSpecKey(e.target.value)} 
-                  placeholder="e.g., focalLength" 
-                  className="input flex-1" 
-                />
-                <input 
-                  value={specValue} 
-                  onChange={e => setSpecValue(e.target.value)} 
-                  placeholder="e.g., 250mm" 
-                  className="input flex-1" 
-                />
-                <Button 
-                  type="button" 
-                  onClick={() => {
-                    if (specKey && specValue) {
-                      setFormData(prev => ({
-                        ...prev,
-                        specifications: { ...prev.specifications, [specKey]: specValue }
-                      }));
-                      setSpecKey("");
-                      setSpecValue("");
-                    }
-                  }}
-                  className="px-4"
-                  disabled={!specKey || !specValue}
-                >
-                  Add
-                </Button>
-              </div>
-              
-              {Object.keys(formData.specifications).length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                  {Object.entries(formData.specifications).map(([k, v]) => (
-                    <Badge key={k} variant="secondary" className="text-xs">
-                      {k}: {v}
-                      <button
-                        onClick={() => {
-                          const newSpecs = { ...formData.specifications };
-                          delete newSpecs[k];
-                          setFormData(prev => ({ ...prev, specifications: newSpecs }));
-                        }}
-                        className="ml-1 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {formData.type && (
+            <EquipmentSpecFields
+              equipmentType={formData.type}
+              specifications={formData.specifications}
+              onChange={(specs) => setFormData(prev => ({ ...prev, specifications: specs }))}
+            />
+          )}
 
           <div className="flex gap-2">
             <Button
@@ -294,8 +243,6 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [specs, setSpecs] = useState<{ [key: string]: string }>({});
-  const [specKey, setSpecKey] = useState("");
-  const [specValue, setSpecValue] = useState("");
   const [description, setDescription] = useState("");
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -342,9 +289,9 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                 Equipment Type *
               </label>
-              <Select 
-                value={type} 
-                onValueChange={(value) => setType(value)}
+              <Select
+                value={type}
+                onValueChange={(value) => { setType(value); setSpecs({}); }}
               >
                 <SelectTrigger className="w-full bg-background border-input text-foreground h-10">
                   <SelectValue placeholder="Select equipment type..." />
@@ -379,62 +326,15 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Specifications */}
-        <div className="mt-6">
-          <label className="block text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
-            Specifications
-          </label>
-          <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <div className="flex gap-3">
-              <input 
-                value={specKey} 
-                onChange={e => setSpecKey(e.target.value)} 
-                placeholder="e.g., focalLength" 
-                className="input flex-1" 
-              />
-              <input 
-                value={specValue} 
-                onChange={e => setSpecValue(e.target.value)} 
-                placeholder="e.g., 250mm" 
-                className="input flex-1" 
-              />
-              <Button 
-                type="button" 
-                onClick={() => {
-                  if (specKey && specValue) {
-                    setSpecs(prev => ({ ...prev, [specKey]: specValue }));
-                    setSpecKey("");
-                    setSpecValue("");
-                  }
-                }}
-                className="px-4"
-                disabled={!specKey || !specValue}
-              >
-                Add
-              </Button>
-            </div>
-            
-            {Object.keys(specs).length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                {Object.entries(specs).map(([k, v]) => (
-                  <Badge key={k} variant="secondary" className="text-xs">
-                    {k}: {v}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newSpecs = { ...specs };
-                        delete newSpecs[k];
-                        setSpecs(newSpecs);
-                      }}
-                      className="ml-1 hover:text-red-500 transition-colors"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
+        {type && (
+          <div className="mt-6">
+            <EquipmentSpecFields
+              equipmentType={type}
+              specifications={specs}
+              onChange={setSpecs}
+            />
           </div>
-        </div>
+        )}
 
         {/* Form Actions */}
         <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
