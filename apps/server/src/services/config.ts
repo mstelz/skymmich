@@ -8,6 +8,12 @@ export interface AppConfig {
     syncFrequency: string;
     syncByAlbum: boolean;
     selectedAlbumIds: string[];
+    metadataSyncEnabled: boolean;
+    syncDescription: boolean;
+    syncCoordinates: boolean;
+    syncTags: boolean;
+    immichMapping: string; // The path Immich uses internally (e.g., /usr/src/app/upload)
+    localMapping: string;  // The path where that same volume is mounted in Skymmich (e.g., /immich-upload)
   };
   astrometry: {
     apiKey: string;
@@ -51,6 +57,12 @@ class ConfigService {
         syncFrequency: adminSettings.immich?.syncFrequency || defaultConfig.immich.syncFrequency,
         syncByAlbum: adminSettings.immich?.syncByAlbum ?? defaultConfig.immich.syncByAlbum,
         selectedAlbumIds: adminSettings.immich?.selectedAlbumIds || defaultConfig.immich.selectedAlbumIds,
+        metadataSyncEnabled: adminSettings.immich?.metadataSyncEnabled ?? defaultConfig.immich.metadataSyncEnabled,
+        syncDescription: adminSettings.immich?.syncDescription ?? defaultConfig.immich.syncDescription,
+        syncCoordinates: adminSettings.immich?.syncCoordinates ?? defaultConfig.immich.syncCoordinates,
+        syncTags: adminSettings.immich?.syncTags ?? defaultConfig.immich.syncTags,
+        immichMapping: process.env.IMMICH_MAPPING_PATH || adminSettings.immich?.immichMapping || defaultConfig.immich.immichMapping,
+        localMapping: process.env.LOCAL_MAPPING_PATH || adminSettings.immich?.localMapping || defaultConfig.immich.localMapping,
       },
       astrometry: {
         apiKey: adminSettings.astrometry?.apiKey || defaultConfig.astrometry.apiKey,
@@ -95,6 +107,12 @@ class ConfigService {
         syncFrequency: "0 */4 * * *",  // Default cron (every 4 hours)
         syncByAlbum: false,  // Disabled by default
         selectedAlbumIds: [],  // Empty array
+        metadataSyncEnabled: false,  // Disabled by default
+        syncDescription: true,
+        syncCoordinates: true,
+        syncTags: true,
+        immichMapping: '/usr/src/app/upload',
+        localMapping: '/immich-upload',
       },
       astrometry: {
         apiKey: "",  // Empty - user must configure

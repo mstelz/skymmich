@@ -48,6 +48,10 @@ interface AdminSettings {
     syncFrequency: string;
     syncByAlbum: boolean;
     selectedAlbumIds: string[];
+    metadataSyncEnabled: boolean;
+    syncDescription: boolean;
+    syncCoordinates: boolean;
+    syncTags: boolean;
   };
   astrometry: {
     apiKey: string;
@@ -88,6 +92,10 @@ export default function AdminPage() {
       syncFrequency: '0 */4 * * *',
       syncByAlbum: true,
       selectedAlbumIds: [],
+      metadataSyncEnabled: false,
+      syncDescription: true,
+      syncCoordinates: true,
+      syncTags: true,
     },
     astrometry: {
       apiKey: '',
@@ -620,15 +628,98 @@ export default function AdminPage() {
                     </p>
                   )}
                 </div>
-                <Button 
-                  onClick={testImmichConnection} 
-                  disabled={immichTestStatus === 'testing' || !settings.immich.host.trim() || !settings.immich.apiKey.trim()} 
-                  size="sm" 
+                <Button
+                  onClick={testImmichConnection}
+                  disabled={immichTestStatus === 'testing' || !settings.immich.host.trim() || !settings.immich.apiKey.trim()}
+                  size="sm"
                   variant="outline"
                 >
                   {getTestButtonIcon(immichTestStatus)}
                   Test Connection
                 </Button>
+              </div>
+
+              <Separator />
+
+              {/* Metadata Sync to Immich */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="metadataSyncEnabled"
+                    checked={settings.immich.metadataSyncEnabled}
+                    onCheckedChange={(checked) => setSettings(prev => ({
+                      ...prev,
+                      immich: { ...prev.immich, metadataSyncEnabled: checked }
+                    }))}
+                  />
+                  <Label htmlFor="metadataSyncEnabled">Enable metadata writeback to Immich</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, Skymmich metadata (description, coordinates, tags) can be synced back to your Immich assets.
+                </p>
+
+                {settings.immich.metadataSyncEnabled && (
+                  <div className="space-y-3 pl-6 border-l-2 border-border">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="syncDescription"
+                        checked={settings.immich.syncDescription}
+                        onCheckedChange={(checked) => setSettings(prev => ({
+                          ...prev,
+                          immich: { ...prev.immich, syncDescription: !!checked }
+                        }))}
+                      />
+                      <Label htmlFor="syncDescription" className="text-sm font-normal">Sync image description</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="syncCoordinates"
+                        checked={settings.immich.syncCoordinates}
+                        onCheckedChange={(checked) => setSettings(prev => ({
+                          ...prev,
+                          immich: { ...prev.immich, syncCoordinates: !!checked }
+                        }))}
+                      />
+                      <Label htmlFor="syncCoordinates" className="text-sm font-normal">Sync GPS coordinates (latitude, longitude)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="syncTags"
+                        checked={settings.immich.syncTags}
+                        onCheckedChange={(checked) => setSettings(prev => ({
+                          ...prev,
+                          immich: { ...prev.immich, syncTags: !!checked }
+                        }))}
+                      />
+                      <Label htmlFor="syncTags" className="text-sm font-normal">Sync tags to Immich (includes object type, constellation, equipment names)</Label>
+                    </div>
+
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            toast({ title: "Syncing...", description: "Syncing all metadata to Immich" });
+                            const response = await fetch('/api/immich/sync-metadata-all', { method: 'POST' });
+                            const data = await response.json();
+                            if (response.ok) {
+                              toast({ title: "Sync Complete", description: data.message });
+                            } else {
+                              toast({ title: "Sync Failed", description: data.message, variant: "destructive" });
+                            }
+                          } catch {
+                            toast({ title: "Error", description: "Failed to sync metadata", variant: "destructive" });
+                          }
+                        }}
+                        disabled={!settings.immich.host.trim() || !settings.immich.apiKey.trim()}
+                      >
+                        Sync All Metadata to Immich
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

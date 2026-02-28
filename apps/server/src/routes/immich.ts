@@ -17,41 +17,62 @@ router.post('/sync-immich', async (req, res) => {
       });
     }
 
-    // Sync by album logic
-    let albumsToSync: any[] = [];
-    const albumsResponse = await axios.get(`${config.host}/api/albums`, {
-      headers: { 'X-API-Key': config.apiKey },
-    });
+    let allAssets: any[] = [];
+
     if (config.syncByAlbum) {
       if (!Array.isArray(config.selectedAlbumIds) || config.selectedAlbumIds.length === 0) {
         return res.status(400).json({ message: 'Sync by album is enabled, but no albums are selected.' });
       }
-      albumsToSync = albumsResponse.data.filter((a: any) => config.selectedAlbumIds.includes(a.id));
-    } else {
-      albumsToSync = albumsResponse.data;
-    }
 
-    let allAssets: any[] = [];
-    for (const album of albumsToSync) {
-      if (album.id && album.assetCount > 0) {
-        try {
-          console.log(`Fetching assets from album: ${album.albumName} (${album.assetCount} assets)`);
-          const albumResponse = await axios.get(`${config.host}/api/albums/${album.id}`, {
-            headers: { 'X-API-Key': config.apiKey },
-          });
-          if (albumResponse.data && albumResponse.data.assets && Array.isArray(albumResponse.data.assets)) {
-            allAssets.push(...albumResponse.data.assets);
-            console.log(`Added ${albumResponse.data.assets.length} assets from album ${album.albumName}`);
+      const albumsResponse = await axios.get(`${config.host}/api/albums`, {
+        headers: { 'X-API-Key': config.apiKey },
+      });
+      const albumsToSync = albumsResponse.data.filter((a: any) => config.selectedAlbumIds.includes(a.id));
+
+      for (const album of albumsToSync) {
+        if (album.id && album.assetCount > 0) {
+          try {
+            console.log(`Fetching assets from album: ${album.albumName} (${album.assetCount} assets)`);
+            const albumResponse = await axios.get(`${config.host}/api/albums/${album.id}`, {
+              headers: { 'X-API-Key': config.apiKey },
+            });
+            if (albumResponse.data && albumResponse.data.assets && Array.isArray(albumResponse.data.assets)) {
+              allAssets.push(...albumResponse.data.assets);
+              console.log(`Added ${albumResponse.data.assets.length} assets from album ${album.albumName}`);
+            }
+          } catch (albumError: any) {
+            console.warn(
+              `Failed to get assets from album ${album.albumName} (${album.id}):`,
+              albumError.response?.data || albumError.message,
+            );
           }
-        } catch (albumError: any) {
-          console.warn(
-            `Failed to get assets from album ${album.albumName} (${album.id}):`,
-            albumError.response?.data || albumError.message,
-          );
         }
       }
+    } else {
+      // Sync all assets from library (not by album)
+      console.log('Fetching all assets from Immich library...');
+      try {
+        const assetsResponse = await axios.get(`${config.host}/api/assets`, {
+          headers: { 'X-API-Key': config.apiKey },
+        });
+        if (Array.isArray(assetsResponse.data)) {
+          allAssets = assetsResponse.data;
+          console.log(`Fetched ${allAssets.length} assets from main library`);
+        }
+      } catch (assetsError: any) {
+        console.error('Failed to get assets from library:', assetsError.response?.data || assetsError.message);
+        throw assetsError;
+      }
     }
-    console.log(`Found ${allAssets.length} total assets in Immich`);
+
+    // De-duplicate assets by ID (important when assets are in multiple albums)
+    const uniqueAssetsMap = new Map();
+    for (const asset of allAssets) {
+      uniqueAssetsMap.set(asset.id, asset);
+    }
+    allAssets = Array.from(uniqueAssetsMap.values());
+
+    console.log(`Found ${allAssets.length} total unique assets in Immich`);
 
     // Remove images from our app that no longer exist in Immich
     const immichAssetIds = new Set(allAssets.map((asset) => asset.id));
@@ -85,6 +106,7 @@ router.post('/sync-immich', async (req, res) => {
         filename: String(asset.originalFileName || ''),
         thumbnailUrl: `/api/assets/${asset.id}/thumbnail`,
         fullUrl: `/api/assets/${asset.id}/thumbnail?size=preview`,
+        originalPath: String(asset.originalPath || ''),
         captureDate: asset.fileCreatedAt ? new Date(asset.fileCreatedAt) : null,
         focalLength: asset.exifInfo?.focalLength ? Number(asset.exifInfo.focalLength) : null,
         aperture: asset.exifInfo?.fNumber ? `f/${asset.exifInfo.fNumber}` : null,
@@ -246,6 +268,39 @@ router.post('/albums', async (req, res) => {
     }
   } catch (error: any) {
     res.status(500).json({ message: error.response?.data?.message || error.message });
+  }
+});
+
+// Sync metadata for a single image to Immich
+router.post('/sync-metadata/:imageId', async (req, res) => {
+  try {
+    const { immichSyncService } = await import('../services/immich-sync');
+    const imageId = parseInt(req.params.imageId);
+    if (isNaN(imageId)) {
+      return res.status(400).json({ message: 'Invalid image ID' });
+    }
+    const result = await immichSyncService.syncImageMetadata(imageId);
+    if (result.success) {
+      res.json({ message: 'Metadata synced to Immich', success: true });
+    } else {
+      res.status(400).json({ message: result.error, success: false });
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message, success: false });
+  }
+});
+
+// Sync metadata for all images to Immich
+router.post('/sync-metadata-all', async (req, res) => {
+  try {
+    const { immichSyncService } = await import('../services/immich-sync');
+    const result = await immichSyncService.syncAllImages();
+    res.json({
+      message: `Synced ${result.synced} images, ${result.failed} failed`,
+      ...result,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 });
 

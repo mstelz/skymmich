@@ -39,13 +39,14 @@ async function updateImmichAssetMetadata(immichId: string, metadata: { latitude?
 // Get all astrophotography images with optional filters
 router.get('/', async (req, res) => {
   try {
-    const { objectType, tags, plateSolved, constellation } = req.query;
+    const { objectType, tags, plateSolved, constellation, equipmentId } = req.query;
     const filters: any = {};
 
     if (objectType) filters.objectType = objectType as string;
     if (tags) filters.tags = Array.isArray(tags) ? (tags as string[]) : [tags as string];
     if (plateSolved !== undefined) filters.plateSolved = plateSolved === 'true';
     if (constellation) filters.constellation = constellation as string;
+    if (equipmentId) filters.equipmentId = parseInt(equipmentId as string);
 
     const images = await storage.getAstroImages(filters);
     res.json(images);
@@ -369,7 +370,7 @@ router.get('/:id/sidecar', async (req, res) => {
     }
 
     const sidecarConfig = await configService.getSidecarConfig();
-    const sidecarPath = xmpSidecarService.resolveSidecarPath(image, sidecarConfig);
+    const sidecarPath = await xmpSidecarService.resolveSidecarPath(image, sidecarConfig);
 
     if (!sidecarPath) {
       return res.status(404).json({ message: 'No XMP sidecar found for this image' });
