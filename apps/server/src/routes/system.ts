@@ -1,10 +1,10 @@
-
 import { Router } from 'express';
 import { storage } from '../services/storage';
 import { configService } from '../services/config';
 import { cronManager } from '../services/cron-manager';
 import { workerManager } from '../services/worker-manager';
 import { astrometryService } from '../services/astrometry';
+import { filterRelevantTags } from '../services/tags-utils';
 import axios from 'axios';
 
 const router = Router();
@@ -129,7 +129,9 @@ router.get('/tags', async (req, res) => {
 
     images.forEach((image) => {
       if (Array.isArray(image.tags)) {
-        image.tags.forEach((tag) => {
+        // Only count relevant tags for the popular tags list
+        const relevantTags = filterRelevantTags(image.tags);
+        relevantTags.forEach((tag) => {
           tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         });
       }

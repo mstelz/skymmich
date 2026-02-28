@@ -1,6 +1,7 @@
 import { writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { dirname } from 'path';
 import { configService } from './config';
+import { filterRelevantTags } from './tags-utils';
 import { AstrometryCalibration, AstrometryAnnotation } from './astrometry';
 import type { Equipment } from '../../../../packages/shared/src/types';
 
@@ -172,7 +173,7 @@ export class XmpSidecarService {
       const data: XmpSidecarData = {
         calibration: plateSolvingResult.calibration,
         annotations: plateSolvingResult.annotations,
-        machineTags: plateSolvingResult.machineTags,
+        machineTags: filterRelevantTags(plateSolvingResult.machineTags),
         imageId: image.immichId,
         filename: image.filename,
         astrometryJobId,

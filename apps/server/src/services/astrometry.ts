@@ -4,6 +4,7 @@ import { storage } from './storage';
 import { xmpSidecarService } from './xmp-sidecar';
 import { configService } from './config';
 import { getConstellationFromCoordinates } from './constellation-utils';
+import { filterRelevantTags } from './tags-utils';
 
 // Import io from the main server file
 let io: any = null;
@@ -288,7 +289,7 @@ export class AstrometryService {
     return {
       calibration,
       annotations,
-      machineTags
+      machineTags: filterRelevantTags(machineTags)
     };
   }
 
@@ -312,8 +313,10 @@ export class AstrometryService {
       const image = await storage.getAstroImage(job.imageId);
       if (image) {
         const existingTags: string[] = image.tags || [];
+        // Only keep relevant tags from plate solving
+        const relevantMachineTags = filterRelevantTags(result.machineTags);
         // Merge and deduplicate tags
-        const allTags = Array.from(new Set([...existingTags, ...result.machineTags])).filter(Boolean);
+        const allTags = Array.from(new Set([...existingTags, ...relevantMachineTags])).filter(Boolean);
         
         // Determine constellation from RA/Dec coordinates
         let constellation = null;

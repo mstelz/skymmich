@@ -49,45 +49,31 @@ router.post('/sync-immich', async (req, res) => {
         }
       }
     } else {
-      // Sync all assets from library (not by album) using metadata search (most stable for listing library)
-      console.log('Fetching assets from Immich library via metadata search...');
-      try {
-        let assetsResponse;
-        
-        try {
-          assetsResponse = await axios.post(`${config.host}/api/search/metadata`, 
-            { take: 5000, type: 'IMAGE' }, // Only sync images
-            { headers: { 'X-API-Key': config.apiKey } }
-          );
-          
-          if (assetsResponse.data?.assets?.items) {
-            allAssets = assetsResponse.data.assets.items;
-          } else if (Array.isArray(assetsResponse.data)) {
-            allAssets = assetsResponse.data;
-          }
-        } catch (searchError: any) {
-          console.log('Metadata search failed, trying standard /api/assets...');
-          // Fallback to standard /api/assets if search endpoint fails or is older version
-          assetsResponse = await axios.get(`${config.host}/api/assets`, {
-            headers: { 'X-API-Key': config.apiKey },
-            params: { take: 5000 }
-          });
-          
-          if (Array.isArray(assetsResponse.data)) {
-            allAssets = assetsResponse.data;
-          } else if (assetsResponse.data?.assets) {
-            allAssets = assetsResponse.data.assets;
-          }
-        }
+      // Sync all assets from library using metadata search with pagination
+      console.log('Fetching all assets from Immich library via metadata search...');
+      let page = 1;
+      const pageSize = 1000;
+      let hasMore = true;
 
-        console.log(`Fetched ${allAssets.length} assets from Immich library`);
-      } catch (assetsError: any) {
-        if (assetsError.response?.status === 404) {
-          throw new Error('Your Immich version does not support standard library sync. Please enable "Sync by album only" in admin settings.');
+      while (hasMore) {
+        const response = await axios.post(`${config.host}/api/search/metadata`,
+          { size: pageSize, page, type: 'IMAGE' },
+          { headers: { 'X-API-Key': config.apiKey } }
+        );
+
+        const items = response.data?.assets?.items || [];
+        allAssets.push(...items);
+        console.log(`Page ${page}: fetched ${items.length} assets (${allAssets.length} total)`);
+
+        const nextPage = response.data?.assets?.nextPage;
+        if (nextPage != null && items.length > 0) {
+          page = nextPage;
+        } else {
+          hasMore = false;
         }
-        console.error('Failed to get assets from library:', assetsError.response?.data || assetsError.message);
-        throw assetsError;
       }
+
+      console.log(`Fetched ${allAssets.length} total assets from Immich library`);
     }
 
     // De-duplicate assets by ID (important when assets are in multiple albums)
