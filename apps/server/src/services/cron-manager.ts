@@ -47,7 +47,7 @@ class CronManager {
     this.scheduleJob('immich-sync', 'Immich Sync', cronExpr, async () => {
       try {
         console.log('[CRON] Starting Immich sync...');
-        const response = await axios.post('http://localhost:5000/api/sync-immich', {}, {
+        const response = await axios.post('http://localhost:5000/api/immich/sync-immich', {}, {
           timeout: 30000, // 30 second timeout
           validateStatus: (status) => true, // Don't throw on any status code
         });

@@ -407,8 +407,8 @@ export default function PlateSolvingPage() {
                       {expandedJobId === job.id && (
                         <div className="px-2 pb-2 text-xs space-y-1" onClick={(e) => e.stopPropagation()}>
                           {job.status === "failed" && (
-                            <div className="text-red-400 bg-red-900/20 rounded p-1.5">
-                              {(job.result as any)?.error || "Unknown error"}
+                            <div className="text-red-400 bg-red-900/20 rounded p-1.5 space-y-1">
+                              <div>{(job.result as any)?.error || "Unknown error"}</div>
                             </div>
                           )}
                           {job.status === "success" && (
@@ -440,6 +440,28 @@ export default function PlateSolvingPage() {
                               Completed: {new Date(job.completedAt).toLocaleString()}
                             </div>
                           )}
+                          <div className="flex gap-2 pt-1">
+                            {job.astrometrySubmissionId && (
+                              <a
+                                href={`https://nova.astrometry.net/status/${job.astrometrySubmissionId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 underline"
+                              >
+                                Submission
+                              </a>
+                            )}
+                            {job.astrometryJobId && (
+                              <a
+                                href={`https://nova.astrometry.net/annotated_full/${job.astrometryJobId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 underline"
+                              >
+                                Annotated Result
+                              </a>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

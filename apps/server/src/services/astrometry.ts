@@ -408,6 +408,24 @@ export class AstrometryService {
         }
       }
 
+      const submissionUrl = `https://nova.astrometry.net/status/${job.astrometrySubmissionId}`;
+      const jobUrl = job.astrometryJobId ? `https://nova.astrometry.net/annotated_full/${job.astrometryJobId}` : null;
+
+      const markFailed = async (error: string) => {
+        const result = {
+          error,
+          submissionId: job.astrometrySubmissionId,
+          astrometryJobId: job.astrometryJobId,
+          submissionUrl,
+          jobUrl,
+        };
+        await storage.updatePlateSolvingJob(job.id, { status: "failed", result: result as any });
+        if (io) {
+          io.emit('plate-solving-update', { jobId: job.id, status: "failed", result });
+        }
+        return { status: "failed" as const };
+      };
+
       // Check individual job status if we have a job ID
       if (job.astrometryJobId) {
         try {
@@ -417,92 +435,65 @@ export class AstrometryService {
               headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
             }
           );
-          
+
           const jobStatus = jobStatusResponse.data;
           if (jobStatus.status === "failure") {
-            await storage.updatePlateSolvingJob(job.id, { 
-              status: "failed", 
-              result: { error: "Job failed on Astrometry.net" }
-            });
-            
-            // Emit real-time update via Socket.io
+            return markFailed(`Plate solving failed. Astrometry.net could not solve this image. This usually means the field of view or scale hints were incorrect, or the image quality was insufficient.`);
+          }
+
+          if (jobStatus.status === "success") {
+            // Job succeeded on Astrometry.net - fetch the full result
+            const result = await this.fetchCompleteResult(job.astrometryJobId);
+            await this.updateJobAndImage(job.id, result);
+
             if (io) {
-              io.emit('plate-solving-update', { 
-                jobId: job.id, 
-                status: "failed", 
-                result: { error: "Job failed on Astrometry.net" }
+              io.emit('plate-solving-update', {
+                jobId: job.id,
+                status: "success",
+                result: { ...result.calibration, annotations: result.annotations }
               });
             }
-            
-            return { status: "failed" };
+
+            return { status: "success", result };
           }
+          // Otherwise still processing, fall through
         } catch (jobError: any) {
           if (jobError.response?.status === 404) {
-            await storage.updatePlateSolvingJob(job.id, {
-              status: "failed",
-              result: { error: "Job not found on Astrometry.net" }
-            });
-            
-            // Emit real-time update via Socket.io
-            if (io) {
-              io.emit('plate-solving-update', { 
-                jobId: job.id, 
-                status: "failed", 
-                result: { error: "Job not found on Astrometry.net" }
-              });
-            }
-            
-            return { status: "failed" };
+            return markFailed(`Job not found on Astrometry.net. It may have expired (jobs expire after ~30 days).`);
           }
           // If we can't check individual job status, continue with submission status check
         }
       }
 
       if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
-        // Job completed successfully
-        const calibration = astrometryStatus.job_calibrations[0];
+        // Job completed successfully via submission status
         const result = await this.fetchCompleteResult(job.astrometryJobId!);
-        
-        // Update job and image
         await this.updateJobAndImage(job.id, result);
-        
-        // Emit real-time update via Socket.io
+
         if (io) {
-          io.emit('plate-solving-update', { 
-            jobId: job.id, 
-            status: "success", 
-            result: {
-              ...result.calibration,
-              annotations: result.annotations
-            }
+          io.emit('plate-solving-update', {
+            jobId: job.id,
+            status: "success",
+            result: { ...result.calibration, annotations: result.annotations }
           });
         }
-        
+
         return { status: "success", result };
       } else if (astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
-        const jobStatus = astrometryStatus.jobs[0];
-        if (jobStatus === null) {
-          await storage.updatePlateSolvingJob(job.id, { 
-            status: "failed", 
-            result: { error: "Job failed on Astrometry.net" }
-          });
-          
-          // Emit real-time update via Socket.io
-          if (io) {
-            io.emit('plate-solving-update', { 
-              jobId: job.id, 
-              status: "failed", 
-              result: { error: "Job failed on Astrometry.net" }
-            });
+        const firstJob = astrometryStatus.jobs[0];
+        if (firstJob === null) {
+          // jobs: [null] can mean the job hasn't been assigned yet OR it truly failed.
+          // Check if the submission also has processing_finished set to confirm failure.
+          if (astrometryStatus.processing_finished) {
+            return markFailed(`Plate solving failed. Astrometry.net could not solve this image.`);
           }
-          
-          return { status: "failed" };
+          // Not finished yet — treat as still processing
+          return { status: "processing" };
         }
         // If job exists but is not null, it's still processing
         return { status: "processing" };
       } else {
         // No jobs array yet - submission is still being processed
-        // This is normal for newly submitted images
         return { status: "processing" };
       }
     } catch (error: any) {
