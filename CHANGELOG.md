@@ -5,6 +5,24 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-03-01
+
+### Fixed
+- **Immich Auto-Sync**: Fixed automatic sync cron job failing with HTTP 404 due to incorrect API route path.
+- **Plate Solving Error Messages**: Improved error messages for failed plate solving jobs with actionable context (e.g., incorrect scale hints, expired jobs).
+- **Plate Solving Null Jobs**: Smarter handling of null Astrometry.net jobs — distinguishes between still-processing and truly failed submissions.
+- **Notification Badge**: Header notification badge now updates instantly when alerts are acknowledged in admin.
+- **Image Deletion Cascade**: Deleting an image now properly cascades to plate solving jobs, equipment links, and acquisition entries.
+- **Sync Metadata Errors**: Sync-metadata errors now show actionable messages instead of generic failures.
+
+### Added
+- **Astrometry.net Links**: Plate solving job details now include direct links to Astrometry.net submission and annotated result pages.
+- **Gallery Auto-Refresh**: Gallery automatically refreshes after a successful Immich sync.
+
+### Changed
+- **CI**: Removed `latest` tag from main branch Docker builds.
+- **Sync Error Messages**: Improved error messages during metadata sync to Immich.
+
 ## [0.5.0] - 2026-02-28
 
 ### Added
