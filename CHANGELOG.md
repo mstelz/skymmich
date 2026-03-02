@@ -5,6 +5,16 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-03-02
+
+### Changed
+- **Dependencies**: Updated production and development dependencies (axios, react-day-picker, react-resizable-panels, autoprefixer, @types/node) to address Dependabot alerts and routine updates.
+- **Docker Build Workflow**: Updated `actions/upload-artifact` to v7.
+- **Dockerfile**: Fixed linting errors (DL3003, DL3042) and improved caching efficiency by avoiding `cd` and using `npm cache clean`.
+
+### Fixed
+- **Docker Linting**: Resolved multi-stage build lint errors related to directory changes and cache management in both builder and runtime stages.
+
 ## [0.5.1] - 2026-03-01
 
 ### Fixed

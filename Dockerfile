@@ -5,8 +5,10 @@ FROM node:24-alpine AS builder
 
 # Upgrade npm and patch its bundled minimatch to fix known CVEs
 RUN npm install -g npm@11.11.0 && \
-    cd /usr/local/lib/node_modules/npm/node_modules/minimatch && \
-    npm pack minimatch@10.2.4 && tar -xzf minimatch-10.2.4.tgz --strip-components=1 && rm minimatch-10.2.4.tgz
+    npm pack minimatch@10.2.4 && \
+    tar -xzf minimatch-10.2.4.tgz -C /usr/local/lib/node_modules/npm/node_modules/minimatch --strip-components=1 && \
+    rm minimatch-10.2.4.tgz && \
+    npm cache clean --force
 
 # Set working directory
 WORKDIR /build
@@ -36,8 +38,10 @@ FROM node:24-alpine AS runtime
 
 # Upgrade npm and patch its bundled minimatch to fix known CVEs
 RUN npm install -g npm@11.11.0 && \
-    cd /usr/local/lib/node_modules/npm/node_modules/minimatch && \
-    npm pack minimatch@10.2.4 && tar -xzf minimatch-10.2.4.tgz --strip-components=1 && rm minimatch-10.2.4.tgz
+    npm pack minimatch@10.2.4 && \
+    tar -xzf minimatch-10.2.4.tgz -C /usr/local/lib/node_modules/npm/node_modules/minimatch --strip-components=1 && \
+    rm minimatch-10.2.4.tgz && \
+    npm cache clean --force
 
 # Install curl for health checks, su-exec for privilege dropping, and shadow for user management
 # hadolint ignore=DL3018
