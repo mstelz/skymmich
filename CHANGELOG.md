@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Docker Linting**: Resolved multi-stage build lint errors related to directory changes and cache management in both builder and runtime stages.
+- **Database**: Added missing `original_path` column to SQLite schema migration.
 
 ## [0.5.1] - 2026-03-01
 
