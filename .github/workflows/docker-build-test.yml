@@ -137,7 +137,7 @@ jobs:
 
       - name: Upload Docker image artifact
         if: success() || failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: docker-image-pr-${{ github.event.pull_request.number }}
           path: skymmich-pr-${{ github.event.pull_request.number }}-${{ github.sha }}.tar.gz
@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload application snapshot
         if: success() || failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: app-snapshot-${{ github.sha }}
           path: snapshot/skymmich-snapshot-${{ github.sha }}.tar.gz
