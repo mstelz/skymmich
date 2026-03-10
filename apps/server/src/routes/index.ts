@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
   app.use('/api/assets', assetsRoutes);
   app.use('/api/sky-map', skyMapRoutes);
   app.use('/api/locations', locationRoutes);
-  app.use('/api', systemRoutes);
+  app.use('/api', systemRoutes(io));
 
   const httpServer = createServer(app);
   return httpServer;

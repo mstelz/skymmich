@@ -34,6 +34,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 
 interface ImmichAlbum {
   id: string;
@@ -120,11 +122,15 @@ export default function AdminPage() {
   const [astrometryTestStatus, setAstrometryTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [immichTestMessage, setImmichTestMessage] = useState('');
   const [astrometryTestMessage, setAstrometryTestMessage] = useState('');
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [albums, setAlbums] = useState<ImmichAlbum[]>([]);
   const [albumsLoading, setAlbumsLoading] = useState(false);
   const [albumError, setAlbumError] = useState<string | null>(null);
+
+  // Use React Query for notifications for consistent state across Header and Admin
+  const { data: notifications = [] } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
+  });
 
   // Fetch albums helper
   const fetchAlbums = async () => {
@@ -155,7 +161,6 @@ export default function AdminPage() {
   // Load settings on component mount
   useEffect(() => {
     loadSettings();
-    loadNotifications();
     fetchAlbums();
   }, []);
 
@@ -180,27 +185,14 @@ export default function AdminPage() {
     }
   };
 
-  const loadNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications');
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-      }
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    }
-  };
-
   const acknowledgeAllNotifications = async () => {
     try {
       const response = await fetch('/api/notifications/acknowledge-all', {
         method: 'POST',
       });
       if (response.ok) {
-        setNotifications([]);
+        queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
         setShowAllNotifications(false);
-        window.dispatchEvent(new Event('notifications-updated'));
         toast({
           title: "Success",
           description: "All notifications acknowledged",
@@ -222,8 +214,7 @@ export default function AdminPage() {
         method: 'POST',
       });
       if (response.ok) {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-        window.dispatchEvent(new Event('notifications-updated'));
+        queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
         toast({
           title: "Success",
           description: "Notification acknowledged",

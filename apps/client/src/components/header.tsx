@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/use-socket";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 
 interface Notification {
   id: number;
@@ -19,35 +20,19 @@ interface Notification {
 
 export function Header() {
   const [location] = useLocation();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [syncing, setSyncing] = useState(false);
   const socket = useSocket();
   const { toast } = useToast();
 
   const isActive = (path: string) => location === path;
 
-  // Load notifications on component mount
-  useEffect(() => {
-    const loadNotifications = async () => {
-      try {
-        const response = await fetch('/api/notifications');
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data);
-        }
-      } catch (error) {
-        console.error('Failed to load notifications:', error);
-      }
-    };
-
-    loadNotifications();
-  }, []);
+  // Use React Query for notifications - aligns with patterns in home.tsx, equipment.tsx, etc.
+  const { data: notifications = [] } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
+  });
 
   const refreshNotifications = () => {
-    fetch('/api/notifications')
-      .then(response => response.json())
-      .then(data => setNotifications(data))
-      .catch(error => console.error('Failed to refresh notifications:', error));
+    queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
   };
 
   // Listen for real-time notification updates via Socket.io
@@ -63,12 +48,7 @@ export function Header() {
     };
   }, [socket]);
 
-  // Listen for notification changes from other components (e.g. admin page)
-  useEffect(() => {
-    window.addEventListener('notifications-updated', refreshNotifications);
-    return () => window.removeEventListener('notifications-updated', refreshNotifications);
-  }, []);
-
+  // Handle sync action
   const handleSync = async () => {
     setSyncing(true);
     try {
@@ -80,7 +60,7 @@ export function Header() {
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
         toast({ title: 'Sync completed', description: data.message || 'Successfully synced images from Immich' });
-        // Refresh gallery and stats so new images appear without a page reload
+        // Refresh gallery and stats - uses same queryClient pattern we'll use for notifications
         queryClient.invalidateQueries({ queryKey: ["/api/images"] });
         queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       } else {
