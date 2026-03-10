@@ -45,7 +45,7 @@ jobs:
         run: npm run build
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.3.0
@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Docker image
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64
@@ -103,7 +103,7 @@ jobs:
 
       - name: Scan for vulnerabilities (SARIF)
         id: security-scan
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: skymmich:test-${{ github.event.pull_request.number }}
           format: 'sarif'
