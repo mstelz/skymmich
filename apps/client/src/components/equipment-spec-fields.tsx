@@ -61,7 +61,7 @@ export function EquipmentSpecFields({
         <div className="space-y-2">
           {knownFields.map((field: SpecFieldDefinition) => (
             <div key={field.key} className="space-y-1">
-              <Label className={`${labelSize} font-medium text-gray-300`}>
+              <Label className={`${labelSize} font-medium text-foreground`}>
                 {field.label}{field.unit ? ` (${field.unit})` : ""}
               </Label>
               {field.type === "number" && (
@@ -69,7 +69,7 @@ export function EquipmentSpecFields({
                   type="number"
                   value={specifications[field.key] ?? ""}
                   onChange={(e) => updateField(field.key, e.target.value ? Number(e.target.value) : undefined)}
-                  className={`bg-gray-800 border-gray-700 text-white ${inputSize}`}
+                  className={`bg-input border-border text-foreground ${inputSize}`}
                 />
               )}
               {field.type === "text" && (
@@ -77,7 +77,7 @@ export function EquipmentSpecFields({
                   type="text"
                   value={specifications[field.key] ?? ""}
                   onChange={(e) => updateField(field.key, e.target.value || undefined)}
-                  className={`bg-gray-800 border-gray-700 text-white ${inputSize}`}
+                  className={`bg-input border-border text-foreground ${inputSize}`}
                 />
               )}
               {field.type === "select" && field.options && (
@@ -85,10 +85,10 @@ export function EquipmentSpecFields({
                   value={specifications[field.key] || ""}
                   onValueChange={(value) => updateField(field.key, value)}
                 >
-                  <SelectTrigger className={`w-full bg-gray-800 border-gray-600 text-white ${compact ? "h-8" : "h-10"}`}>
+                  <SelectTrigger className={`w-full bg-input border-border text-foreground ${compact ? "h-8" : "h-10"}`}>
                     <SelectValue placeholder={`Select ${field.label.toLowerCase()}...`} />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                  <SelectContent className="bg-input border-border text-foreground">
                     {field.options.map(opt => (
                       <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                     ))}
@@ -100,9 +100,9 @@ export function EquipmentSpecFields({
                   <Checkbox
                     checked={!!specifications[field.key]}
                     onCheckedChange={(checked) => updateField(field.key, !!checked)}
-                    className="border-gray-600"
+                    className="border-border"
                   />
-                  <span className={`${labelSize} text-gray-400`}>{specifications[field.key] ? "Yes" : "No"}</span>
+                  <span className={`${labelSize} text-muted-foreground`}>{specifications[field.key] ? "Yes" : "No"}</span>
                 </div>
               )}
             </div>
@@ -112,7 +112,7 @@ export function EquipmentSpecFields({
 
       {/* Custom key/value entries */}
       <div className="space-y-2">
-        <Label className={`${labelSize} font-medium text-gray-300`}>
+        <Label className={`${labelSize} font-medium text-foreground`}>
           {knownFields.length > 0 ? "Additional Specifications" : "Specifications"}
         </Label>
         <div className="flex gap-2">
@@ -121,14 +121,14 @@ export function EquipmentSpecFields({
             value={customKey}
             onChange={(e) => setCustomKey(e.target.value)}
             placeholder="Name"
-            className={`flex-1 bg-gray-800 border-gray-700 text-white ${inputSize}`}
+            className={`flex-1 bg-input border-border text-foreground ${inputSize}`}
           />
           <Input
             type="text"
             value={customValue}
             onChange={(e) => setCustomValue(e.target.value)}
             placeholder="Value"
-            className={`flex-1 bg-gray-800 border-gray-700 text-white ${inputSize}`}
+            className={`flex-1 bg-input border-border text-foreground ${inputSize}`}
           />
           <Button
             type="button"

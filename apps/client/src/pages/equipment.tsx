@@ -103,12 +103,18 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
     type: equipment.type,
     description: equipment.description || "",
     specifications: equipment.specifications as Record<string, string> || {},
+    cost: equipment.cost != null ? String(equipment.cost) : "",
+    acquisitionDate: equipment.acquisitionDate ? new Date(equipment.acquisitionDate).toISOString().split('T')[0] : "",
   });
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const res = await apiRequest("PUT", `/api/equipment/${equipment.id}`, data);
+      const res = await apiRequest("PUT", `/api/equipment/${equipment.id}`, {
+        ...data,
+        cost: data.cost ? parseFloat(data.cost) : undefined,
+        acquisitionDate: data.acquisitionDate || undefined,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -127,6 +133,8 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
       type: equipment.type,
       description: equipment.description || "",
       specifications: equipment.specifications as Record<string, string> || {},
+      cost: equipment.cost != null ? String(equipment.cost) : "",
+      acquisitionDate: equipment.acquisitionDate ? new Date(equipment.acquisitionDate).toISOString().split('T')[0] : "",
     });
     onCancel();
   };
@@ -177,6 +185,30 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Purchase Price</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.cost}
+                onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
+                placeholder="e.g., 499.99"
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Acquisition Date</label>
+              <input
+                type="date"
+                value={formData.acquisitionDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, acquisitionDate: e.target.value }))}
+                className="input w-full"
+              />
+            </div>
+          </div>
+
           {formData.type && (
             <EquipmentSpecFields
               equipmentType={formData.type}
@@ -206,7 +238,15 @@ function EquipmentCard({ equipment, specs, isEditing, onEdit, onCancel, onDelete
       <div className="flex-1">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="font-semibold text-lg">{equipment.name}</div>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <div className="font-semibold text-lg">{equipment.name}</div>
+              {equipment.cost != null && (
+                <span className="text-xs text-gray-500"><span className="font-semibold">Cost:</span> ${equipment.cost.toFixed(2)}</span>
+              )}
+              {equipment.acquisitionDate && (
+                <span className="text-xs text-gray-500"><span className="font-semibold">Acquired:</span> {new Date(equipment.acquisitionDate).toLocaleDateString()}</span>
+              )}
+            </div>
             <div className="text-sm text-gray-400">{equipment.type}</div>
             {equipment.description && <div className="text-sm mt-1">{equipment.description}</div>}
             {specs && (
@@ -244,9 +284,11 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
   const [type, setType] = useState("");
   const [specs, setSpecs] = useState<{ [key: string]: string }>({});
   const [description, setDescription] = useState("");
+  const [cost, setCost] = useState("");
+  const [acquisitionDate, setAcquisitionDate] = useState("");
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: async (data: { name: string; type: string; specifications: { [key: string]: string }; description: string }): Promise<any> => {
+    mutationFn: async (data: { name: string; type: string; specifications: { [key: string]: string }; description: string; cost?: number; acquisitionDate?: string }): Promise<any> => {
       const res = await apiRequest("POST", "/api/equipment", data);
       return res.json();
     },
@@ -267,61 +309,86 @@ function AddEquipmentForm({ onClose }: { onClose: () => void }) {
       
       <form onSubmit={e => {
         e.preventDefault();
-        mutation.mutate({ name, type, specifications: specs, description });
+        mutation.mutate({
+          name, type, specifications: specs, description,
+          cost: cost ? parseFloat(cost) : undefined,
+          acquisitionDate: acquisitionDate || undefined,
+        });
       }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-2 text-foreground">
                 Equipment Name *
               </label>
-              <input 
-                value={name} 
-                onChange={e => setName(e.target.value)} 
-                placeholder="e.g., William Optics RedCat 51" 
-                required 
-                className="input w-full" 
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g., William Optics RedCat 51"
+                required
+                className="input w-full"
               />
             </div>
-            
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                Equipment Type *
+              <label className="block text-sm font-medium mb-2 text-foreground">
+                Purchase Price
               </label>
-              <Select
-                value={type}
-                onValueChange={(value) => { setType(value); setSpecs({}); }}
-              >
-                <SelectTrigger className="w-full bg-background border-input text-foreground h-10">
-                  <SelectValue placeholder="Select equipment type..." />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700 text-white">
-                  <SelectItem value="telescope">Telescope</SelectItem>
-                  <SelectItem value="camera">Camera</SelectItem>
-                  <SelectItem value="mount">Mount</SelectItem>
-                  <SelectItem value="filter">Filter</SelectItem>
-                  <SelectItem value="accessory">Accessory</SelectItem>
-                  <SelectItem value="software">Software</SelectItem>
-                </SelectContent>
-              </Select>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={cost}
+                onChange={e => setCost(e.target.value)}
+                placeholder="e.g., 499.99"
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">
+                Acquisition Date
+              </label>
+              <input
+                type="date"
+                value={acquisitionDate}
+                onChange={e => setAcquisitionDate(e.target.value)}
+                className="input w-full"
+              />
             </div>
           </div>
 
-          {/* Description */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                Description
-              </label>
-              <textarea 
-                value={description} 
-                onChange={e => setDescription(e.target.value)} 
-                placeholder="Brief description of the equipment..."
-                className="input w-full resize-none" 
-                rows={4}
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-foreground">
+              Equipment Type *
+            </label>
+            <Select
+              value={type}
+              onValueChange={(value) => { setType(value); setSpecs({}); }}
+            >
+              <SelectTrigger className="w-full bg-background border-input text-foreground h-10">
+                <SelectValue placeholder="Select equipment type..." />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                <SelectItem value="telescope">Telescope</SelectItem>
+                <SelectItem value="camera">Camera</SelectItem>
+                <SelectItem value="mount">Mount</SelectItem>
+                <SelectItem value="filter">Filter</SelectItem>
+                <SelectItem value="accessory">Accessory</SelectItem>
+                <SelectItem value="software">Software</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-foreground">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Brief description of the equipment..."
+              className="input w-full resize-none"
+              rows={2}
+            />
           </div>
         </div>
 

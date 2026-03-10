@@ -37,13 +37,13 @@
     --color-background: hsl(215, 28%, 7%);
     --color-foreground: hsl(0, 0%, 98%);
     --color-muted: hsl(215, 20%, 12%);
-    --color-muted-foreground: hsl(240, 5%, 64.9%);
+    --color-muted-foreground: hsl(240, 5%, 72%);
     --color-popover: hsl(215, 25%, 10%);
     --color-popover-foreground: hsl(0, 0%, 98%);
-    --color-card: hsl(215, 25%, 10%);
+    --color-card: hsl(215, 25%, 13%);
     --color-card-foreground: hsl(0, 0%, 98%);
-    --color-border: hsl(215, 15%, 20%);
-    --color-input: hsl(215, 20%, 12%);
+    --color-border: hsl(215, 15%, 30%);
+    --color-input: hsl(215, 28%, 7%);
     --color-primary: hsl(207, 90%, 54%);
     --color-primary-foreground: hsl(211, 100%, 99%);
     --color-secondary: hsl(215, 20%, 12%);
@@ -58,14 +58,14 @@
 
 @layer base {
   * {
-    border-color: hsl(var(--color-border));
+    border-color: var(--color-border);
   }
 
   body {
     font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     -webkit-font-smoothing: antialiased;
-    background-color: hsl(var(--color-background));
-    color: hsl(var(--color-foreground));
+    background-color: var(--color-background);
+    color: var(--color-foreground);
   }
 
   button, [role="button"] {
@@ -98,8 +98,8 @@
 
 @layer components {
   .sky-card {
-    background-color: hsl(var(--color-card));
-    border: 1px solid hsl(var(--color-border));
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: 0.75rem;
     overflow: hidden;
     transition: all 0.3s;
@@ -107,7 +107,7 @@
   }
 
   .sky-card:hover {
-    background-color: color-mix(in srgb, hsl(var(--color-card)) 80%, transparent);
+    background-color: color-mix(in srgb, var(--color-card) 80%, transparent);
   }
 
   .sky-button-primary {
@@ -137,37 +137,37 @@
   }
 
   .sky-input {
-    background-color: hsl(var(--color-input));
-    border: 1px solid hsl(var(--color-border));
+    background-color: var(--color-input);
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
-    color: hsl(var(--color-foreground));
+    color: var(--color-foreground);
   }
 
   .sky-input::placeholder {
-    color: hsl(var(--color-muted-foreground));
+    color: var(--color-muted-foreground);
   }
 
   .sky-input:focus {
     outline: none;
-    border-color: hsl(var(--color-primary));
+    border-color: var(--color-primary);
   }
 
   .input {
-    background-color: hsl(var(--color-input));
-    border: 1px solid hsl(var(--color-border));
+    background-color: var(--color-input);
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
-    color: hsl(var(--color-foreground));
+    color: var(--color-foreground);
   }
 
   .input::placeholder {
-    color: hsl(var(--color-muted-foreground));
+    color: var(--color-muted-foreground);
   }
 
   .input:focus {
     outline: none;
-    border-color: hsl(var(--color-primary));
+    border-color: var(--color-primary);
   }
 
   .sky-tag {
