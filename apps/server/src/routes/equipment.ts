@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 // Create new equipment
 router.post('/', async (req, res) => {
   try {
-    const { name, type, specifications, description } = req.body;
+    const { name, type, specifications, description, cost, acquisitionDate } = req.body;
     if (!name || !type) {
       return res.status(400).json({ message: 'Name and type are required' });
     }
@@ -26,6 +26,8 @@ router.post('/', async (req, res) => {
       type,
       specifications: specifications || {},
       description: description || '',
+      cost: cost ?? null,
+      acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
     });
     res.json(equipment);
   } catch (error) {
@@ -37,7 +39,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { name, type, specifications, description } = req.body;
+    const { name, type, specifications, description, cost, acquisitionDate } = req.body;
 
     if (!name || !type) {
       return res.status(400).json({ message: 'Name and type are required' });
@@ -48,6 +50,8 @@ router.put('/:id', async (req, res) => {
       type,
       specifications: specifications || {},
       description: description || '',
+      cost: cost ?? null,
+      acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
     });
 
     if (!equipment) {

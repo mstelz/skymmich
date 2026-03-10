@@ -44,6 +44,8 @@ export const equipment = sqliteTable('equipment', {
     specifications: text('specifications', { mode: 'json' }),
     imageUrl: text('image_url'),
     description: text('description'),
+    cost: real('cost'),
+    acquisitionDate: integer('acquisition_date', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });

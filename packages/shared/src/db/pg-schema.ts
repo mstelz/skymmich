@@ -46,6 +46,8 @@ export const equipment = pgTable('equipment', {
   specifications: json('specifications'),
   imageUrl: text('image_url'),
   description: text('description'),
+  cost: real('cost'),
+  acquisitionDate: timestamp('acquisition_date'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
