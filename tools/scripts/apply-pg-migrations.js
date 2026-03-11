@@ -160,7 +160,8 @@ async function runMigrations() {
       CREATE TABLE IF NOT EXISTS equipment_group_members (
         id SERIAL PRIMARY KEY,
         group_id INTEGER NOT NULL REFERENCES equipment_groups(id) ON DELETE CASCADE,
-        equipment_id INTEGER NOT NULL REFERENCES equipment(id) ON DELETE CASCADE
+        equipment_id INTEGER NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `;
 
@@ -185,6 +186,16 @@ async function runMigrations() {
       console.log('Migration: Checked/Added cost and acquisition_date columns to equipment');
     } catch (err) {
       console.error('Migration failed for equipment cost/acquisition_date columns:', err.message);
+    }
+
+    // Migration: Add created_at to equipment_group_members if it doesn't exist
+    try {
+      await connection`
+        ALTER TABLE equipment_group_members ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+      `;
+      console.log('Migration: Checked/Added created_at column to equipment_group_members');
+    } catch (err) {
+      console.error('Migration failed for equipment_group_members created_at:', err.message);
     }
 
     console.log('Database tables and migrations completed successfully');

@@ -39,6 +39,7 @@ router.post('/', async (req, res) => {
     const full = await storage.getEquipmentGroup(group.id);
     res.json(full);
   } catch (error) {
+    console.error('Failed to create equipment group:', error);
     res.status(500).json({ message: 'Failed to create equipment group' });
   }
 });
