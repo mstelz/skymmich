@@ -1,6 +1,6 @@
 import { db, schema } from '../db';
 import { eq, and, inArray, lte } from 'drizzle-orm';
-import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow } from "../../../../packages/shared/src/types";
+import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, EquipmentGroup, InsertEquipmentGroup, EquipmentGroupMember, InsertEquipmentGroupMember, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow } from "../../../../packages/shared/src/types";
 
 class DbStorage {
   // Astrophotography images
@@ -152,6 +152,94 @@ class DbStorage {
     };
     const result = await db.update(schema.imageEquipment).set(values).where(and(eq((schema.imageEquipment).imageId, imageId), eq((schema.imageEquipment).equipmentId, equipmentId))).returning().execute();
     return result[0] ? result[0] : undefined;
+  }
+
+  // Equipment Groups
+  async getEquipmentGroups(): Promise<(EquipmentGroup & { members: Equipment[] })[]> {
+    const groups = await db.select().from(schema.equipmentGroups).execute();
+    const result = [];
+    for (const group of groups) {
+      const memberRows = await db.select().from(schema.equipmentGroupMembers)
+        .where(eq(schema.equipmentGroupMembers.groupId, group.id)).execute();
+      const equipmentIds = memberRows.map((m: EquipmentGroupMember) => m.equipmentId);
+      let members: Equipment[] = [];
+      if (equipmentIds.length > 0) {
+        members = await db.select().from(schema.equipment)
+          .where(inArray(schema.equipment.id, equipmentIds)).execute();
+      }
+      result.push({ ...group, members });
+    }
+    return result;
+  }
+
+  async getEquipmentGroup(id: number): Promise<(EquipmentGroup & { members: Equipment[] }) | undefined> {
+    const groups = await db.select().from(schema.equipmentGroups)
+      .where(eq(schema.equipmentGroups.id, id)).execute();
+    if (!groups[0]) return undefined;
+    const memberRows = await db.select().from(schema.equipmentGroupMembers)
+      .where(eq(schema.equipmentGroupMembers.groupId, id)).execute();
+    const equipmentIds = memberRows.map((m: EquipmentGroupMember) => m.equipmentId);
+    let members: Equipment[] = [];
+    if (equipmentIds.length > 0) {
+      members = await db.select().from(schema.equipment)
+        .where(inArray(schema.equipment.id, equipmentIds)).execute();
+    }
+    return { ...groups[0], members };
+  }
+
+  async createEquipmentGroup(data: { name: string; description?: string; memberIds?: number[] }): Promise<EquipmentGroup> {
+    const result = await db.insert(schema.equipmentGroups).values({
+      name: data.name,
+      description: data.description || null,
+    }).returning().execute();
+    if (!result[0]) throw new Error('Failed to create equipment group');
+    if (data.memberIds && data.memberIds.length > 0) {
+      const memberValues = data.memberIds.map(equipmentId => ({
+        groupId: result[0].id,
+        equipmentId,
+      }));
+      await db.insert(schema.equipmentGroupMembers).values(memberValues).execute();
+    }
+    return result[0];
+  }
+
+  async updateEquipmentGroup(id: number, updates: { name?: string; description?: string }): Promise<EquipmentGroup | undefined> {
+    const values = { ...updates, updatedAt: new Date() };
+    const result = await db.update(schema.equipmentGroups).set(values)
+      .where(eq(schema.equipmentGroups.id, id)).returning().execute();
+    return result[0] || undefined;
+  }
+
+  async deleteEquipmentGroup(id: number): Promise<boolean> {
+    await db.delete(schema.equipmentGroupMembers).where(eq(schema.equipmentGroupMembers.groupId, id)).execute();
+    await db.delete(schema.equipmentGroups).where(eq(schema.equipmentGroups.id, id)).execute();
+    return true;
+  }
+
+  async setEquipmentGroupMembers(groupId: number, memberIds: number[]): Promise<void> {
+    await db.delete(schema.equipmentGroupMembers).where(eq(schema.equipmentGroupMembers.groupId, groupId)).execute();
+    if (memberIds.length > 0) {
+      const values = memberIds.map(equipmentId => ({ groupId, equipmentId }));
+      await db.insert(schema.equipmentGroupMembers).values(values).execute();
+    }
+  }
+
+  async applyEquipmentGroupToImage(groupId: number, imageId: number): Promise<Equipment[]> {
+    const memberRows = await db.select().from(schema.equipmentGroupMembers)
+      .where(eq(schema.equipmentGroupMembers.groupId, groupId)).execute();
+    const existingRows = await db.select().from(schema.imageEquipment)
+      .where(eq(schema.imageEquipment.imageId, imageId)).execute();
+    const existingIds = new Set(existingRows.map((r: ImageEquipment) => r.equipmentId));
+    const newIds = memberRows
+      .map((m: EquipmentGroupMember) => m.equipmentId)
+      .filter((id: number) => !existingIds.has(id));
+    if (newIds.length > 0) {
+      const values = newIds.map((equipmentId: number) => ({ imageId, equipmentId }));
+      await db.insert(schema.imageEquipment).values(values).execute();
+      await this.recomputeImageSummary(imageId);
+    }
+    if (newIds.length === 0) return [];
+    return await db.select().from(schema.equipment).where(inArray(schema.equipment.id, newIds)).execute();
   }
 
   // Plate solving

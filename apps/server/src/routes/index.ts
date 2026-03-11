@@ -5,6 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import imageRoutes from './images';
 import plateSolvingRoutes from './plate-solving';
 import equipmentRoutes from './equipment';
+import equipmentGroupRoutes from './equipment-groups';
 import immichRoutes from './immich';
 import assetsRoutes from './assets';
 import systemRoutes from './system';
@@ -15,6 +16,7 @@ export async function registerRoutes(app: Express, io?: SocketIOServer): Promise
   app.use('/api/images', imageRoutes);
   app.use('/api/plate-solving', plateSolvingRoutes(io));
   app.use('/api/equipment', equipmentRoutes);
+  app.use('/api/equipment-groups', equipmentGroupRoutes);
   app.use('/api/immich', immichRoutes);
   app.use('/api/assets', assetsRoutes);
   app.use('/api/sky-map', skyMapRoutes);

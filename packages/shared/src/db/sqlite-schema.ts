@@ -102,6 +102,21 @@ export const imageAcquisition = sqliteTable('image_acquisition', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
+export const equipmentGroups = sqliteTable('equipment_groups', {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull(),
+    description: text('description'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
+export const equipmentGroupMembers = sqliteTable('equipment_group_members', {
+    id: integer('id').primaryKey(),
+    groupId: integer('group_id').notNull(),
+    equipmentId: integer('equipment_id').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
 export const locations = sqliteTable('locations', {
     id: integer('id').primaryKey(),
     name: text('name').notNull(),

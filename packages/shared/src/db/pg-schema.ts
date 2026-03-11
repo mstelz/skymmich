@@ -104,6 +104,21 @@ export const imageAcquisition = pgTable('image_acquisition', {
     createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const equipmentGroups = pgTable('equipment_groups', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const equipmentGroupMembers = pgTable('equipment_group_members', {
+  id: serial('id').primaryKey(),
+  groupId: integer('group_id').notNull().references(() => equipmentGroups.id, { onDelete: 'cascade' }),
+  equipmentId: integer('equipment_id').notNull().references(() => equipment.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const locations = pgTable('locations', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
@@ -122,6 +137,8 @@ export const insertEquipmentSchema = createInsertSchema(equipment);
 export const insertImageEquipmentSchema = createInsertSchema(imageEquipment);
 export const insertPlateSolvingJobSchema = createInsertSchema(plateSolvingJobs);
 export const insertImageAcquisitionSchema = createInsertSchema(imageAcquisition);
+export const insertEquipmentGroupSchema = createInsertSchema(equipmentGroups);
+export const insertEquipmentGroupMemberSchema = createInsertSchema(equipmentGroupMembers);
 export const insertLocationSchema = createInsertSchema(locations);
 
 export type AstroImage = typeof astrophotographyImages.$inferSelect;
@@ -134,5 +151,9 @@ export type PlateSolvingJob = typeof plateSolvingJobs.$inferSelect;
 export type InsertPlateSolvingJob = z.infer<typeof insertPlateSolvingJobSchema>;
 export type ImageAcquisitionRow = typeof imageAcquisition.$inferSelect;
 export type InsertImageAcquisitionRow = z.infer<typeof insertImageAcquisitionSchema>;
+export type EquipmentGroup = typeof equipmentGroups.$inferSelect;
+export type InsertEquipmentGroup = z.infer<typeof insertEquipmentGroupSchema>;
+export type EquipmentGroupMember = typeof equipmentGroupMembers.$inferSelect;
+export type InsertEquipmentGroupMember = z.infer<typeof insertEquipmentGroupMemberSchema>;
 export type Location = typeof locations.$inferSelect;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;

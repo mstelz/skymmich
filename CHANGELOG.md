@@ -5,15 +5,23 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.2] - 2026-03-02
+## [0.6.0] - 2026-03-11
+
+### Added
+- **Equipment Groups**: Create named equipment groups (e.g., "Deep Sky Rig") to bundle telescopes, cameras, and accessories together for quick assignment to images.
+- **Apply Group to Image**: Apply an equipment group to an image from the gallery overlay, with preview of members and duplicate detection.
+- **Equipment Cost & Acquisition Date**: Track purchase cost and acquisition date for equipment items.
+- **Real-time Notifications**: Notifications now use React Query with socket.io events for instant updates across tabs.
 
 ### Changed
-- **Dependencies**: Updated production and development dependencies (axios, react-day-picker, react-resizable-panels, autoprefixer, @types/node) to address Dependabot alerts and routine updates.
-- **Docker Build Workflow**: Updated `actions/upload-artifact` to v7.
-- **Dockerfile**: Fixed linting errors (DL3003, DL3042) and improved caching efficiency by avoiding `cd` and using `npm cache clean`.
+- **Dependencies**: Updated production and development dependencies (axios, react-day-picker, react-resizable-panels, autoprefixer, @types/node).
+- **GitHub Actions**: Updated docker/setup-buildx (v4), docker/login (v4), docker/metadata (v6), docker/build-push (v7), actions/upload-artifact (v7), aquasecurity/trivy-action (0.35.0).
+- **Dockerfile**: Fixed linting errors (DL3003, DL3042) and improved caching efficiency.
+- **Docs**: Consolidated feature documentation into `docs/features/` directory.
 
 ### Fixed
-- **Docker Linting**: Resolved multi-stage build lint errors related to directory changes and cache management in both builder and runtime stages.
+- **GHCR Prune**: Fixed image pruning workflow to preserve semver release tags.
+- **Equipment Form**: Restructured form layout to row-based and improved dark mode contrast for inputs and labels.
 - **Database**: Added missing `original_path` column to SQLite schema migration.
 
 ## [0.5.1] - 2026-03-01

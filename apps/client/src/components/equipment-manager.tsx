@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, Settings, Edit3, Zap } from "lucide-react";
+import { Plus, X, Settings, Edit3, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { EquipmentSpecFields } from "@/components/equipment-spec-fields";
-import type { Equipment } from "@shared/schema";
+import type { Equipment, EquipmentGroup } from "@shared/schema";
+
+interface EquipmentGroupWithMembers extends EquipmentGroup {
+  members: Equipment[];
+}
 
 interface EquipmentWithDetails extends Equipment {
   settings?: any;
@@ -30,6 +34,8 @@ interface EquipmentManagerProps {
 export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [isQuickAdding, setIsQuickAdding] = useState(false);
+  const [isApplyingGroup, setIsApplyingGroup] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | null>(null);
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [notes, setNotes] = useState("");
@@ -63,6 +69,29 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/equipment");
       return response.json();
+    },
+  });
+
+  // Fetch equipment groups
+  const { data: equipmentGroups = [] } = useQuery<EquipmentGroupWithMembers[]>({
+    queryKey: ["/api/equipment-groups"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/equipment-groups");
+      return response.json();
+    },
+  });
+
+  // Apply group to image
+  const applyGroupMutation = useMutation({
+    mutationFn: async (groupId: number) => {
+      const response = await apiRequest("POST", `/api/equipment-groups/${groupId}/apply/${imageId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/images", imageId, "equipment"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+      setIsApplyingGroup(false);
+      setSelectedGroupId(null);
     },
   });
 
@@ -226,8 +255,8 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-gray-300">Add Equipment</h4>
 
-        {!isAddingEquipment && !isQuickAdding ? (
-          <div className="flex gap-2">
+        {!isAddingEquipment && !isQuickAdding && !isApplyingGroup ? (
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -241,6 +270,16 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setIsApplyingGroup(true)}
+              className="text-white border-gray-600 hover:bg-gray-800"
+              disabled={equipmentGroups.length === 0}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Apply Group ({equipmentGroups.length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setIsQuickAdding(true)}
               className="text-white border-gray-600 hover:bg-gray-800"
             >
@@ -248,6 +287,21 @@ export function EquipmentManager({ imageId, onClose }: EquipmentManagerProps) {
               Quick Add New
             </Button>
           </div>
+        ) : isApplyingGroup ? (
+          <ApplyGroupPanel
+            groups={equipmentGroups}
+            currentEquipment={currentEquipment}
+            selectedGroupId={selectedGroupId}
+            onSelectGroup={setSelectedGroupId}
+            onApply={() => {
+              if (selectedGroupId) applyGroupMutation.mutate(selectedGroupId);
+            }}
+            onCancel={() => {
+              setIsApplyingGroup(false);
+              setSelectedGroupId(null);
+            }}
+            isPending={applyGroupMutation.isPending}
+          />
         ) : isQuickAdding ? (
           <div className="space-y-3 p-3 bg-black/20 rounded-lg border border-gray-700">
             <h5 className="text-sm font-medium text-gray-300">Quick Add New Equipment</h5>
@@ -686,6 +740,111 @@ function EquipmentCard({ equipment, onRemove, onUpdate }: EquipmentCardProps) {
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const GROUP_TYPE_COLORS: Record<string, string> = {
+  telescope: "bg-blue-600/20 text-blue-400",
+  camera: "bg-green-600/20 text-green-400",
+  mount: "bg-purple-600/20 text-purple-400",
+  filter: "bg-yellow-600/20 text-yellow-400",
+  accessory: "bg-gray-600/20 text-gray-400",
+  software: "bg-cyan-600/20 text-cyan-400",
+};
+
+function ApplyGroupPanel({
+  groups,
+  currentEquipment,
+  selectedGroupId,
+  onSelectGroup,
+  onApply,
+  onCancel,
+  isPending,
+}: {
+  groups: EquipmentGroupWithMembers[];
+  currentEquipment: EquipmentWithDetails[];
+  selectedGroupId: number | null;
+  onSelectGroup: (id: number | null) => void;
+  onApply: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const selectedGroup = groups.find((g) => g.id === selectedGroupId);
+  const currentIds = new Set(currentEquipment.map((e) => e.id));
+
+  return (
+    <div className="space-y-3 p-3 bg-black/20 rounded-lg border border-gray-700">
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-gray-300">Select Equipment Group</Label>
+        <Select
+          value={selectedGroupId?.toString() || ""}
+          onValueChange={(value) => onSelectGroup(Number(value) || null)}
+        >
+          <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white h-10">
+            <SelectValue placeholder="Choose a group..." />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-900 border-gray-700 text-white">
+            {groups.map((group) => (
+              <SelectItem key={group.id} value={group.id.toString()}>
+                {group.name} ({group.members.length} items)
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedGroup && (
+        <div className="space-y-2">
+          {selectedGroup.description && (
+            <p className="text-xs text-gray-400">{selectedGroup.description}</p>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {selectedGroup.members.map((eq) => {
+              const alreadyAssigned = currentIds.has(eq.id);
+              return (
+                <span
+                  key={eq.id}
+                  className={`text-xs px-2 py-1 rounded ${
+                    alreadyAssigned
+                      ? "bg-gray-700/50 text-gray-500 line-through"
+                      : GROUP_TYPE_COLORS[eq.type] || GROUP_TYPE_COLORS.accessory
+                  }`}
+                >
+                  {eq.name}
+                  {alreadyAssigned && " (assigned)"}
+                </span>
+              );
+            })}
+          </div>
+          {selectedGroup.members.every((eq) => currentIds.has(eq.id)) && (
+            <p className="text-xs text-gray-500">All equipment in this group is already assigned.</p>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          onClick={onApply}
+          disabled={
+            !selectedGroupId ||
+            isPending ||
+            (selectedGroup?.members.every((eq) => currentIds.has(eq.id)) ?? false)
+          }
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          {isPending ? "Applying..." : "Apply Group"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onCancel}
+          className="border-gray-600 text-gray-300 hover:bg-gray-800"
+        >
+          Cancel
+        </Button>
       </div>
     </div>
   );
