@@ -64,6 +64,8 @@ async function runMigrations() {
         specifications JSON,
         image_url TEXT,
         description TEXT,
+        cost REAL,
+        acquisition_date TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -144,6 +146,24 @@ async function runMigrations() {
       );
     `;
 
+    await connection`
+      CREATE TABLE IF NOT EXISTS equipment_groups (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS equipment_group_members (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES equipment_groups(id) ON DELETE CASCADE,
+        equipment_id INTEGER NOT NULL REFERENCES equipment(id) ON DELETE CASCADE
+      );
+    `;
+
     // Migration: Add original_path to astrophotography_images if it doesn't exist
     try {
       await connection`
@@ -152,6 +172,19 @@ async function runMigrations() {
       console.log('Migration: Checked/Added original_path column to astrophotography_images');
     } catch (err) {
       console.error('Migration failed for original_path column:', err.message);
+    }
+
+    // Migration: Add cost and acquisition_date to equipment if they don't exist
+    try {
+      await connection`
+        ALTER TABLE equipment ADD COLUMN IF NOT EXISTS cost REAL;
+      `;
+      await connection`
+        ALTER TABLE equipment ADD COLUMN IF NOT EXISTS acquisition_date TIMESTAMP;
+      `;
+      console.log('Migration: Checked/Added cost and acquisition_date columns to equipment');
+    } catch (err) {
+      console.error('Migration failed for equipment cost/acquisition_date columns:', err.message);
     }
 
     console.log('Database tables and migrations completed successfully');
