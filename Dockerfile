@@ -3,11 +3,14 @@
 # All sensitive configuration is provided via environment variables at runtime
 FROM node:24-alpine AS builder
 
-# Upgrade npm and patch its bundled minimatch to fix known CVEs
+# Upgrade npm and patch its bundled dependencies to fix known CVEs
 RUN npm install -g npm@11.11.0 && \
     npm pack minimatch@10.2.4 && \
     tar -xzf minimatch-10.2.4.tgz -C /usr/local/lib/node_modules/npm/node_modules/minimatch --strip-components=1 && \
     rm minimatch-10.2.4.tgz && \
+    npm pack tar@7.5.11 && \
+    tar -xzf tar-7.5.11.tgz -C /usr/local/lib/node_modules/npm/node_modules/tar --strip-components=1 && \
+    rm tar-7.5.11.tgz && \
     npm cache clean --force
 
 # Set working directory
@@ -36,16 +39,20 @@ RUN npm run build:docker
 # Production stage
 FROM node:24-alpine AS runtime
 
-# Upgrade npm and patch its bundled minimatch to fix known CVEs
+# Upgrade npm and patch its bundled dependencies to fix known CVEs
 RUN npm install -g npm@11.11.0 && \
     npm pack minimatch@10.2.4 && \
     tar -xzf minimatch-10.2.4.tgz -C /usr/local/lib/node_modules/npm/node_modules/minimatch --strip-components=1 && \
     rm minimatch-10.2.4.tgz && \
+    npm pack tar@7.5.11 && \
+    tar -xzf tar-7.5.11.tgz -C /usr/local/lib/node_modules/npm/node_modules/tar --strip-components=1 && \
+    rm tar-7.5.11.tgz && \
     npm cache clean --force
 
-# Install curl for health checks, su-exec for privilege dropping, and shadow for user management
+# Upgrade base packages (fixes zlib CVEs) and install runtime dependencies
 # hadolint ignore=DL3018
-RUN apk add --no-cache curl su-exec shadow
+RUN apk upgrade --no-cache && \
+    apk add --no-cache curl su-exec shadow
 
 # Create app user for security (will be remapped via PUID/PGID if provided)
 RUN addgroup -g 1001 -S nodejs && \
