@@ -78,6 +78,7 @@ COPY docker/startup.sh ./
 RUN chmod +x startup.sh
 
 # Run as root initially to allow PUID/PGID remapping in startup.sh
+# hadolint ignore=DL3002
 USER root
 
 # Expose port
