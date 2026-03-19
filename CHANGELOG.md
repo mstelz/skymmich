@@ -5,6 +5,19 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-03-19
+
+### Fixed
+- **PostgreSQL Migration**: Added missing `created_at` column to `equipment_group_members` table in PostgreSQL DDL.
+
+### Security
+- **socket.io-parser CVE**: Overrode socket.io-parser to >=4.2.6 to fix high-severity unbounded binary attachments vulnerability.
+- **Docker Image**: Patched node-tar and zlib CVEs in Docker image.
+- **Dockerfile Lint**: Added hadolint ignore for DL3002 since root is required for PUID/PGID remapping at startup.
+
+### Changed
+- **Dependencies**: Updated production dependencies (better-sqlite3, framer-motion, nanoid, openseadragon, react-resizable-panels).
+
 ## [0.6.0] - 2026-03-11
 
 ### Added
