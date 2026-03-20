@@ -53,6 +53,6 @@ A comprehensive celestial catalog integration that provides a target-centric vie
 
 ## Infrastructure
 
-- **Docker**: Added `/app/cache/thumbnails` volume for persistent thumbnail storage.
-- **Environment Variables**:
-  - `THUMBNAIL_CACHE_DIR`: Customizable path for cached images.
+- Docker: Added `/app/cache` volume for persistent thumbnail and survey image storage.
+- Environment Variables:
+  - `THUMBNAIL_CACHE_DIR`: Customizable path for cached images (defaults to `/app/cache/thumbnails` in production).

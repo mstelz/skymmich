@@ -21,6 +21,7 @@ services:
       - skymmich-config:/app/config
       - skymmich-logs:/app/logs
       - skymmich-sidecars:/app/sidecars
+      - skymmich-cache:/app/cache
     depends_on:
       skymmich-db:
         condition: service_healthy
@@ -66,4 +67,6 @@ volumes:
   skymmich-logs:
     driver: local
   skymmich-sidecars:
+    driver: local
+  skymmich-cache:
     driver: local

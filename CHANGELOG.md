@@ -5,6 +5,12 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-03-20
+
+### Fixed
+- **Docker Permissions**: Added `/app/cache` to startup permission management. This ensures that the container automatically handles ownership of survey images and thumbnails regardless of host environment or PUID/PGID settings.
+- **Persistence**: Fixed missing cache volume mappings in production Docker Compose and Unraid templates.
+
 ## [0.7.0] - 2026-03-20
 
 ### Added
@@ -24,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Header Navigation**: Added "Targets" to the main site navigation.
 - **Dockerfile**: Added persistent cache directory for thumbnails (`/app/cache/thumbnails`).
 - **App Layout**: Registered new `/targets` route and updated global UI components.
+- **Persistence**: Added new `/app/cache` volume requirement. **Existing Docker and Unraid users should manually add this path mapping to ensure survey images and thumbnails persist across restarts.**
 
 ### Fixed
 - **Thumbnail Cache**: Improved thumbnail serving performance via disk-based caching and immutable headers.

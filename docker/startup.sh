@@ -13,7 +13,7 @@ usermod -o -u "$PUID" skymmich || true
 
 # Ensure proper ownership of application and data directories
 echo "Setting directory permissions..."
-chown -R skymmich:nodejs /app/config /app/logs /app/sidecars /app/dist
+chown -R skymmich:nodejs /app/config /app/logs /app/sidecars /app/cache /app/dist
 
 echo "Starting Skymmich container..."
 echo "Node.js version: $(node --version)"

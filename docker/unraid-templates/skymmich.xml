@@ -11,8 +11,19 @@
   <Project>https://github.com/mstelz/skymmich</Project>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
-  <Date>2026-02-26</Date>
+  <Date>2026-03-20</Date>
   <Changes>
+    ### v0.7.1
+    - FIX: Automatic permission handling for /app/cache
+    - CONFIG: Added /app/cache volume mapping to standard template
+    
+    ### v0.7.0
+    - FEAT: Deep Sky Catalog & Targets page
+    - FEAT: Automated survey thumbnails with DSS2 data
+    - FEAT: "Best Now" intelligent target sorting
+    - FEAT: Immich Metadata Sync writeback
+    - CONFIG: Added /app/cache path mapping requirement. **Existing users: Please manually add a new path mapping for /app/cache to ensure survey images are persisted.**
+    
     ### v0.4.1
     - FEAT: Visual Image Renaming (custom display titles)
     - FEAT: PUID/PGID support for proper volume permissions
@@ -108,6 +119,8 @@
   <Config Name="Logs Directory" Target="/app/logs" Default="/mnt/user/appdata/skymmich/logs" Mode="rw" Description="Application logs storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/skymmich/logs</Config>
   
   <Config Name="Sidecar Directory" Target="/app/sidecars" Default="/mnt/user/appdata/skymmich/sidecars" Mode="rw" Description="XMP sidecar files storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/skymmich/sidecars</Config>
+  
+  <Config Name="Cache Directory" Target="/app/cache" Default="/mnt/user/appdata/skymmich/cache" Mode="rw" Description="Cache storage for thumbnails and survey images" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/skymmich/cache</Config>
   
   <Config Name="XMP Sidecar Path" Target="XMP_SIDECAR_PATH" Default="/app/sidecars" Mode="" Description="Directory for XMP sidecar files" Type="Variable" Display="advanced" Required="false" Mask="false">/app/sidecars</Config>
   
