@@ -35,7 +35,7 @@ All API responses return JSON with the following general structure:
 
 ## Endpoints
 
-### 🖼️ Images
+### Images
 
 #### Get All Images
 ```
@@ -103,7 +103,7 @@ PATCH /api/images/{id}
 
 **Response:** Updated image object
 
-### 🔭 Plate Solving
+### Plate Solving
 
 #### Submit Image for Plate Solving
 ```
@@ -236,7 +236,7 @@ GET /api/images/{id}/annotations
 }
 ```
 
-### 🛠️ Equipment
+### Equipment
 
 #### Get All Equipment
 ```
@@ -373,7 +373,7 @@ DELETE /api/images/{imageId}/equipment/{equipmentId}
 }
 ```
 
-### ⚙️ Admin & Configuration
+### Admin & Configuration
 
 #### Get Admin Settings
 ```
@@ -461,7 +461,7 @@ POST /api/test-astrometry-connection
 }
 ```
 
-### 🔄 Sync & Integration
+### Sync & Integration
 
 #### Sync Images from Immich
 ```
@@ -504,7 +504,7 @@ POST /api/immich/albums
 ]
 ```
 
-### 📊 Statistics & Data
+### Statistics & Data
 
 #### Get Statistics
 ```
@@ -572,7 +572,7 @@ GET /api/constellations
 ]
 ```
 
-### 🔔 Notifications
+### Notifications
 
 #### Get Notifications
 ```
@@ -613,7 +613,7 @@ POST /api/notifications/{id}/acknowledge
 }
 ```
 
-### 🏥 Health & Monitoring
+### Health & Monitoring
 
 #### Health Check
 ```
@@ -638,7 +638,7 @@ GET /api/health
 }
 ```
 
-### 🎯 Asset Proxy
+### Asset Proxy
 
 #### Get Asset
 ```

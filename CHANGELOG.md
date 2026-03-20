@@ -174,7 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-01-27
 
 ### Added
-- **🎉 Initial Release**: Core functionality including Immich synchronization and image management.
+- **Initial Release**: Core functionality including Immich synchronization and image management.
 - **Plate Solving**: Astrometry.net integration for automatic celestial coordinate detection.
 - **Equipment Catalog**: Manage telescopes, cameras, and accessories.
 - **Deep Zoom Viewer**: OpenSeaDragon integration for high-resolution exploration.

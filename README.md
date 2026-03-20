@@ -20,15 +20,15 @@
 
 Perfect for organizing, analyzing, and showcasing your astrophotography collection with full control over your data and infrastructure.
 
-> **📢 Disclaimer**: Skymmich is an independent project and is not affiliated with, endorsed by, or officially connected to Immich or its developers. Skymmich is a third-party application that integrates with Immich's public API.
+> **Disclaimer**: Skymmich is an independent project and is not affiliated with, endorsed by, or officially connected to Immich or its developers. Skymmich is a third-party application that integrates with Immich's public API.
 
 <div align="center">
   <img width="80%" src="assets/images/demo.gif" />
 </div>
 
-## ✨ Features
+## Features
 
-### 🖼️ **Self-Hosted Image Management**
+### **Self-Hosted Image Management**
 - **Immich Integration**: Seamless synchronization with your self-hosted Immich photo library
 - **Interactive Sky Map**: Explore your collection on a high-fidelity celestial atlas powered by Aladin Lite v3
 - **Astrophotography Filtering**: Filter by telescopes, cameras, targets, constellations, and acquisition details
@@ -36,29 +36,29 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 - **Metadata Preservation**: Automatic EXIF and XMP sidecar handling for astrophotography workflows
 - **Zero Duplication**: View images directly from Immich without storage overhead
 
-### 🔭 **Plate Solving**
+### **Plate Solving**
 - **Astrometry.net Integration**: Automatic coordinate solving for your images
 - **Background Processing**: Non-blocking worker processes with job queuing
 - **Real-time Updates**: Live progress tracking via WebSocket connections
 - **Batch Processing**: Handle multiple images simultaneously
 - **Results Storage**: Persistent RA/Dec coordinates and field information
 
-### 📊 **Astrophotography Equipment Tracking**
+### **Astrophotography Equipment Tracking**
 - **Telescope Catalog**: Manage your telescopes, mounts, and accessories with specifications
 - **Camera Database**: Track sensors, filters, and imaging configurations specific to astrophotography
 - **Session Logging**: Automatic equipment association from EXIF metadata and manual tagging
 
-### 🎛️ **Admin Interface**
+### **Admin Interface**
 - **Configuration Management**: Secure API key and integration settings
 - **Sync Scheduling**: Configurable cron jobs for automated tasks
 - **Worker Control**: Enable/disable background processing for plate solving
 
-### 🔒 **Security & Deployment**
+### **Security & Deployment**
 - **Docker Ready**: Multi-stage containerization with health checks
 - **UnRAID Support**: Ready-to-use container templates
 - **Database Options**: PostgreSQL for production, SQLite for development
 
-## 🚀 Quick Start
+## Quick Start
 
 > **Prerequisites**: Skymmich requires a running [Immich](https://immich.app/) instance for photo management. Ensure you have Immich set up and accessible before proceeding.
 
@@ -91,7 +91,7 @@ open http://localhost:5000
 
 Single container deployment using GitHub Container Registry:
 
-> **⚠️ Database Required**: You'll need a running PostgreSQL database. If you don't have one, use Option 1 (Docker Compose) instead, which includes PostgreSQL automatically.
+> **Database Required**: You'll need a running PostgreSQL database. If you don't have one, use Option 1 (Docker Compose) instead, which includes PostgreSQL automatically.
 
 ```bash
 # Pull the latest image
@@ -113,7 +113,7 @@ open http://localhost:5000
 
 ### Option 3: UnRAID Template
 
-> **📢 Coming Soon**: Skymmich will be available in UnRAID Community Applications for easy one-click installation.
+> **Coming Soon**: Skymmich will be available in UnRAID Community Applications for easy one-click installation.
 
 For now, manual installation:
 
@@ -151,7 +151,7 @@ npm run dev:worker:standalone
 # Access at http://localhost:5000 (Docker) or http://localhost:5173 (local)
 ```
 
-## 📋 Requirements
+## Requirements
 
 ### Core Requirements
 - **Immich Server**: Self-hosted photo management server (currently the only supported photo source)
@@ -168,7 +168,7 @@ npm run dev:worker:standalone
 
 > **Note**: Support for additional photo sources beyond Immich is planned for future releases, but Immich is currently required as the primary photo library.
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -193,9 +193,9 @@ After startup, access the admin interface at `/admin` to configure:
 - **Worker Management**: Enable/disable background processing
 - **Sync Scheduling**: Automated Immich synchronization frequency
 
-> 💡 **Tip**: Configuration via admin interface takes precedence over environment variables and persists across container restarts.
+> **Tip**: Configuration via admin interface takes precedence over environment variables and persists across container restarts.
 
-## 📦 Container Images
+## Container Images
 
 Skymmich provides ready-to-use container images through GitHub Container Registry:
 
@@ -216,7 +216,7 @@ Skymmich provides ready-to-use container images through GitHub Container Registr
 
 All images are automatically built, tested, and scanned for vulnerabilities using GitHub Actions.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────┐    ┌─────────────────────┐
@@ -241,7 +241,7 @@ All images are automatically built, tested, and scanned for vulnerabilities usin
 └─────────────────────────────────────┘
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Skymmich/
@@ -278,7 +278,7 @@ Skymmich/
 └── assets/                     # Static assets and examples
 ```
 
-## 🛠️ Development
+## Development
 
 ### Prerequisites
 
@@ -355,7 +355,7 @@ npm run test:e2e:headed # Run tests in headed browser mode
 npm run check          # TypeScript compilation check
 ```
 
-## 🚢 CI/CD & Deployment
+## CI/CD & Deployment
 
 Skymmich uses GitHub Actions for continuous integration and deployment. All builds are automatically tested, scanned for vulnerabilities, and containerized.
 
@@ -373,11 +373,11 @@ Skymmich uses GitHub Actions for continuous integration and deployment. All buil
 
 For detailed CI/CD documentation, see [docs/CI_CD.md](docs/CI_CD.md).
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Core Features
 - [ ] **Additional Photo Sources**: Support for photo libraries beyond Immich (direct uploads, other self-hosted solutions)
@@ -395,14 +395,14 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [ ] Community features (sharing, public galleries)
 
 ### Community & Help
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/mstelz/Skymmich/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/mstelz/Skymmich/discussions)
+- **Bug Reports**: [GitHub Issues](https://github.com/mstelz/Skymmich/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/mstelz/Skymmich/discussions)
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **[Immich](https://immich.app/)** - Inspiration and integration for photo management
 - **[Astrometry.net](https://astrometry.net/)** - Plate solving service and algorithms
@@ -413,8 +413,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Built with ❤️ for the astrophotography community**
+**Built for the astrophotography community**
 
-[⭐ Star this repo](https://github.com/mstelz/Skymmich) | [🐛 Report bug](https://github.com/mstelz/Skymmich/issues) | [💡 Request feature](https://github.com/mstelz/Skymmich/discussions)
+[Star this repo](https://github.com/mstelz/Skymmich) | [Report bug](https://github.com/mstelz/Skymmich/issues) | [Request feature](https://github.com/mstelz/Skymmich/discussions)
 
 </div>

@@ -109,7 +109,7 @@ app.use('/api/sessions', sessionRoutes);
 │            Z avg hours/session"              │
 ├─────────────────────────────────────────────┤
 │ ┌─────────────────────────────────────────┐ │
-│ │ 📅 January 15, 2024          ▾ expand  │ │
+│ │ January 15, 2024             expand    │ │
 │ │ 5 images · 4.2 hours                    │ │
 │ │ [M42] [NGC 1977]                        │ │
 │ │ Telescope: EQ6-R · Camera: ASI2600MC   │ │
@@ -118,7 +118,7 @@ app.use('/api/sessions', sessionRoutes);
 │ └─────────────────────────────────────────┘ │
 │                                              │
 │ ┌─────────────────────────────────────────┐ │
-│ │ 📅 January 10, 2024          ▾ expand  │ │
+│ │ January 10, 2024             expand    │ │
 │ │ 3 images · 2.8 hours                    │ │
 │ │ [M31]                                   │ │
 │ └─────────────────────────────────────────┘ │
