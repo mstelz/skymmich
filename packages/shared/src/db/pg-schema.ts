@@ -34,6 +34,7 @@ export const astrophotographyImages = pgTable('astrophotography_images', {
   tags: text('tags').array(),
   objectType: text('object_type'),
   constellation: text('constellation'),
+  targetName: text('target_name'),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
@@ -119,6 +120,29 @@ export const equipmentGroupMembers = pgTable('equipment_group_members', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const catalogObjects = pgTable('catalog_objects', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  type: text('type'),
+  ra: text('ra'),
+  dec: text('dec'),
+  raDeg: real('ra_deg'),
+  decDeg: real('dec_deg'),
+  constellation: text('constellation'),
+  majorAxis: real('major_axis'),
+  minorAxis: real('minor_axis'),
+  bMag: real('b_mag'),
+  vMag: real('v_mag'),
+  surfaceBrightness: real('surface_brightness'),
+  hubbleType: text('hubble_type'),
+  messier: text('messier'),
+  ngcRef: text('ngc_ref'),
+  icRef: text('ic_ref'),
+  commonNames: text('common_names'),
+  identifiers: text('identifiers'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const locations = pgTable('locations', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
@@ -126,6 +150,15 @@ export const locations = pgTable('locations', {
   longitude: real('longitude').notNull(),
   altitude: real('altitude'),
   description: text('description'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const userTargets = pgTable('user_targets', {
+  id: serial('id').primaryKey(),
+  catalogName: text('catalog_name').notNull().unique(),
+  notes: text('notes'),
+  tags: json('tags').$type<string[]>(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -140,6 +173,8 @@ export const insertImageAcquisitionSchema = createInsertSchema(imageAcquisition)
 export const insertEquipmentGroupSchema = createInsertSchema(equipmentGroups);
 export const insertEquipmentGroupMemberSchema = createInsertSchema(equipmentGroupMembers);
 export const insertLocationSchema = createInsertSchema(locations);
+export const insertCatalogObjectSchema = createInsertSchema(catalogObjects);
+export const insertUserTargetSchema = createInsertSchema(userTargets);
 
 export type AstroImage = typeof astrophotographyImages.$inferSelect;
 export type InsertAstroImage = z.infer<typeof insertAstroImageSchema>;
@@ -157,3 +192,7 @@ export type EquipmentGroupMember = typeof equipmentGroupMembers.$inferSelect;
 export type InsertEquipmentGroupMember = z.infer<typeof insertEquipmentGroupMemberSchema>;
 export type Location = typeof locations.$inferSelect;
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
+export type CatalogObject = typeof catalogObjects.$inferSelect;
+export type InsertCatalogObject = z.infer<typeof insertCatalogObjectSchema>;
+export type UserTarget = typeof userTargets.$inferSelect;
+export type InsertUserTarget = z.infer<typeof insertUserTargetSchema>;

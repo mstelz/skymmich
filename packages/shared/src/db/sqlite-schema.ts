@@ -32,6 +32,7 @@ export const astrophotographyImages = sqliteTable('astrophotography_images', {
     tags: text('tags', { mode: 'json' }),
     objectType: text('object_type'),
     constellation: text('constellation'),
+    targetName: text('target_name'),
     description: text('description'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
@@ -117,6 +118,29 @@ export const equipmentGroupMembers = sqliteTable('equipment_group_members', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
+export const catalogObjects = sqliteTable('catalog_objects', {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull().unique(),
+    type: text('type'),
+    ra: text('ra'),
+    dec: text('dec'),
+    raDeg: real('ra_deg'),
+    decDeg: real('dec_deg'),
+    constellation: text('constellation'),
+    majorAxis: real('major_axis'),
+    minorAxis: real('minor_axis'),
+    bMag: real('b_mag'),
+    vMag: real('v_mag'),
+    surfaceBrightness: real('surface_brightness'),
+    hubbleType: text('hubble_type'),
+    messier: text('messier'),
+    ngcRef: text('ngc_ref'),
+    icRef: text('ic_ref'),
+    commonNames: text('common_names'),
+    identifiers: text('identifiers'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
 export const locations = sqliteTable('locations', {
     id: integer('id').primaryKey(),
     name: text('name').notNull(),
@@ -124,6 +148,15 @@ export const locations = sqliteTable('locations', {
     longitude: real('longitude').notNull(),
     altitude: real('altitude'),
     description: text('description'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
+export const userTargets = sqliteTable('user_targets', {
+    id: integer('id').primaryKey(),
+    catalogName: text('catalog_name').notNull().unique(),
+    notes: text('notes'),
+    tags: text('tags', { mode: 'json' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });

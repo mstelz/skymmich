@@ -50,6 +50,7 @@ async function runMigrations() {
         tags TEXT[],
         object_type TEXT,
         constellation TEXT,
+        target_name TEXT,
         description TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -68,6 +69,25 @@ async function runMigrations() {
         acquisition_date TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS equipment_groups (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS equipment_group_members (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES equipment_groups(id) ON DELETE CASCADE,
+        equipment_id INTEGER NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `;
 
@@ -116,19 +136,6 @@ async function runMigrations() {
     `;
 
     await connection`
-      CREATE TABLE IF NOT EXISTS locations (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL,
-        altitude REAL,
-        description TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      );
-    `;
-
-    await connection`
       CREATE TABLE IF NOT EXISTS image_acquisition (
         id SERIAL PRIMARY KEY,
         image_id INTEGER NOT NULL REFERENCES astrophotography_images(id) ON DELETE CASCADE,
@@ -147,9 +154,12 @@ async function runMigrations() {
     `;
 
     await connection`
-      CREATE TABLE IF NOT EXISTS equipment_groups (
+      CREATE TABLE IF NOT EXISTS locations (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        altitude REAL,
         description TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -157,48 +167,68 @@ async function runMigrations() {
     `;
 
     await connection`
-      CREATE TABLE IF NOT EXISTS equipment_group_members (
+      CREATE TABLE IF NOT EXISTS catalog_objects (
         id SERIAL PRIMARY KEY,
-        group_id INTEGER NOT NULL REFERENCES equipment_groups(id) ON DELETE CASCADE,
-        equipment_id INTEGER NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+        name TEXT NOT NULL UNIQUE,
+        type TEXT,
+        ra TEXT,
+        dec TEXT,
+        ra_deg REAL,
+        dec_deg REAL,
+        constellation TEXT,
+        major_axis REAL,
+        minor_axis REAL,
+        b_mag REAL,
+        v_mag REAL,
+        surface_brightness REAL,
+        hubble_type TEXT,
+        messier TEXT,
+        ngc_ref TEXT,
+        ic_ref TEXT,
+        common_names TEXT,
+        identifiers TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       );
     `;
 
-    // Migration: Add original_path to astrophotography_images if it doesn't exist
-    try {
-      await connection`
-        ALTER TABLE astrophotography_images ADD COLUMN IF NOT EXISTS original_path TEXT;
-      `;
-      console.log('Migration: Checked/Added original_path column to astrophotography_images');
-    } catch (err) {
-      console.error('Migration failed for original_path column:', err.message);
-    }
+    await connection`
+      CREATE TABLE IF NOT EXISTS user_targets (
+        id SERIAL PRIMARY KEY,
+        catalog_name TEXT NOT NULL UNIQUE,
+        notes TEXT,
+        tags JSON,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
 
-    // Migration: Add cost and acquisition_date to equipment if they don't exist
-    try {
-      await connection`
-        ALTER TABLE equipment ADD COLUMN IF NOT EXISTS cost REAL;
-      `;
-      await connection`
-        ALTER TABLE equipment ADD COLUMN IF NOT EXISTS acquisition_date TIMESTAMP;
-      `;
-      console.log('Migration: Checked/Added cost and acquisition_date columns to equipment');
-    } catch (err) {
-      console.error('Migration failed for equipment cost/acquisition_date columns:', err.message);
-    }
+    // Add target_name column to astrophotography_images if not exists
+    await connection`
+      DO $$ BEGIN
+        ALTER TABLE astrophotography_images ADD COLUMN target_name TEXT;
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `;
 
-    // Migration: Add created_at to equipment_group_members if it doesn't exist
-    try {
-      await connection`
-        ALTER TABLE equipment_group_members ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
-      `;
-      console.log('Migration: Checked/Added created_at column to equipment_group_members');
-    } catch (err) {
-      console.error('Migration failed for equipment_group_members created_at:', err.message);
-    }
+    // Add cost and acquisition_date to equipment if not exists
+    await connection`
+      DO $$ BEGIN
+        ALTER TABLE equipment ADD COLUMN cost REAL;
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `;
 
-    console.log('Database tables and migrations completed successfully');
+    await connection`
+      DO $$ BEGIN
+        ALTER TABLE equipment ADD COLUMN acquisition_date TIMESTAMP;
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `;
+
+    console.log('Database tables created successfully');
     
   } catch (error) {
     console.error('Migration failed:', error);

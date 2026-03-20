@@ -1,6 +1,6 @@
 {
   "name": "skymmich",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -21,6 +21,7 @@
     "docker:stop": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "check": "tsc",
+    "test": "tsx --test packages/shared/src/**/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",

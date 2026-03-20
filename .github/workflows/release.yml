@@ -141,25 +141,28 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Get the previous tag
+          VERSION="${{ github.ref_name }}"
+          VERSION_CLEAN="${VERSION#v}"
+          
+          # Extract the section for this version from CHANGELOG.md
+          # Starts at the version header and ends before the next version header
+          sed -n "/## \[$VERSION_CLEAN\]/,/## \[/p" CHANGELOG.md | sed '1d;$d' > changelog.md
+          
+          echo "" >> changelog.md
+          echo "--------" >> changelog.md
+          echo "" >> changelog.md
+          echo "Docker: \`docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION_CLEAN}\`" >> changelog.md
+          echo "" >> changelog.md
+          
           PREV_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
-          
-          if [ -z "$PREV_TAG" ]; then
-            echo "This is the first release" > changelog.md
-          else
-            echo "## What's Changed" > changelog.md
-            echo "" >> changelog.md
-            git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" >> changelog.md
+          if [ -n "$PREV_TAG" ]; then
+            echo "Full Changelog: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${VERSION}" >> changelog.md
           fi
-          
-          echo "" >> changelog.md
-          echo "" >> changelog.md
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${{ github.ref_name }}" >> changelog.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           body_path: changelog.md
           draft: false
           prerelease: false
@@ -167,7 +170,7 @@ jobs:
             release/skymmich-${{ github.ref_name }}-dist.tar.gz
             release/skymmich-${{ github.ref_name }}-source.tar.gz
             release/sbom-${{ github.ref_name }}.spdx.json
-          generate_release_notes: true
+          generate_release_notes: false
 
       - name: Create deployment summary
         run: |

@@ -59,6 +59,7 @@ async function runMigrations() {
         tags TEXT[],
         object_type TEXT,
         constellation TEXT,
+        target_name TEXT,
         description TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -73,8 +74,29 @@ async function runMigrations() {
         specifications JSON,
         image_url TEXT,
         description TEXT,
+        cost REAL,
+        acquisition_date TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS equipment_groups (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS equipment_group_members (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES equipment_groups(id) ON DELETE CASCADE,
+        equipment_id INTEGER NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `;
 
@@ -151,6 +173,68 @@ async function runMigrations() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS catalog_objects (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        type TEXT,
+        ra TEXT,
+        dec TEXT,
+        ra_deg REAL,
+        dec_deg REAL,
+        constellation TEXT,
+        major_axis REAL,
+        minor_axis REAL,
+        b_mag REAL,
+        v_mag REAL,
+        surface_brightness REAL,
+        hubble_type TEXT,
+        messier TEXT,
+        ngc_ref TEXT,
+        ic_ref TEXT,
+        common_names TEXT,
+        identifiers TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    await connection`
+      CREATE TABLE IF NOT EXISTS user_targets (
+        id SERIAL PRIMARY KEY,
+        catalog_name TEXT NOT NULL UNIQUE,
+        notes TEXT,
+        tags JSON,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
+    // Add target_name column to astrophotography_images if not exists
+    await connection`
+      DO $$ BEGIN
+        ALTER TABLE astrophotography_images ADD COLUMN target_name TEXT;
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `;
+
+    // Add cost and acquisition_date to equipment if not exists
+    await connection`
+      DO $$ BEGIN
+        ALTER TABLE equipment ADD COLUMN cost REAL;
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `;
+
+    await connection`
+      DO $$ BEGIN
+        ALTER TABLE equipment ADD COLUMN acquisition_date TIMESTAMP;
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
     `;
 
     console.log('Database tables created successfully');

@@ -1,6 +1,9 @@
 import { db, schema } from '../db';
 import { eq, and, inArray, lte } from 'drizzle-orm';
-import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, EquipmentGroup, InsertEquipmentGroup, EquipmentGroupMember, InsertEquipmentGroupMember, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow } from "../../../../packages/shared/src/types";
+import { like, or } from 'drizzle-orm';
+import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, EquipmentGroup, InsertEquipmentGroup, EquipmentGroupMember, InsertEquipmentGroupMember, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow, CatalogObject, InsertCatalogObject, UserTarget } from "../../../../packages/shared/src/types";
+import { computeImageSummary } from '../../../../packages/shared/src/image-utils';
+import { groupAndEnrichTargets } from '../../../../packages/shared/src/image-utils';
 
 class DbStorage {
   // Astrophotography images
@@ -396,41 +399,93 @@ class DbStorage {
     const acquisitions = await this.getImageAcquisitions(imageId);
     const linkedEquipment = await this.getEquipmentForImage(imageId);
 
-    const updates: Partial<InsertAstroImage> = {};
-
-    // Compute from acquisitions
-    if (acquisitions.length > 0) {
-      const totalFrames = acquisitions.reduce((sum, a) => sum + a.frameCount, 0);
-      const totalSeconds = acquisitions.reduce((sum, a) => sum + (a.frameCount * a.exposureTime), 0);
-      const filterNames = [...new Set(
-        acquisitions.map(a => a.filterName).filter(Boolean) as string[]
-      )];
-
-      updates.frameCount = totalFrames;
-      updates.totalIntegration = Math.round((totalSeconds / 3600) * 1000) / 1000;
-      updates.filters = filterNames.join(', ') || null;
-
-      const exposureTimes = [...new Set(acquisitions.map(a => a.exposureTime))];
-      if (exposureTimes.length === 1) {
-        updates.exposureTime = `${exposureTimes[0]}s`;
-      } else {
-        const min = Math.min(...exposureTimes);
-        const max = Math.max(...exposureTimes);
-        updates.exposureTime = `${min}s - ${max}s`;
-      }
-    }
-
-    // Compute from linked telescope equipment
-    const telescope = linkedEquipment.find(e => e.type === 'telescope');
-    if (telescope && telescope.specifications) {
-      const specs = telescope.specifications as Record<string, unknown>;
-      if (specs.focalLength) updates.focalLength = Number(specs.focalLength);
-      if (specs.focalRatio) updates.aperture = String(specs.focalRatio);
-    }
+    const updates = computeImageSummary(
+      acquisitions.map(a => ({ frameCount: a.frameCount, exposureTime: a.exposureTime, filterName: a.filterName })),
+      linkedEquipment.map(e => ({ type: e.type, specifications: e.specifications as Record<string, unknown> | null })),
+    );
 
     if (Object.keys(updates).length > 0) {
       await this.updateAstroImage(imageId, updates);
     }
+  }
+
+  // Catalog objects
+  async getCatalogObjects(): Promise<CatalogObject[]> {
+    return await db.select().from(schema.catalogObjects).execute();
+  }
+
+  async getCatalogObject(name: string): Promise<CatalogObject | undefined> {
+    const result = await db.select().from(schema.catalogObjects).where(eq(schema.catalogObjects.name, name)).execute();
+    return result[0] || undefined;
+  }
+
+  async searchCatalogObjects(query: string, limit: number = 20): Promise<CatalogObject[]> {
+    const pattern = `%${query}%`;
+    return await db.select().from(schema.catalogObjects)
+      .where(
+        or(
+          like(schema.catalogObjects.name, pattern),
+          like(schema.catalogObjects.messier, pattern),
+          like(schema.catalogObjects.commonNames, pattern),
+          like(schema.catalogObjects.identifiers, pattern),
+        )
+      )
+      .limit(limit)
+      .execute();
+  }
+
+  async bulkInsertCatalogObjects(objects: InsertCatalogObject[]): Promise<void> {
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < objects.length; i += BATCH_SIZE) {
+      const batch = objects.slice(i, i + BATCH_SIZE);
+      await db.insert(schema.catalogObjects).values(batch).execute();
+    }
+  }
+
+  async clearCatalogObjects(): Promise<void> {
+    await db.delete(schema.catalogObjects).execute();
+  }
+
+  // User Targets (annotations on catalog objects)
+  async getUserTargets(): Promise<UserTarget[]> {
+    return await db.select().from(schema.userTargets).execute();
+  }
+
+  async getUserTarget(catalogName: string): Promise<UserTarget | undefined> {
+    const result = await db.select().from(schema.userTargets).where(eq(schema.userTargets.catalogName, catalogName)).execute();
+    return result[0] || undefined;
+  }
+
+  async upsertUserTarget(catalogName: string, data: { notes?: string | null; tags?: string[] | null }): Promise<UserTarget> {
+    const existing = await this.getUserTarget(catalogName);
+    if (existing) {
+      const result = await db.update(schema.userTargets).set({
+        notes: data.notes !== undefined ? data.notes : existing.notes,
+        tags: data.tags !== undefined ? data.tags : existing.tags,
+        updatedAt: new Date(),
+      }).where(eq(schema.userTargets.catalogName, catalogName)).returning().execute();
+      return result[0];
+    }
+    const result = await db.insert(schema.userTargets).values({
+      catalogName,
+      notes: data.notes || null,
+      tags: data.tags || null,
+    }).returning().execute();
+    if (!result[0]) throw new Error('Failed to create user target');
+    return result[0];
+  }
+
+  async deleteUserTarget(catalogName: string): Promise<boolean> {
+    await db.delete(schema.userTargets).where(eq(schema.userTargets.catalogName, catalogName)).execute();
+    return true;
+  }
+
+  // Targets (images grouped by target name)
+  async getTargets(): Promise<any[]> {
+    const images = await this.getAstroImages();
+    const catalogObjects = await this.getCatalogObjects();
+
+    return groupAndEnrichTargets(images, catalogObjects);
   }
 
   // Stats

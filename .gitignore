@@ -95,6 +95,7 @@ xmp-sidecars/
 uploads/
 images/
 thumbnails/
+data/
 
 # Legacy paths
 server/public

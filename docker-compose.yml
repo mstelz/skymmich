@@ -19,6 +19,7 @@ services:
       - skymmich-config:/app/config
       - skymmich-logs:/app/logs
       - skymmich-sidecars:/app/sidecars
+      - skymmich-cache:/app/cache
       - skymmich_immich-upload:/immich-upload
     depends_on:
       skymmich-db:
@@ -65,6 +66,8 @@ volumes:
   skymmich-logs:
     driver: local
   skymmich-sidecars:
+    driver: local
+  skymmich-cache:
     driver: local
   skymmich_immich-upload:
     external: true

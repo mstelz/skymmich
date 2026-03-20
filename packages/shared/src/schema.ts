@@ -22,6 +22,10 @@ export type {
   InsertLocation,
   ImageAcquisitionRow,
   InsertImageAcquisitionRow,
+  CatalogObject,
+  InsertCatalogObject,
+  UserTarget,
+  InsertUserTarget,
 } from './db/pg-schema';
 
 // Re-export equipment types and config

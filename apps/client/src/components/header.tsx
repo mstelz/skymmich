@@ -102,8 +102,14 @@ export function Header() {
             >
               Gallery
             </Link>
-            <Link 
-              href="/equipment" 
+            <Link
+              href="/targets"
+              className={`transition-colors ${isActive('/targets') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Targets
+            </Link>
+            <Link
+              href="/equipment"
               className={`transition-colors ${isActive('/equipment') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Equipment

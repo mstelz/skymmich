@@ -71,7 +71,7 @@ RUN npm pkg delete dependencies.better-sqlite3 && npm ci --omit=dev && npm cache
 COPY --from=builder /build/dist ./dist
 
 # Create directories for runtime
-RUN mkdir -p /app/config /app/logs /app/sidecars
+RUN mkdir -p /app/config /app/logs /app/sidecars /app/cache/thumbnails
 
 # Copy startup script
 COPY docker/startup.sh ./

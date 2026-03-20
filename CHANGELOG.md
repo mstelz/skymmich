@@ -5,6 +5,30 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-03-20
+
+### Added
+- **Deep Sky Catalog & Targets**: New "Targets" page for browsing and filtering astronomical objects (Messier and NGC/IC catalogs).
+- **Advanced Target Filtering**: Search by name/aliases, multi-select object types, filter by constellation, magnitude range, and minimum size.
+- **Survey Thumbnails**: Automatic DSS2 survey image previews from Aladin Lite (hips2fits) with local disk caching.
+- **"Best Now" Sorting**: Intelligently rank targets based on current date and observer location to find what's best to image tonight.
+- **Visibility Filtering**: Support for hiding targets currently below the horizon based on managed location coordinates.
+- **Auto-Matching**: Automatically assign catalog targets to images after successful plate solving.
+- **Target Picker Modal**: Interactive search tool to manually assign catalog targets to gallery images.
+- **Backfill Administrative Tool**: New "Backfill Targets" button in Admin to re-match all existing plate-solved images against the catalog.
+- **Immich Metadata Sync**: Full writeback of metadata to Immich, including image description, constellation, and celestial coordinates.
+- **Metadata Configuration**: Granular admin toggles to enable/disable specific metadata fields for Immich sync.
+- **Gallery Equipment Filter**: Clicking an equipment badge in the image overlay now automatically filters the gallery to show all images using that equipment.
+
+### Changed
+- **Header Navigation**: Added "Targets" to the main site navigation.
+- **Dockerfile**: Added persistent cache directory for thumbnails (`/app/cache/thumbnails`).
+- **App Layout**: Registered new `/targets` route and updated global UI components.
+
+### Fixed
+- **Thumbnail Cache**: Improved thumbnail serving performance via disk-based caching and immutable headers.
+- **Plate Solving**: More robust target matching during the post-processing phase of plate solving jobs.
+
 ## [0.6.1] - 2026-03-19
 
 ### Fixed

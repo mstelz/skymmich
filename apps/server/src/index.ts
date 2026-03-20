@@ -3,18 +3,18 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
-import { configService } from "./services/config";
 import { registerRoutes } from "./routes";
 import { cronManager, setSocketIO as setCronSocketIO } from './services/cron-manager';
 // Vite imports are loaded dynamically to avoid bundling them in production
 import { setSocketIO } from "./services/astrometry";
 import { workerManager } from "./services/worker-manager";
+import { catalogService } from "./services/catalog";
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.NODE_ENV === 'production' ? undefined : '*',
     methods: ["GET", "POST"]
   }
 });
@@ -50,6 +50,18 @@ async function startServer() {
 
   // Initialize cron manager
   cronManager.initialize();
+
+  // Auto-load catalog if not yet loaded
+  catalogService.getStatus().then(status => {
+    if (!status.count) {
+      console.log('Catalog not loaded, fetching OpenNGC catalog...');
+      catalogService.loadCatalog()
+        .then(result => console.log(`Catalog loaded: ${result.count} objects`))
+        .catch(err => console.error('Failed to auto-load catalog:', err));
+    } else {
+      console.log(`Catalog already loaded: ${status.count} objects`);
+    }
+  }).catch(err => console.error('Failed to check catalog status:', err));
 
   // Socket.io connection handling
   io.on("connection", (socket) => {

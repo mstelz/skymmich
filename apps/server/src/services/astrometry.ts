@@ -5,6 +5,7 @@ import { xmpSidecarService } from './xmp-sidecar';
 import { configService } from './config';
 import { getConstellationFromCoordinates } from './constellation-utils';
 import { filterRelevantTags } from './tags-utils';
+import { catalogService } from './catalog';
 
 // Import io from the main server file
 let io: any = null;
@@ -335,6 +336,19 @@ export class AstrometryService {
           constellation: constellation,
           tags: allTags as any,
         });
+
+        // Auto-match target from catalog using plate solving tags.
+        // matchTargetFromTags checks ALL tags against the catalog (not just the first),
+        // collects every match, then ranks them: Messier objects first, then by
+        // brightest V-magnitude. We auto-set targetName to the top-ranked result.
+        try {
+          const matches = await catalogService.matchTargetFromTags(allTags);
+          if (matches.length > 0) {
+            await storage.updateAstroImage(job.imageId, { targetName: matches[0].name } as any);
+          }
+        } catch (error) {
+          console.error(`Failed to auto-match target for image ${image.id}:`, error);
+        }
 
         // Write XMP sidecar file with equipment information
         try {
