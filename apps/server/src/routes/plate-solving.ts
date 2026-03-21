@@ -4,6 +4,7 @@ import { storage } from '../services/storage';
 import { astrometryService } from '../services/astrometry';
 import { configService } from '../services/config';
 import { Server as SocketIOServer } from 'socket.io';
+import { handleRouteError } from './route-utils';
 
 export default (io?: SocketIOServer) => {
   const router = Router();
@@ -26,7 +27,6 @@ export default (io?: SocketIOServer) => {
       }
 
       // Use the shared service to complete the full plate solving workflow
-      // This will submit, poll for completion, and update the job/image with all results
       const result = await astrometryService.completePlateSolvingWorkflow(image);
 
       res.json({
@@ -37,12 +37,8 @@ export default (io?: SocketIOServer) => {
           machineTags: result.machineTags,
         },
       });
-    } catch (error: any) {
-      console.error('Plate solving error:', error.response?.data || error.message);
-      res.status(500).json({
-        message: 'Failed to complete plate solving',
-        error: error.response?.data?.message || error.message,
-      });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to complete plate solving');
     }
   });
 
@@ -52,7 +48,7 @@ export default (io?: SocketIOServer) => {
       const jobs = await storage.getPlateSolvingJobs();
       res.json(jobs);
     } catch (error) {
-      res.status(500).json({ message: 'Failed to fetch plate solving jobs' });
+      handleRouteError(res, error, 'Failed to fetch plate solving jobs');
     }
   });
 
@@ -88,7 +84,7 @@ export default (io?: SocketIOServer) => {
             continue;
           }
 
-          // Submit for plate solving (just submit, don\'t wait for completion)
+          // Submit for plate solving (just submit, don't wait for completion)
           const { submissionId, jobId } = await astrometryService.submitImageForPlateSolving(image);
 
           results.push({
@@ -98,11 +94,12 @@ export default (io?: SocketIOServer) => {
             jobId,
             message: 'Submitted for plate solving',
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
+          const err = error as Error & { response?: { data?: { message?: string } } };
           results.push({
             imageId,
             success: false,
-            error: error.response?.data?.message || error.message,
+            error: err.response?.data?.message || err.message,
           });
         }
       }
@@ -111,17 +108,12 @@ export default (io?: SocketIOServer) => {
         message: 'Bulk plate solving submission completed',
         results,
       });
-    } catch (error: any) {
-      console.error('Bulk plate solving error:', error);
-      res.status(500).json({
-        message: 'Failed to submit images for plate solving',
-        error: error.message,
-      });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to submit images for plate solving');
     }
   });
 
   // Update plate solving job status
-  // Note: This endpoint is mainly for debugging. The worker process automatically checks and updates job status.
   router.post('/update/:jobId', async (req, res) => {
     try {
       const jobId = parseInt(req.params.jobId);
@@ -133,12 +125,8 @@ export default (io?: SocketIOServer) => {
       }
 
       res.json({ status, result });
-    } catch (error: any) {
-      console.error('Status update error:', error.response?.data || error.message);
-      res.status(500).json({
-        message: 'Failed to update plate solving status',
-        error: error.response?.data?.message || error.message,
-      });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to update plate solving status');
     }
   });
 

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/header";
 import { Input } from "@/components/ui/input";
@@ -62,7 +63,6 @@ function getObjectTypeLabel(type: string | null): string {
 
 export default function TargetsPage() {
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [constellationFilter, setConstellationFilter] = useState("all");
   const [locationId, setLocationId] = useState("none");
@@ -81,16 +81,10 @@ export default function TargetsPage() {
   const PAGE_SIZE = 50;
 
   // Debounce search input
-  const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    if (searchTimer) clearTimeout(searchTimer);
-    const timer = setTimeout(() => {
-      setDebouncedSearch(value);
-      setPage(1);
-    }, 300);
-    setSearchTimer(timer);
-  };
+  const debouncedSearch = useDebounce(search, 300);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   // Fetch locations (once)
   const { data: locations = [] } = useQuery<Location[]>({
@@ -266,7 +260,7 @@ export default function TargetsPage() {
               <Input
                 placeholder="Search catalog..."
                 value={search}
-                onChange={e => handleSearchChange(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 className="pl-9 sky-input"
               />
             </div>

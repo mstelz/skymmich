@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -27,8 +28,7 @@ router.get('/', async (req, res) => {
 
     res.json(targets);
   } catch (error) {
-    console.error('Failed to fetch targets:', error);
-    res.status(500).json({ message: 'Failed to fetch targets' });
+    handleRouteError(res, error, 'Failed to fetch targets');
   }
 });
 
@@ -45,8 +45,7 @@ router.get('/:name', async (req, res) => {
 
     res.json(target);
   } catch (error) {
-    console.error('Failed to fetch target:', error);
-    res.status(500).json({ message: 'Failed to fetch target' });
+    handleRouteError(res, error, 'Failed to fetch target');
   }
 });
 

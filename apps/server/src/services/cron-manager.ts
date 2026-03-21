@@ -3,11 +3,13 @@ import axios from 'axios';
 import { configService } from './config';
 import { storage } from './storage';
 
+import type { Server as SocketIOServer } from 'socket.io';
+
 // Import io from the main server file
-let io: any = null;
+let io: SocketIOServer | null = null;
 
 // Function to set io instance (called from server/index.ts)
-export function setSocketIO(socketIO: any) {
+export function setSocketIO(socketIO: SocketIOServer) {
   io = socketIO;
 }
 
@@ -75,10 +77,11 @@ class CronManager {
           throw new Error(`HTTP ${response.status}: ${response.data?.message || 'Unknown error'}`);
         }
         
-      } catch (error: any) {
-        const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      } catch (error: unknown) {
+        const err = error as Error & { response?: { data?: { message?: string } } };
+        const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
         console.error('[CRON] Immich sync failed:', errorMessage);
-        
+
         // Emit real-time update via Socket.io for failures
         if (io) {
           io.emit('immich-sync-complete', {
@@ -119,8 +122,8 @@ class CronManager {
       try {
         await storage.clearOldNotifications(30);
         console.log('[CRON] Old notifications cleaned up');
-      } catch (error: any) {
-        console.error('[CRON] Failed to clean up notifications:', error.message);
+      } catch (error: unknown) {
+        console.error('[CRON] Failed to clean up notifications:', (error as Error).message);
         // Don't create a notification for cleanup failures to avoid infinite loops
       }
     });
@@ -129,22 +132,23 @@ class CronManager {
   private scheduleJob(id: string, name: string, schedule: string, task: () => Promise<void>) {
     // Stop existing job if it exists
     this.stopJob(id);
-    
+
     try {
       // Wrap the task in a global error handler
       const safeTask = async () => {
         try {
           await task();
-        } catch (error: any) {
-          console.error(`[CRON] Unhandled error in job ${name}:`, error.message);
-          
+        } catch (error: unknown) {
+          const errMsg = (error as Error).message;
+          console.error(`[CRON] Unhandled error in job ${name}:`, errMsg);
+
           // Try to create a notification for unhandled errors
           try {
             await storage.createNotification({
               type: 'error',
               title: 'Cron Job Error',
-              message: `Unhandled error in ${name}: ${error.message}`,
-              details: { jobId: id, error: error.message }
+              message: `Unhandled error in ${name}: ${errMsg}`,
+              details: { jobId: id, error: errMsg }
             });
           } catch (notificationError) {
             console.error('[CRON] Failed to create unhandled error notification:', notificationError);
@@ -165,16 +169,16 @@ class CronManager {
       this.jobs.set(id, job);
       console.log(`[CRON] Scheduled ${name} with cron: ${schedule}`);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[CRON] Failed to schedule ${name}:`, error);
-      
+
       // Create notification for scheduling failure - wrap in try-catch
       try {
         storage.createNotification({
           type: 'error',
           title: 'Cron Job Scheduling Failed',
           message: `Failed to schedule ${name} with cron expression: ${schedule}`,
-          details: { jobId: id, schedule, error: error.message }
+          details: { jobId: id, schedule, error: (error as Error).message }
         });
       } catch (notificationError) {
         console.error('[CRON] Failed to create scheduling failure notification:', notificationError);

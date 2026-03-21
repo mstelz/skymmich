@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { storage } from '../services/storage';
 import { xmpSidecarService } from '../services/xmp-sidecar';
 import { configService } from '../services/config';
+import { handleRouteError } from './route-utils';
 
 import axios from 'axios';
 
@@ -31,8 +32,9 @@ async function updateImmichAssetMetadata(immichId: string, metadata: { latitude?
       }
     );
     console.log(`Synced metadata to Immich for asset ${immichId}`);
-  } catch (error: any) {
-    console.error(`Failed to sync metadata to Immich for asset ${immichId}:`, error.response?.data || error.message);
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { data?: unknown } };
+    console.error(`Failed to sync metadata to Immich for asset ${immichId}:`, err.response?.data || err.message);
   }
 }
 
@@ -40,7 +42,7 @@ async function updateImmichAssetMetadata(immichId: string, metadata: { latitude?
 router.get('/', async (req, res) => {
   try {
     const { objectType, tags, plateSolved, constellation, equipmentId } = req.query;
-    const filters: any = {};
+    const filters: { objectType?: string; tags?: string[]; plateSolved?: boolean; constellation?: string; equipmentId?: number } = {};
 
     if (objectType) filters.objectType = objectType as string;
     if (tags) filters.tags = Array.isArray(tags) ? (tags as string[]) : [tags as string];
@@ -51,8 +53,7 @@ router.get('/', async (req, res) => {
     const images = await storage.getAstroImages(filters);
     res.json(images);
   } catch (error) {
-    console.error('Failed to fetch images:', error);
-    res.status(500).json({ message: 'Failed to fetch images' });
+    handleRouteError(res, error, 'Failed to fetch images');
   }
 });
 
@@ -66,7 +67,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json(image);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch image' });
+    handleRouteError(res, error, 'Failed to fetch image');
   }
 });
 
@@ -91,8 +92,7 @@ router.patch('/:id', async (req, res) => {
 
     res.json(updatedImage);
   } catch (error) {
-    console.error('Failed to update image:', error);
-    res.status(500).json({ message: 'Failed to update image' });
+    handleRouteError(res, error, 'Failed to update image');
   }
 });
 
@@ -106,9 +106,8 @@ router.get('/:id/plate-solving-job', async (req, res) => {
       return res.status(404).json({ message: 'Image not found' });
     }
 
-    // Find the plate solving job for this image
-    const jobs = await storage.getPlateSolvingJobs();
-    const job = jobs.find((j) => j.imageId === imageId && j.status === 'success');
+    // Find the successful plate solving job for this image directly
+    const job = await storage.getLatestPlateSolvingJob(imageId, 'success');
 
     if (!image.plateSolved || !job) {
       return res.status(400).json({ message: 'Image has not been successfully plate solved' });
@@ -123,12 +122,7 @@ router.get('/:id/plate-solving-job', async (req, res) => {
       completedAt: job.completedAt,
     });
   } catch (error) {
-    const err = error as any;
-    console.error('Plate solving job fetch error:', err.response?.data || err.message);
-    res.status(500).json({
-      message: 'Failed to fetch plate solving job data',
-      error: err.response?.data?.message || err.message,
-    });
+    handleRouteError(res, error, 'Failed to fetch plate solving job data');
   }
 });
 
@@ -142,20 +136,19 @@ router.get('/:id/annotations', async (req, res) => {
       return res.status(404).json({ message: 'Image not found' });
     }
 
-    // Find the plate solving job for this image
-    const jobs = await storage.getPlateSolvingJobs();
-    const job = jobs.find((j) => j.imageId === imageId && j.status === 'success');
+    // Find the successful plate solving job for this image directly
+    const job = await storage.getLatestPlateSolvingJob(imageId, 'success');
 
     if (!image.plateSolved || !job) {
       return res.status(400).json({ message: 'Image has not been plate solved' });
     }
 
-    if (!job || !job.result) {
+    if (!job.result) {
       return res.status(400).json({ message: 'No successful plate solving data found' });
     }
 
-    const result = job.result as any;
-    const annotations = result.annotations || [];
+    const result = job.result as Record<string, unknown>;
+    const annotations = (result.annotations as unknown[]) || [];
     const calibration = {
       ra: result.ra,
       dec: result.dec,
@@ -173,12 +166,7 @@ router.get('/:id/annotations', async (req, res) => {
       },
     });
   } catch (error) {
-    const err = error as any;
-    console.error('Annotation fetch error:', err.response?.data || err.message);
-    res.status(500).json({
-      message: 'Failed to fetch image annotations',
-      error: err.response?.data?.message || err.message,
-    });
+    handleRouteError(res, error, 'Failed to fetch image annotations');
   }
 });
 
@@ -207,42 +195,31 @@ router.get('/:id/equipment', async (req, res) => {
 
     res.json(equipmentWithDetails);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch image equipment' });
+    handleRouteError(res, error, 'Failed to fetch image equipment');
   }
 });
 
 // Add equipment to an image
 router.post('/:id/equipment', async (req, res) => {
   try {
-    console.log('POST /api/images/:id/equipment called');
-    console.log('params:', req.params);
-    console.log('body:', req.body);
-
     const imageId = parseInt(req.params.id);
     const { equipmentId, settings, notes } = req.body;
 
-    console.log('Parsed values:', { imageId, equipmentId, settings, notes });
-
     const image = await storage.getAstroImage(imageId);
     if (!image) {
-      console.log('Image not found for ID:', imageId);
       return res.status(404).json({ message: 'Image not found' });
     }
 
     const equipment = await storage.getEquipment();
     const targetEquipment = equipment.find((eq) => eq.id === equipmentId);
     if (!targetEquipment) {
-      console.log('Equipment not found for ID:', equipmentId);
       return res.status(404).json({ message: 'Equipment not found' });
     }
 
-    console.log('Adding equipment to image:', { imageId, equipmentId, settings, notes });
     const imageEquipment = await storage.addEquipmentToImage(imageId, equipmentId, settings, notes);
-    console.log('Equipment added successfully:', imageEquipment);
     res.json(imageEquipment);
   } catch (error) {
-    console.error('Error adding equipment to image:', error);
-    res.status(500).json({ message: 'Failed to add equipment to image' });
+    handleRouteError(res, error, 'Failed to add equipment to image');
   }
 });
 
@@ -259,7 +236,7 @@ router.delete('/:imageId/equipment/:equipmentId', async (req, res) => {
 
     res.json({ message: 'Equipment removed from image' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to remove equipment from image' });
+    handleRouteError(res, error, 'Failed to remove equipment from image');
   }
 });
 
@@ -277,7 +254,7 @@ router.put('/:imageId/equipment/:equipmentId', async (req, res) => {
 
     res.json(imageEquipment);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update equipment settings' });
+    handleRouteError(res, error, 'Failed to update equipment settings');
   }
 });
 
@@ -290,7 +267,7 @@ router.get('/:id/acquisitions', async (req, res) => {
     const acquisitions = await storage.getImageAcquisitions(imageId);
     res.json(acquisitions);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch acquisition entries' });
+    handleRouteError(res, error, 'Failed to fetch acquisition entries');
   }
 });
 
@@ -319,7 +296,7 @@ router.post('/:id/acquisitions', async (req, res) => {
     });
     res.json(acquisition);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create acquisition entry' });
+    handleRouteError(res, error, 'Failed to create acquisition entry');
   }
 });
 
@@ -341,7 +318,7 @@ router.put('/:imageId/acquisitions/:id', async (req, res) => {
     }
     res.json(acquisition);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update acquisition entry' });
+    handleRouteError(res, error, 'Failed to update acquisition entry');
   }
 });
 
@@ -355,7 +332,7 @@ router.delete('/:imageId/acquisitions/:id', async (req, res) => {
     }
     res.json({ message: 'Acquisition entry deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete acquisition entry' });
+    handleRouteError(res, error, 'Failed to delete acquisition entry');
   }
 });
 
@@ -386,8 +363,7 @@ router.get('/:id/sidecar', async (req, res) => {
     res.setHeader('Content-Type', 'application/xml');
     res.send(content);
   } catch (error) {
-    console.error('Failed to fetch sidecar:', error);
-    res.status(500).json({ message: 'Failed to fetch sidecar' });
+    handleRouteError(res, error, 'Failed to fetch sidecar');
   }
 });
 

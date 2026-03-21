@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -9,7 +10,7 @@ router.get('/', async (req, res) => {
     const groups = await storage.getEquipmentGroups();
     res.json(groups);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch equipment groups' });
+    handleRouteError(res, error, 'Failed to fetch equipment groups');
   }
 });
 
@@ -23,7 +24,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json(group);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch equipment group' });
+    handleRouteError(res, error, 'Failed to fetch equipment group');
   }
 });
 
@@ -39,8 +40,7 @@ router.post('/', async (req, res) => {
     const full = await storage.getEquipmentGroup(group.id);
     res.json(full);
   } catch (error) {
-    console.error('Failed to create equipment group:', error);
-    res.status(500).json({ message: 'Failed to create equipment group' });
+    handleRouteError(res, error, 'Failed to create equipment group');
   }
 });
 
@@ -56,7 +56,7 @@ router.put('/:id', async (req, res) => {
     const full = await storage.getEquipmentGroup(id);
     res.json(full);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update equipment group' });
+    handleRouteError(res, error, 'Failed to update equipment group');
   }
 });
 
@@ -67,7 +67,7 @@ router.delete('/:id', async (req, res) => {
     await storage.deleteEquipmentGroup(id);
     res.json({ message: 'Equipment group deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete equipment group' });
+    handleRouteError(res, error, 'Failed to delete equipment group');
   }
 });
 
@@ -83,7 +83,7 @@ router.put('/:id/members', async (req, res) => {
     const full = await storage.getEquipmentGroup(id);
     res.json(full);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update group members' });
+    handleRouteError(res, error, 'Failed to update group members');
   }
 });
 
@@ -95,7 +95,7 @@ router.post('/:id/apply/:imageId', async (req, res) => {
     const added = await storage.applyEquipmentGroupToImage(groupId, imageId);
     res.json({ added, message: `${added.length} equipment item(s) assigned` });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to apply equipment group' });
+    handleRouteError(res, error, 'Failed to apply equipment group');
   }
 });
 

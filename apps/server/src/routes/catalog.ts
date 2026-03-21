@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { catalogService, normalizeObjectName } from '../services/catalog';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -11,7 +12,9 @@ const THUMBNAIL_CACHE_DIR = process.env.THUMBNAIL_CACHE_DIR
   || (process.env.NODE_ENV === 'production' ? '/app/cache/thumbnails' : './data/thumbnails');
 
 // Ensure cache dir exists at startup
-fs.mkdir(THUMBNAIL_CACHE_DIR, { recursive: true }).catch(() => {});
+fs.mkdir(THUMBNAIL_CACHE_DIR, { recursive: true }).catch(err => {
+  console.warn('Failed to create thumbnail cache dir:', err);
+});
 
 // Serve cached thumbnails as static files — Express handles path safety.
 // Rewrite the request path to the sanitized filename before static lookup.
@@ -52,8 +55,7 @@ router.get('/browse', async (req, res) => {
     });
     res.json(result);
   } catch (error) {
-    console.error('Failed to browse catalog:', error);
-    res.status(500).json({ message: 'Failed to browse catalog' });
+    handleRouteError(res, error, 'Failed to browse catalog');
   }
 });
 
@@ -67,8 +69,7 @@ router.get('/search', async (req, res) => {
     const results = await catalogService.searchCatalog(q, 20);
     res.json(results);
   } catch (error) {
-    console.error('Failed to search catalog:', error);
-    res.status(500).json({ message: 'Failed to search catalog' });
+    handleRouteError(res, error, 'Failed to search catalog');
   }
 });
 
@@ -78,8 +79,7 @@ router.get('/status', async (req, res) => {
     const status = await catalogService.getStatus();
     res.json(status);
   } catch (error) {
-    console.error('Failed to get catalog status:', error);
-    res.status(500).json({ message: 'Failed to get catalog status' });
+    handleRouteError(res, error, 'Failed to get catalog status');
   }
 });
 
@@ -126,8 +126,7 @@ router.get('/thumbnail/:name', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(buffer);
   } catch (error) {
-    console.error('Failed to get thumbnail:', error);
-    res.status(500).json({ message: 'Failed to get thumbnail' });
+    handleRouteError(res, error, 'Failed to get thumbnail');
   }
 });
 
@@ -141,8 +140,7 @@ router.get('/:name', async (req, res) => {
     }
     res.json(obj);
   } catch (error) {
-    console.error('Failed to get catalog object:', error);
-    res.status(500).json({ message: 'Failed to get catalog object' });
+    handleRouteError(res, error, 'Failed to get catalog object');
   }
 });
 
@@ -152,8 +150,7 @@ router.post('/load', async (req, res) => {
     const result = await catalogService.loadCatalog();
     res.json({ message: `Loaded ${result.count} catalog objects`, count: result.count });
   } catch (error) {
-    console.error('Failed to load catalog:', error);
-    res.status(500).json({ message: 'Failed to load catalog' });
+    handleRouteError(res, error, 'Failed to load catalog');
   }
 });
 
@@ -163,8 +160,7 @@ router.post('/check-updates', async (req, res) => {
     const result = await catalogService.checkForUpdates();
     res.json(result);
   } catch (error) {
-    console.error('Failed to check for updates:', error);
-    res.status(500).json({ message: 'Failed to check for updates' });
+    handleRouteError(res, error, 'Failed to check for updates');
   }
 });
 
@@ -187,8 +183,7 @@ router.post('/backfill-targets', async (req, res) => {
 
       const matches = await catalogService.matchTargetFromTags(tags);
       if (matches.length > 0) {
-        await storage.updateAstroImage(image.id, { targetName: matches[0].name } as any);
-        matched++;
+        await storage.updateAstroImage(image.id, { targetName: matches[0].name });
       }
     }
 
@@ -199,8 +194,7 @@ router.post('/backfill-targets', async (req, res) => {
       total: images.length,
     });
   } catch (error) {
-    console.error('Failed to backfill targets:', error);
-    res.status(500).json({ message: 'Failed to backfill targets' });
+    handleRouteError(res, error, 'Failed to backfill targets');
   }
 });
 

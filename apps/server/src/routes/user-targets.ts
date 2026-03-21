@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -9,8 +10,7 @@ router.get('/', async (req, res) => {
     const targets = await storage.getUserTargets();
     res.json(targets);
   } catch (error) {
-    console.error('Failed to fetch user targets:', error);
-    res.status(500).json({ message: 'Failed to fetch user targets' });
+    handleRouteError(res, error, 'Failed to fetch user targets');
   }
 });
 
@@ -24,8 +24,7 @@ router.get('/:catalogName', async (req, res) => {
     }
     res.json(target);
   } catch (error) {
-    console.error('Failed to fetch user target:', error);
-    res.status(500).json({ message: 'Failed to fetch user target' });
+    handleRouteError(res, error, 'Failed to fetch user target');
   }
 });
 
@@ -37,8 +36,7 @@ router.put('/:catalogName', async (req, res) => {
     const target = await storage.upsertUserTarget(catalogName, { notes, tags });
     res.json(target);
   } catch (error) {
-    console.error('Failed to upsert user target:', error);
-    res.status(500).json({ message: 'Failed to upsert user target' });
+    handleRouteError(res, error, 'Failed to upsert user target');
   }
 });
 
@@ -49,8 +47,7 @@ router.delete('/:catalogName', async (req, res) => {
     await storage.deleteUserTarget(catalogName);
     res.json({ message: 'User target deleted' });
   } catch (error) {
-    console.error('Failed to delete user target:', error);
-    res.status(500).json({ message: 'Failed to delete user target' });
+    handleRouteError(res, error, 'Failed to delete user target');
   }
 });
 

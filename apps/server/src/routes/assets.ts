@@ -26,17 +26,17 @@ router.get('/:assetId/:type', async (req, res) => {
     const immichUrl = config.host;
     const immichApiKey = config.apiKey;
     if (!immichUrl || !immichApiKey) {
-      return res.status(500).json({ message: 'Immich configuration missing' });
+      return res.status(503).json({ message: 'Immich configuration missing' });
     }
 
     // Validate Immich URL protocol to prevent SSRF
     try {
       const parsedUrl = new URL(immichUrl);
       if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        return res.status(500).json({ message: 'Invalid Immich URL protocol' });
+        return res.status(400).json({ message: 'Invalid Immich URL protocol' });
       }
     } catch {
-      return res.status(500).json({ message: 'Invalid Immich URL format' });
+      return res.status(400).json({ message: 'Invalid Immich URL format' });
     }
 
     // Forward query parameters (e.g., ?size=preview)

@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ router.get('/', async (_req, res) => {
     const locations = await storage.getLocations();
     res.json(locations);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch locations' });
+    handleRouteError(res, error, 'Failed to fetch locations');
   }
 });
 
@@ -24,7 +25,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json(location);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch location' });
+    handleRouteError(res, error, 'Failed to fetch location');
   }
 });
 
@@ -35,7 +36,7 @@ router.post('/', async (req, res) => {
     const location = await storage.createLocation(locationData);
     res.json(location);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create location' });
+    handleRouteError(res, error, 'Failed to create location');
   }
 });
 
@@ -50,7 +51,7 @@ router.patch('/:id', async (req, res) => {
     }
     res.json(location);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update location' });
+    handleRouteError(res, error, 'Failed to update location');
   }
 });
 
@@ -59,9 +60,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await storage.deleteLocation(id);
-    res.json({ success: true });
+    res.json({ message: 'Location deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete location' });
+    handleRouteError(res, error, 'Failed to delete location');
   }
 });
 

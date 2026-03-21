@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/markers', async (_req, res) => {
 
     res.json(markers);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch sky map markers' });
+    handleRouteError(res, error, 'Failed to fetch sky map markers');
   }
 });
 

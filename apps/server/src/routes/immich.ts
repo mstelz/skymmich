@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { configService } from '../services/config';
 import { storage } from '../services/storage';
 import axios from 'axios';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.post('/sync-immich', async (req, res) => {
       });
     }
 
-    let allAssets: any[] = [];
+    let allAssets: Record<string, unknown>[] = [];
 
     if (config.syncByAlbum) {
       if (!Array.isArray(config.selectedAlbumIds) || config.selectedAlbumIds.length === 0) {
@@ -27,10 +28,10 @@ router.post('/sync-immich', async (req, res) => {
       const albumsResponse = await axios.get(`${config.host}/api/albums`, {
         headers: { 'X-API-Key': config.apiKey },
       });
-      const albumsToSync = albumsResponse.data.filter((a: any) => config.selectedAlbumIds.includes(a.id));
+      const albumsToSync = albumsResponse.data.filter((a: Record<string, unknown>) => config.selectedAlbumIds.includes(a.id as string));
 
       for (const album of albumsToSync) {
-        if (album.id && album.assetCount > 0) {
+        if (album.id && (album.assetCount as number) > 0) {
           try {
             console.log(`Fetching assets from album: ${album.albumName} (${album.assetCount} assets)`);
             const albumResponse = await axios.get(`${config.host}/api/albums/${album.id}`, {
@@ -40,10 +41,11 @@ router.post('/sync-immich', async (req, res) => {
               allAssets.push(...albumResponse.data.assets);
               console.log(`Added ${albumResponse.data.assets.length} assets from album ${album.albumName}`);
             }
-          } catch (albumError: any) {
+          } catch (albumError: unknown) {
+            const err = albumError as Error & { response?: { data?: unknown } };
             console.warn(
               `Failed to get assets from album ${album.albumName} (${album.id}):`,
-              albumError.response?.data || albumError.message,
+              err.response?.data || err.message,
             );
           }
         }
@@ -104,11 +106,12 @@ router.post('/sync-immich', async (req, res) => {
 
     for (const asset of allAssets) {
       // Check if image already exists
-      const existing = await storage.getAstroImageByImmichId(asset.id);
+      const existing = await storage.getAstroImageByImmichId(asset.id as string);
       if (existing) {
-        console.log(`Asset ${asset.originalFileName} already exists, skipping`);
         continue;
       }
+
+      const exifInfo = asset.exifInfo as Record<string, unknown> | undefined;
 
       // Extract EXIF data and create astrophotography image
       const astroImage = {
@@ -118,24 +121,24 @@ router.post('/sync-immich', async (req, res) => {
         thumbnailUrl: `/api/assets/${asset.id}/thumbnail`,
         fullUrl: `/api/assets/${asset.id}/thumbnail?size=preview`,
         originalPath: String(asset.originalPath || ''),
-        captureDate: asset.fileCreatedAt ? new Date(asset.fileCreatedAt) : null,
-        focalLength: asset.exifInfo?.focalLength ? Number(asset.exifInfo.focalLength) : null,
-        aperture: asset.exifInfo?.fNumber ? `f/${asset.exifInfo.fNumber}` : null,
-        iso: asset.exifInfo?.iso ? Number(asset.exifInfo.iso) : null,
-        exposureTime: asset.exifInfo?.exposureTime ? String(asset.exifInfo.exposureTime) : null,
+        captureDate: asset.fileCreatedAt ? new Date(asset.fileCreatedAt as string) : null,
+        focalLength: exifInfo?.focalLength ? Number(exifInfo.focalLength) : null,
+        aperture: exifInfo?.fNumber ? `f/${exifInfo.fNumber}` : null,
+        iso: exifInfo?.iso ? Number(exifInfo.iso) : null,
+        exposureTime: exifInfo?.exposureTime ? String(exifInfo.exposureTime) : null,
         frameCount: 1,
-        totalIntegration: asset.exifInfo?.exposureTime ? parseFloat(asset.exifInfo.exposureTime) / 3600 : null,
-        telescope: asset.exifInfo?.lensModel ? String(asset.exifInfo.lensModel) : '',
-        camera: asset.exifInfo?.make && asset.exifInfo?.model ? `${asset.exifInfo.make} ${asset.exifInfo.model}` : null,
+        totalIntegration: exifInfo?.exposureTime ? parseFloat(String(exifInfo.exposureTime)) / 3600 : null,
+        telescope: exifInfo?.lensModel ? String(exifInfo.lensModel) : '',
+        camera: exifInfo?.make && exifInfo?.model ? `${exifInfo.make} ${exifInfo.model}` : null,
         mount: '',
         filters: '',
-        latitude: asset.exifInfo?.latitude ? Number(asset.exifInfo.latitude) : null,
-        longitude: asset.exifInfo?.longitude ? Number(asset.exifInfo.longitude) : null,
-        altitude: asset.exifInfo?.altitude ? Number(asset.exifInfo.altitude) : null,
+        latitude: exifInfo?.latitude ? Number(exifInfo.latitude) : null,
+        longitude: exifInfo?.longitude ? Number(exifInfo.longitude) : null,
+        altitude: exifInfo?.altitude ? Number(exifInfo.altitude) : null,
         plateSolved: false,
         tags: ['astrophotography'],
-        objectType: 'Deep Sky', // Default classification
-        description: String(asset.exifInfo?.description || ''),
+        objectType: 'Deep Sky',
+        description: String(exifInfo?.description || ''),
       };
 
       await storage.createAstroImage(astroImage);
@@ -148,12 +151,8 @@ router.post('/sync-immich', async (req, res) => {
       syncedCount,
       removedCount,
     });
-  } catch (error: any) {
-    console.error('Immich sync error:', error.response?.data || error.message);
-    res.status(500).json({
-      message: 'Failed to sync with Immich',
-      error: error.response?.data?.message || error.message,
-    });
+  } catch (error) {
+    handleRouteError(res, error, 'Failed to sync with Immich');
   }
 });
 
@@ -164,86 +163,73 @@ router.post('/test-immich-connection', async (req, res) => {
 
     if (!host || !apiKey) {
       return res.status(400).json({
-        success: false,
         message: 'Host and API key are required',
       });
     }
 
-    // Basic SSRF protection - validate URL format and protocol
+    // Validate URL format and protocol
     try {
       const url = new URL(host);
       if (!['http:', 'https:'].includes(url.protocol)) {
         return res.status(400).json({
-          success: false,
           message: 'Only HTTP and HTTPS protocols are allowed',
         });
       }
-    } catch (urlError) {
+    } catch {
       return res.status(400).json({
-        success: false,
         message: 'Invalid URL format',
       });
     }
 
-    // Test the connection by trying to get albums (same endpoint as working sync)
+    // Test the connection by trying to get albums
     const response = await axios.get(`${host}/api/albums`, {
       headers: {
         'X-API-Key': apiKey,
         Accept: 'application/json',
       },
       params: {
-        take: 1, // Just get 1 album to test the connection
+        take: 1,
       },
-      timeout: 10000, // 10 second timeout
-      validateStatus: (status) => true, // Don't throw on any status code
+      timeout: 10000,
+      validateStatus: (status) => true,
     });
 
     // Check if response is JSON
     const contentType = response.headers['content-type'] || '';
     if (!contentType.includes('application/json')) {
-      console.error('Immich returned non-JSON response:', {
-        status: response.status,
-        contentType,
-        data: response.data?.toString().substring(0, 200), // First 200 chars for debugging
-      });
       return res.status(500).json({
-        success: false,
         message: `Server returned non-JSON response (${contentType}). Please check the host URL.`,
       });
     }
 
     if (response.status === 200) {
       res.json({
-        success: true,
         message: 'Connection successful!',
       });
     } else {
       res.json({
-        success: false,
         message: `Connection failed with status: ${response.status}`,
       });
     }
-  } catch (error: any) {
-    console.error('Immich connection test error:', error.response?.data || error.message);
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { data?: { message?: string }; status?: number }; code?: string };
 
-    // Provide more specific error messages
     let errorMessage = 'Connection failed';
-    if (error.code === 'ECONNREFUSED') {
+    if (err.code === 'ECONNREFUSED') {
       errorMessage = 'Cannot connect to Immich server. Please check the host URL.';
-    } else if (error.code === 'ENOTFOUND') {
+    } else if (err.code === 'ENOTFOUND') {
       errorMessage = 'Host not found. Please check the host URL.';
-    } else if (error.response?.status === 401) {
+    } else if (err.response?.status === 401) {
       errorMessage = 'Authentication failed. Please check your API key.';
-    } else if (error.response?.status === 404) {
+    } else if (err.response?.status === 404) {
       errorMessage = 'API endpoint not found. Please check the host URL.';
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
+    } else if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.message) {
+      errorMessage = err.message;
     }
 
     res.status(500).json({
-      success: false,
       message: errorMessage,
     });
   }
@@ -258,27 +244,26 @@ router.post('/albums', async (req, res) => {
       return res.status(400).json({ message: 'Host and API key are required' });
     }
 
-    // Basic SSRF protection - validate URL format and protocol
+    // Validate URL format and protocol
     try {
       const url = new URL(host);
       if (!['http:', 'https:'].includes(url.protocol)) {
         return res.status(400).json({ message: 'Only HTTP and HTTPS protocols are allowed' });
       }
-    } catch (urlError) {
+    } catch {
       return res.status(400).json({ message: 'Invalid URL format' });
     }
     const response = await axios.get(`${host}/api/albums`, {
       headers: { 'X-API-Key': apiKey },
     });
     if (Array.isArray(response.data)) {
-      // Only return id and albumName for dropdown
-      const albums = response.data.map((a: any) => ({ id: a.id, albumName: a.albumName }));
+      const albums = response.data.map((a: Record<string, unknown>) => ({ id: a.id, albumName: a.albumName }));
       res.json(albums);
     } else {
       res.status(500).json({ message: 'Unexpected response from Immich' });
     }
-  } catch (error: any) {
-    res.status(500).json({ message: error.response?.data?.message || error.message });
+  } catch (error) {
+    handleRouteError(res, error, 'Failed to fetch albums');
   }
 });
 
@@ -292,12 +277,12 @@ router.post('/sync-metadata/:imageId', async (req, res) => {
     }
     const result = await immichSyncService.syncImageMetadata(imageId);
     if (result.success) {
-      res.json({ message: 'Metadata synced to Immich', success: true });
+      res.json({ message: 'Metadata synced to Immich' });
     } else {
-      res.status(400).json({ message: result.error, success: false });
+      res.status(400).json({ message: result.error });
     }
-  } catch (error: any) {
-    res.status(500).json({ message: error.message, success: false });
+  } catch (error) {
+    handleRouteError(res, error, 'Failed to sync metadata');
   }
 });
 
@@ -310,8 +295,8 @@ router.post('/sync-metadata-all', async (req, res) => {
       message: `Synced ${result.synced} images, ${result.failed} failed`,
       ...result,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    handleRouteError(res, error, 'Failed to sync all metadata');
   }
 });
 

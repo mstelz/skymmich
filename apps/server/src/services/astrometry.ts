@@ -7,11 +7,13 @@ import { getConstellationFromCoordinates } from './constellation-utils';
 import { filterRelevantTags } from './tags-utils';
 import { catalogService } from './catalog';
 
+import type { Server as SocketIOServer } from 'socket.io';
+
 // Import io from the main server file
-let io: any = null;
+let io: SocketIOServer | null = null;
 
 // Function to set io instance (called from server/index.ts)
-export function setSocketIO(socketIO: any) {
+export function setSocketIO(socketIO: SocketIOServer) {
   io = socketIO;
 }
 
@@ -93,7 +95,7 @@ export class AstrometryService {
     return loginResponse.data.session;
   }
 
-  async submitImageForPlateSolving(image: any): Promise<{ submissionId: string; jobId: number }> {
+  async submitImageForPlateSolving(image: { id: number; fullUrl?: string | null; immichId?: string | null; title?: string | null; filename?: string | null }): Promise<{ submissionId: string; jobId: number }> {
     await this.ensureConfigLoaded();
     
     if (!image.fullUrl) {
@@ -216,8 +218,9 @@ export class AstrometryService {
 
         // Wait before polling again
         await new Promise(resolve => setTimeout(resolve, pollInterval));
-      } catch (error: any) {
-        if (error.response?.status === 404) {
+      } catch (error: unknown) {
+        const err = error as { response?: { status?: number } };
+        if (err.response?.status === 404) {
           // Job expired or not found
           return null;
         }
@@ -256,12 +259,14 @@ export class AstrometryService {
       }
       
       // Process annotations to include pixel coordinates if available
-      annotations = (annotationsData as any[]).map((annotation: any) => ({
-        ...annotation,
-        ra: annotation.ra ? parseFloat(annotation.ra) : null,
-        dec: annotation.dec ? parseFloat(annotation.dec) : null,
-        pixelX: annotation.pixel_x || null,
-        pixelY: annotation.pixel_y || null,
+      annotations = (annotationsData as Record<string, unknown>[]).map((annotation) => ({
+        type: String(annotation.type || ''),
+        names: Array.isArray(annotation.names) ? annotation.names as string[] : [],
+        pixelx: annotation.pixelx != null ? Number(annotation.pixelx) : (annotation.pixel_x != null ? Number(annotation.pixel_x) : 0),
+        pixely: annotation.pixely != null ? Number(annotation.pixely) : (annotation.pixel_y != null ? Number(annotation.pixel_y) : 0),
+        ra: annotation.ra ? parseFloat(String(annotation.ra)) : 0,
+        dec: annotation.dec ? parseFloat(String(annotation.dec)) : 0,
+        radius: annotation.radius != null ? Number(annotation.radius) : undefined,
       }));
     } catch (error) {
       console.error(`Failed to fetch annotations for job ${jobId}:`, error);
@@ -378,7 +383,7 @@ export class AstrometryService {
     }
   }
 
-  async completePlateSolvingWorkflow(image: any): Promise<PlateSolvingResult> {
+  async completePlateSolvingWorkflow(image: { id: number; fullUrl?: string | null; immichId?: string | null; title?: string | null; filename?: string | null }): Promise<PlateSolvingResult> {
     // Submit image
     const { submissionId, jobId } = await this.submitImageForPlateSolving(image);
     
@@ -433,7 +438,7 @@ export class AstrometryService {
           submissionUrl,
           jobUrl,
         };
-        await storage.updatePlateSolvingJob(job.id, { status: "failed", result: result as any });
+        await storage.updatePlateSolvingJob(job.id, { status: "failed", result });
         if (io) {
           io.emit('plate-solving-update', { jobId: job.id, status: "failed", result });
         }
@@ -471,8 +476,9 @@ export class AstrometryService {
             return { status: "success", result };
           }
           // Otherwise still processing, fall through
-        } catch (jobError: any) {
-          if (jobError.response?.status === 404) {
+        } catch (jobError: unknown) {
+          const je = jobError as { response?: { status?: number } };
+          if (je.response?.status === 404) {
             return markFailed(`Job not found on Astrometry.net. It may have expired (jobs expire after ~30 days).`);
           }
           // If we can't check individual job status, continue with submission status check
@@ -510,7 +516,7 @@ export class AstrometryService {
         // No jobs array yet - submission is still being processed
         return { status: "processing" };
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error checking job status:", error);
       throw error;
     }

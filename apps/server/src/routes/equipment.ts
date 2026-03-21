@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ router.get('/', async (req, res) => {
     const equipment = await storage.getEquipment();
     res.json(equipment);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch equipment' });
+    handleRouteError(res, error, 'Failed to fetch equipment');
   }
 });
 
@@ -31,7 +32,7 @@ router.post('/', async (req, res) => {
     });
     res.json(equipment);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create equipment' });
+    handleRouteError(res, error, 'Failed to create equipment');
   }
 });
 
@@ -60,7 +61,7 @@ router.put('/:id', async (req, res) => {
 
     res.json(equipment);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update equipment' });
+    handleRouteError(res, error, 'Failed to update equipment');
   }
 });
 
@@ -76,7 +77,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ message: 'Equipment deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete equipment' });
+    handleRouteError(res, error, 'Failed to delete equipment');
   }
 });
 

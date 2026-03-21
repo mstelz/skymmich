@@ -7,6 +7,7 @@ import { astrometryService } from '../services/astrometry';
 import { filterRelevantTags } from '../services/tags-utils';
 import axios from 'axios';
 import { Server as SocketIOServer } from 'socket.io';
+import { handleRouteError } from './route-utils';
 
 export default function systemRoutes(io?: SocketIOServer) {
   const router = Router();
@@ -22,26 +23,20 @@ export default function systemRoutes(io?: SocketIOServer) {
           const url = new URL(settings.immich.host);
           if (!['http:', 'https:'].includes(url.protocol)) {
             return res.status(400).json({
-              success: false,
               message: 'Only HTTP and HTTPS protocols are allowed for Immich host',
             });
           }
         } catch {
           return res.status(400).json({
-            success: false,
             message: 'Invalid Immich host URL format',
           });
         }
       }
 
       await configService.updateConfig(settings);
-      res.json({ success: true, message: 'Settings saved successfully' });
-    } catch (error: any) {
-      console.error('Failed to save admin settings:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to save settings',
-      });
+      res.json({ message: 'Settings saved successfully' });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to save settings');
     }
   });
 
@@ -50,12 +45,8 @@ export default function systemRoutes(io?: SocketIOServer) {
     try {
       const config = await configService.getConfig();
       res.json(config);
-    } catch (error: any) {
-      console.error('Failed to get admin settings:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get settings',
-      });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to get settings');
     }
   });
 
@@ -66,7 +57,6 @@ export default function systemRoutes(io?: SocketIOServer) {
 
       if (!apiKey) {
         return res.status(400).json({
-          success: false,
           message: 'API key is required',
         });
       }
@@ -77,37 +67,34 @@ export default function systemRoutes(io?: SocketIOServer) {
 
       const response = await axios.post('http://nova.astrometry.net/api/login', loginData, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        timeout: 10000, // 10 second timeout
-        validateStatus: (status) => true, // Don't throw on any status code
+        timeout: 10000,
+        validateStatus: (status) => true,
       });
 
       if (response.status === 200 && response.data.status === 'success') {
         res.json({
-          success: true,
           message: 'Connection successful!',
         });
       } else {
         res.json({
-          success: false,
           message: `Connection failed: ${response.data.message || 'Unknown error'}`,
         });
       }
-    } catch (error: any) {
-      console.error('Astrometry connection test error:', error.response?.data || error.message);
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data?: { message?: string } }; code?: string };
 
       let errorMessage = 'Connection failed';
-      if (error.code === 'ECONNREFUSED') {
+      if (err.code === 'ECONNREFUSED') {
         errorMessage = 'Cannot connect to Astrometry.net server.';
-      } else if (error.code === 'ENOTFOUND') {
+      } else if (err.code === 'ENOTFOUND') {
         errorMessage = 'Astrometry.net server not found.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
 
       res.status(500).json({
-        success: false,
         message: errorMessage,
       });
     }
@@ -119,7 +106,7 @@ export default function systemRoutes(io?: SocketIOServer) {
       const stats = await storage.getStats();
       res.json(stats);
     } catch (error) {
-      res.status(500).json({ message: 'Failed to fetch stats' });
+      handleRouteError(res, error, 'Failed to fetch stats');
     }
   });
 
@@ -131,7 +118,6 @@ export default function systemRoutes(io?: SocketIOServer) {
 
       images.forEach((image) => {
         if (Array.isArray(image.tags)) {
-          // Only count relevant tags for the popular tags list
           const relevantTags = filterRelevantTags(image.tags);
           relevantTags.forEach((tag) => {
             tagCounts[tag] = (tagCounts[tag] || 0) + 1;
@@ -146,8 +132,7 @@ export default function systemRoutes(io?: SocketIOServer) {
 
       res.json(popularTags);
     } catch (error) {
-      console.error('Failed to fetch tags:', error);
-      res.status(500).json({ message: 'Failed to fetch tags' });
+      handleRouteError(res, error, 'Failed to fetch tags');
     }
   });
 
@@ -160,7 +145,7 @@ export default function systemRoutes(io?: SocketIOServer) {
       ).sort();
       res.json(constellations);
     } catch (error) {
-      res.status(500).json({ message: 'Failed to fetch constellations' });
+      handleRouteError(res, error, 'Failed to fetch constellations');
     }
   });
 
@@ -169,12 +154,8 @@ export default function systemRoutes(io?: SocketIOServer) {
     try {
       const notifications = await storage.getNotifications();
       res.json(notifications);
-    } catch (error: any) {
-      console.error('Failed to get notifications:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get notifications',
-      });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to get notifications');
     }
   });
 
@@ -182,17 +163,12 @@ export default function systemRoutes(io?: SocketIOServer) {
   router.post('/notifications/acknowledge-all', async (req, res) => {
     try {
       await storage.acknowledgeAllNotifications();
-      // Emit event to notify all connected clients
       if (io) {
         io.emit('notifications-updated');
       }
-      res.json({ success: true, message: 'All notifications acknowledged' });
-    } catch (error: any) {
-      console.error('Failed to acknowledge all notifications:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to acknowledge all notifications',
-      });
+      res.json({ message: 'All notifications acknowledged' });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to acknowledge all notifications');
     }
   });
 
@@ -201,17 +177,12 @@ export default function systemRoutes(io?: SocketIOServer) {
     try {
       const id = parseInt(req.params.id);
       await storage.acknowledgeNotification(id);
-      // Emit event to notify all connected clients
       if (io) {
         io.emit('notifications-updated');
       }
-      res.json({ success: true, message: 'Notification acknowledged' });
-    } catch (error: any) {
-      console.error('Failed to acknowledge notification:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to acknowledge notification',
-      });
+      res.json({ message: 'Notification acknowledged' });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to acknowledge notification');
     }
   });
 
@@ -220,12 +191,8 @@ export default function systemRoutes(io?: SocketIOServer) {
     try {
       const jobs = cronManager.getAllJobs();
       res.json(jobs);
-    } catch (error: any) {
-      console.error('Failed to get cron jobs:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get cron jobs',
-      });
+    } catch (error) {
+      handleRouteError(res, error, 'Failed to get cron jobs');
     }
   });
 
@@ -235,7 +202,7 @@ export default function systemRoutes(io?: SocketIOServer) {
       // Check database connection
       let databaseStatus = 'healthy';
       try {
-        await storage.getStats(); // Simple database query
+        await storage.getStats();
       } catch (dbError) {
         console.error('Database health check failed:', dbError);
         databaseStatus = 'unhealthy';
@@ -259,7 +226,6 @@ export default function systemRoutes(io?: SocketIOServer) {
         nodeVersion: process.version,
       };
 
-      // Return 503 if database is unhealthy
       const statusCode = databaseStatus === 'healthy' ? 200 : 503;
       res.status(statusCode).json(healthStatus);
     } catch (error) {
