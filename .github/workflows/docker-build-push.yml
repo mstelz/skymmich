@@ -187,6 +187,25 @@ jobs:
           path: snapshot/skymmich-snapshot-${{ github.sha }}.tar.gz
           retention-days: 30
 
+      - name: Prune old non-release images
+        if: github.event_name != 'pull_request'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'skymmich'
+          package-type: 'container'
+          min-versions-to-keep: 5
+          ignore-versions: '^(v?[0-9]+(\.[0-9]+)*|latest|main)$'
+          delete-only-pre-release-versions: 'false'
+
+      - name: Prune untagged images
+        if: github.event_name != 'pull_request'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'skymmich'
+          package-type: 'container'
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: 'true'
+
       - name: Create deployment summary
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
