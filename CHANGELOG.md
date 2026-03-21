@@ -5,6 +5,13 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-03-21
+
+### Fixed
+- **ReDoS Vulnerability**: Fixed polynomial regular expression in catalog name normalization that could cause denial-of-service with crafted input.
+- **Thumbnail Path Safety**: Serve cached thumbnails via static middleware instead of manual file reads, delegating path safety to the framework.
+- **Thumbnail Rate Limiting**: Added global throttle on external survey image fetches to prevent abuse of the upstream API.
+
 ## [0.7.1] - 2026-03-20
 
 ### Fixed
