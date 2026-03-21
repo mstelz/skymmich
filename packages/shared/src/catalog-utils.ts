@@ -4,10 +4,10 @@
  */
 export function normalizeObjectName(raw: string): string {
   const trimmed = raw.trim();
-  const match = trimmed.match(/^(NGC|IC|M)\s*0*(\d+)(\w*)$/i);
+  const match = trimmed.match(/^(NGC|IC|M)\s*(\d+)([A-Za-z]*)$/i);
   if (match) {
     const prefix = match[1].toUpperCase();
-    const num = match[2];
+    const num = match[2].replace(/^0+/, '') || '0';
     const suffix = match[3] || '';
     return `${prefix} ${num}${suffix}`;
   }

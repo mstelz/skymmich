@@ -1,7 +1,7 @@
 import { Router } from 'express';
+import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
-import { existsSync } from 'fs';
 import { catalogService, normalizeObjectName } from '../services/catalog';
 import { storage } from '../services/storage';
 
@@ -12,6 +12,19 @@ const THUMBNAIL_CACHE_DIR = process.env.THUMBNAIL_CACHE_DIR
 
 // Ensure cache dir exists at startup
 fs.mkdir(THUMBNAIL_CACHE_DIR, { recursive: true }).catch(() => {});
+
+// Serve cached thumbnails as static files — Express handles path safety.
+// Rewrite the request path to the sanitized filename before static lookup.
+router.use('/thumbnail', (req, _res, next) => {
+  const name = decodeURIComponent(req.path.slice(1)); // strip leading /
+  req.url = '/' + name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.jpg';
+  next();
+}, express.static(THUMBNAIL_CACHE_DIR, {
+  maxAge: '1y',
+  immutable: true,
+  index: false,
+  dotfiles: 'ignore',
+}));
 
 // Browse catalog with pagination and filtering
 router.get('/browse', async (req, res) => {
@@ -70,20 +83,21 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// Get a cached survey thumbnail for a catalog object
+// Global throttle for external survey image fetches (cache misses only)
+let lastFetchTime = 0;
+const FETCH_THROTTLE_MS = 500;
+
+// Fetch and cache a survey thumbnail (only reached on cache miss — static middleware handles hits)
 router.get('/thumbnail/:name', async (req, res) => {
   try {
+    const now = Date.now();
+    if (now - lastFetchTime < FETCH_THROTTLE_MS) {
+      return res.status(429).json({ message: 'Too many requests' });
+    }
+    lastFetchTime = now;
+
     const name = decodeURIComponent(req.params.name);
     const safeFilename = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.jpg';
-    const cachePath = path.join(THUMBNAIL_CACHE_DIR, safeFilename);
-
-    // Serve from cache if available
-    if (existsSync(cachePath)) {
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      const data = await fs.readFile(cachePath);
-      return res.send(data);
-    }
 
     // Look up catalog object for coordinates
     const obj = await catalogService.getCatalogObject(name);
@@ -103,8 +117,8 @@ router.get('/thumbnail/:name', async (req, res) => {
 
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    // Cache to disk
-    await fs.writeFile(cachePath, buffer);
+    // Save to cache dir — next request will be served by static middleware
+    await fs.writeFile(path.join(THUMBNAIL_CACHE_DIR, safeFilename), buffer);
 
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
