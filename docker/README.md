@@ -92,9 +92,9 @@ docker compose up -d --scale skymmich=1
 │        Skymmich Container          │    │   PostgreSQL        │
 ├─────────────────────────────────────┤    │   Container         │
 │  Frontend (React SPA)              │    ├─────────────────────┤
-│  Backend (Express.js API)          │◄──►│  Database Engine    │
+│  Backend (Hono API)                │◄──►│  Database Engine    │
 │  Worker (Plate Solving)            │    │  Data Storage       │
-│  Real-time Updates (Socket.io)     │    │  Health Checks      │
+│  Real-time Updates (WebSocket)     │    │  Health Checks      │
 └─────────────────────────────────────┘    └─────────────────────┘
 ```
 

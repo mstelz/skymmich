@@ -14,7 +14,7 @@ This file provides context for working with the Skymmich project.
 ## Project Structure
 
 - `apps/client`: Contains the React frontend application.
-- `apps/server`: Contains the Express backend server.
+- `apps/server`: Contains the Hono backend server.
 - `packages/shared`: Contains shared code between the client and server.
 - `tools/migrations`: Contains database migrations.
 
