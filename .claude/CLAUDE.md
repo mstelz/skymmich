@@ -32,3 +32,15 @@ This file provides context for working with the Skymmich project.
 
 - When making changes, ensure they pass the type checker (`npm run check`).
 - For significant changes, consider adding or updating tests.
+
+## Releases
+
+Releases are driven by git tags. Do not create releases manually with `gh release create`.
+
+1. Bump the version in `package.json`.
+2. Add a changelog entry to `CHANGELOG.md` under a new version heading.
+3. Commit and push to main.
+4. Create and push a semver tag: `git tag v<version> && git push origin v<version>`.
+5. The `release.yml` workflow handles everything else: builds, security scan, multi-arch Docker image push (with `latest`, semver, and major/minor tags), SBOM generation, and GitHub release creation with artifacts.
+
+The `docker-build-push.yml` workflow runs on every push to main and publishes intermediate Docker images (`main`, `sha-*`, timestamp tags). It prunes old non-release images automatically after each build. The weekly `prune-ghcr.yml` workflow handles any remaining cleanup.
