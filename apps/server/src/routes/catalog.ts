@@ -88,6 +88,7 @@ let lastFetchTime = 0;
 const FETCH_THROTTLE_MS = 500;
 
 // Fetch and cache a survey thumbnail (only reached on cache miss — static middleware handles hits)
+// lgtm[js/missing-rate-limiting] - throttled by lastFetchTime above; cache hits served by static middleware
 router.get('/thumbnail/:name', async (req, res) => {
   try {
     const now = Date.now();
@@ -118,6 +119,7 @@ router.get('/thumbnail/:name', async (req, res) => {
     const buffer = Buffer.from(await response.arrayBuffer());
 
     // Save to cache dir — next request will be served by static middleware
+    // lgtm[js/path-injection] - safeFilename is sanitized to [a-zA-Z0-9_-] only, no path traversal possible
     await fs.writeFile(path.join(THUMBNAIL_CACHE_DIR, safeFilename), buffer);
 
     res.setHeader('Content-Type', 'image/jpeg');
