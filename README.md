@@ -24,6 +24,8 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 
 <div align="center">
   <img width="80%" src="assets/images/demo.gif" />
+  <br/>
+  <a href="assets/images/screenshots">View all screenshots</a>
 </div>
 
 ## Features

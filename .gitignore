@@ -89,11 +89,15 @@ docker-compose.immich.yml
 .env.immich
 .docker/
 
+# Documentation (internal/dev only)
+docs/screenshots.md
+
 # Skymmich specific
 sidecars/
 xmp-sidecars/
 uploads/
 images/
+!assets/images/
 thumbnails/
 data/
 
