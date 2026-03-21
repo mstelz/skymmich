@@ -1,54 +1,54 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
 import { handleRouteError } from './route-utils';
 
-const router = Router();
+const app = new Hono();
 
 // Get all user target annotations
-router.get('/', async (req, res) => {
+app.get('/', async (c) => {
   try {
     const targets = await storage.getUserTargets();
-    res.json(targets);
+    return c.json(targets);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch user targets');
+    return handleRouteError(c, error, 'Failed to fetch user targets');
   }
 });
 
 // Get a single user target annotation
-router.get('/:catalogName', async (req, res) => {
+app.get('/:catalogName', async (c) => {
   try {
-    const catalogName = decodeURIComponent(req.params.catalogName);
+    const catalogName = decodeURIComponent(c.req.param('catalogName'));
     const target = await storage.getUserTarget(catalogName);
     if (!target) {
-      return res.status(404).json({ message: 'User target not found' });
+      return c.json({ message: 'User target not found' }, 404);
     }
-    res.json(target);
+    return c.json(target);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch user target');
+    return handleRouteError(c, error, 'Failed to fetch user target');
   }
 });
 
 // Upsert a user target annotation
-router.put('/:catalogName', async (req, res) => {
+app.put('/:catalogName', async (c) => {
   try {
-    const catalogName = decodeURIComponent(req.params.catalogName);
-    const { notes, tags } = req.body;
+    const catalogName = decodeURIComponent(c.req.param('catalogName'));
+    const { notes, tags } = await c.req.json();
     const target = await storage.upsertUserTarget(catalogName, { notes, tags });
-    res.json(target);
+    return c.json(target);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to upsert user target');
+    return handleRouteError(c, error, 'Failed to upsert user target');
   }
 });
 
 // Delete a user target annotation
-router.delete('/:catalogName', async (req, res) => {
+app.delete('/:catalogName', async (c) => {
   try {
-    const catalogName = decodeURIComponent(req.params.catalogName);
+    const catalogName = decodeURIComponent(c.req.param('catalogName'));
     await storage.deleteUserTarget(catalogName);
-    res.json({ message: 'User target deleted' });
+    return c.json({ message: 'User target deleted' });
   } catch (error) {
-    handleRouteError(res, error, 'Failed to delete user target');
+    return handleRouteError(c, error, 'Failed to delete user target');
   }
 });
 
-export default router;
+export default app;

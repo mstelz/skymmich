@@ -1,51 +1,51 @@
-
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { configService } from '../services/config';
 import { storage } from '../services/storage';
-import axios from 'axios';
 import { handleRouteError } from './route-utils';
 
-const router = Router();
+const app = new Hono();
 
 // Sync images from Immich
-router.post('/sync-immich', async (req, res) => {
+app.post('/sync-immich', async (c) => {
   try {
     const config = await configService.getImmichConfig();
 
     if (!config.host || !config.apiKey) {
-      return res.status(400).json({
+      return c.json({
         message: 'Immich configuration missing. Please configure in admin settings or set environment variables.',
-      });
+      }, 400);
     }
 
     let allAssets: Record<string, unknown>[] = [];
 
     if (config.syncByAlbum) {
       if (!Array.isArray(config.selectedAlbumIds) || config.selectedAlbumIds.length === 0) {
-        return res.status(400).json({ message: 'Sync by album is enabled, but no albums are selected.' });
+        return c.json({ message: 'Sync by album is enabled, but no albums are selected.' }, 400);
       }
 
-      const albumsResponse = await axios.get(`${config.host}/api/albums`, {
+      const albumsRes = await fetch(`${config.host}/api/albums`, {
         headers: { 'X-API-Key': config.apiKey },
       });
-      const albumsToSync = albumsResponse.data.filter((a: Record<string, unknown>) => config.selectedAlbumIds.includes(a.id as string));
+      const albumsData = await albumsRes.json() as Record<string, unknown>[];
+      const albumsToSync = albumsData.filter((a) => config.selectedAlbumIds.includes(a.id as string));
 
       for (const album of albumsToSync) {
         if (album.id && (album.assetCount as number) > 0) {
           try {
             console.log(`Fetching assets from album: ${album.albumName} (${album.assetCount} assets)`);
-            const albumResponse = await axios.get(`${config.host}/api/albums/${album.id}`, {
+            const albumRes = await fetch(`${config.host}/api/albums/${album.id}`, {
               headers: { 'X-API-Key': config.apiKey },
             });
-            if (albumResponse.data && albumResponse.data.assets && Array.isArray(albumResponse.data.assets)) {
-              allAssets.push(...albumResponse.data.assets);
-              console.log(`Added ${albumResponse.data.assets.length} assets from album ${album.albumName}`);
+            const albumData = await albumRes.json() as Record<string, unknown>;
+            if (albumData && albumData.assets && Array.isArray(albumData.assets)) {
+              allAssets.push(...(albumData.assets as Record<string, unknown>[]));
+              console.log(`Added ${(albumData.assets as unknown[]).length} assets from album ${album.albumName}`);
             }
           } catch (albumError: unknown) {
-            const err = albumError as Error & { response?: { data?: unknown } };
+            const err = albumError as Error;
             console.warn(
               `Failed to get assets from album ${album.albumName} (${album.id}):`,
-              err.response?.data || err.message,
+              err.message,
             );
           }
         }
@@ -58,18 +58,21 @@ router.post('/sync-immich', async (req, res) => {
       let hasMore = true;
 
       while (hasMore) {
-        const response = await axios.post(`${config.host}/api/search/metadata`,
-          { size: pageSize, page, type: 'IMAGE' },
-          { headers: { 'X-API-Key': config.apiKey } }
-        );
+        const response = await fetch(`${config.host}/api/search/metadata`, {
+          method: 'POST',
+          headers: { 'X-API-Key': config.apiKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ size: pageSize, page, type: 'IMAGE' }),
+        });
+        const data = await response.json() as Record<string, unknown>;
 
-        const items = response.data?.assets?.items || [];
+        const assets = data?.assets as Record<string, unknown> | undefined;
+        const items = (assets?.items || []) as Record<string, unknown>[];
         allAssets.push(...items);
         console.log(`Page ${page}: fetched ${items.length} assets (${allAssets.length} total)`);
 
-        const nextPage = response.data?.assets?.nextPage;
+        const nextPage = assets?.nextPage;
         if (nextPage != null && items.length > 0) {
-          page = nextPage;
+          page = nextPage as number;
         } else {
           hasMore = false;
         }
@@ -146,158 +149,137 @@ router.post('/sync-immich', async (req, res) => {
       console.log(`Synced asset: ${asset.originalFileName}`);
     }
 
-    res.json({
+    return c.json({
       message: `Successfully synced ${syncedCount} new images from Immich. Removed ${removedCount} images no longer in Immich.`,
       syncedCount,
       removedCount,
     });
   } catch (error) {
-    handleRouteError(res, error, 'Failed to sync with Immich');
+    return handleRouteError(c, error, 'Failed to sync with Immich');
   }
 });
 
 // Test Immich connection
-router.post('/test-immich-connection', async (req, res) => {
+app.post('/test-immich-connection', async (c) => {
   try {
-    const { host, apiKey } = req.body;
+    const { host, apiKey } = await c.req.json();
 
     if (!host || !apiKey) {
-      return res.status(400).json({
-        message: 'Host and API key are required',
-      });
+      return c.json({ message: 'Host and API key are required' }, 400);
     }
 
     // Validate URL format and protocol
     try {
       const url = new URL(host);
       if (!['http:', 'https:'].includes(url.protocol)) {
-        return res.status(400).json({
-          message: 'Only HTTP and HTTPS protocols are allowed',
-        });
+        return c.json({ message: 'Only HTTP and HTTPS protocols are allowed' }, 400);
       }
     } catch {
-      return res.status(400).json({
-        message: 'Invalid URL format',
-      });
+      return c.json({ message: 'Invalid URL format' }, 400);
     }
 
     // Test the connection by trying to get albums
-    const response = await axios.get(`${host}/api/albums`, {
+    const response = await fetch(`${host}/api/albums?take=1`, {
       headers: {
         'X-API-Key': apiKey,
-        Accept: 'application/json',
+        'Accept': 'application/json',
       },
-      params: {
-        take: 1,
-      },
-      timeout: 10000,
-      validateStatus: (status) => true,
+      signal: AbortSignal.timeout(10000),
     });
 
     // Check if response is JSON
-    const contentType = response.headers['content-type'] || '';
+    const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      return res.status(500).json({
+      return c.json({
         message: `Server returned non-JSON response (${contentType}). Please check the host URL.`,
-      });
+      }, 500);
     }
 
-    if (response.status === 200) {
-      res.json({
-        message: 'Connection successful!',
-      });
+    if (response.ok) {
+      return c.json({ message: 'Connection successful!' });
     } else {
-      res.json({
-        message: `Connection failed with status: ${response.status}`,
-      });
+      return c.json({ message: `Connection failed with status: ${response.status}` });
     }
   } catch (error: unknown) {
-    const err = error as Error & { response?: { data?: { message?: string }; status?: number }; code?: string };
+    const err = error as Error & { code?: string };
 
     let errorMessage = 'Connection failed';
     if (err.code === 'ECONNREFUSED') {
       errorMessage = 'Cannot connect to Immich server. Please check the host URL.';
     } else if (err.code === 'ENOTFOUND') {
       errorMessage = 'Host not found. Please check the host URL.';
-    } else if (err.response?.status === 401) {
-      errorMessage = 'Authentication failed. Please check your API key.';
-    } else if (err.response?.status === 404) {
-      errorMessage = 'API endpoint not found. Please check the host URL.';
-    } else if (err.response?.data?.message) {
-      errorMessage = err.response.data.message;
     } else if (err.message) {
       errorMessage = err.message;
     }
 
-    res.status(500).json({
-      message: errorMessage,
-    });
+    return c.json({ message: errorMessage }, 500);
   }
 });
 
-
 // Fetch albums from Immich
-router.post('/albums', async (req, res) => {
+app.post('/albums', async (c) => {
   try {
-    const { host, apiKey } = req.body;
+    const { host, apiKey } = await c.req.json();
     if (!host || !apiKey) {
-      return res.status(400).json({ message: 'Host and API key are required' });
+      return c.json({ message: 'Host and API key are required' }, 400);
     }
 
     // Validate URL format and protocol
     try {
       const url = new URL(host);
       if (!['http:', 'https:'].includes(url.protocol)) {
-        return res.status(400).json({ message: 'Only HTTP and HTTPS protocols are allowed' });
+        return c.json({ message: 'Only HTTP and HTTPS protocols are allowed' }, 400);
       }
     } catch {
-      return res.status(400).json({ message: 'Invalid URL format' });
+      return c.json({ message: 'Invalid URL format' }, 400);
     }
-    const response = await axios.get(`${host}/api/albums`, {
+
+    const response = await fetch(`${host}/api/albums`, {
       headers: { 'X-API-Key': apiKey },
     });
-    if (Array.isArray(response.data)) {
-      const albums = response.data.map((a: Record<string, unknown>) => ({ id: a.id, albumName: a.albumName }));
-      res.json(albums);
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      const albums = data.map((a: Record<string, unknown>) => ({ id: a.id, albumName: a.albumName }));
+      return c.json(albums);
     } else {
-      res.status(500).json({ message: 'Unexpected response from Immich' });
+      return c.json({ message: 'Unexpected response from Immich' }, 500);
     }
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch albums');
+    return handleRouteError(c, error, 'Failed to fetch albums');
   }
 });
 
 // Sync metadata for a single image to Immich
-router.post('/sync-metadata/:imageId', async (req, res) => {
+app.post('/sync-metadata/:imageId', async (c) => {
   try {
     const { immichSyncService } = await import('../services/immich-sync');
-    const imageId = parseInt(req.params.imageId);
+    const imageId = parseInt(c.req.param('imageId'));
     if (isNaN(imageId)) {
-      return res.status(400).json({ message: 'Invalid image ID' });
+      return c.json({ message: 'Invalid image ID' }, 400);
     }
     const result = await immichSyncService.syncImageMetadata(imageId);
     if (result.success) {
-      res.json({ message: 'Metadata synced to Immich' });
+      return c.json({ message: 'Metadata synced to Immich' });
     } else {
-      res.status(400).json({ message: result.error });
+      return c.json({ message: result.error }, 400);
     }
   } catch (error) {
-    handleRouteError(res, error, 'Failed to sync metadata');
+    return handleRouteError(c, error, 'Failed to sync metadata');
   }
 });
 
 // Sync metadata for all images to Immich
-router.post('/sync-metadata-all', async (req, res) => {
+app.post('/sync-metadata-all', async (c) => {
   try {
     const { immichSyncService } = await import('../services/immich-sync');
     const result = await immichSyncService.syncAllImages();
-    res.json({
+    return c.json({
       message: `Synced ${result.synced} images, ${result.failed} failed`,
       ...result,
     });
   } catch (error) {
-    handleRouteError(res, error, 'Failed to sync all metadata');
+    return handleRouteError(c, error, 'Failed to sync all metadata');
   }
 });
 
-export default router;
+export default app;

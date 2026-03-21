@@ -1,35 +1,34 @@
-
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
 import { astrometryService } from '../services/astrometry';
 import { configService } from '../services/config';
-import { Server as SocketIOServer } from 'socket.io';
 import { handleRouteError } from './route-utils';
+import type { WsManager } from '../services/ws-manager';
 
-export default (io?: SocketIOServer) => {
-  const router = Router();
+export default (wsManager?: WsManager) => {
+  const app = new Hono();
 
   // Submit image for plate solving
-  router.post('/images/:id/plate-solve', async (req, res) => {
+  app.post('/images/:id/plate-solve', async (c) => {
     try {
       // Check if plate solving is enabled and API key is configured
       const astrometryConfig = await configService.getAstrometryConfig();
       if (!astrometryConfig.enabled || !astrometryConfig.apiKey) {
-        return res.status(400).json({
+        return c.json({
           message: 'Plate solving is not configured. Please enable it and provide an API key in the admin settings.',
-        });
+        }, 400);
       }
 
-      const imageId = parseInt(req.params.id);
+      const imageId = parseInt(c.req.param('id'));
       const image = await storage.getAstroImage(imageId);
       if (!image) {
-        return res.status(404).json({ message: 'Image not found' });
+        return c.json({ message: 'Image not found' }, 404);
       }
 
       // Use the shared service to complete the full plate solving workflow
       const result = await astrometryService.completePlateSolvingWorkflow(image);
 
-      res.json({
+      return c.json({
         message: 'Image plate solving completed successfully',
         result: {
           calibration: result.calibration,
@@ -38,35 +37,35 @@ export default (io?: SocketIOServer) => {
         },
       });
     } catch (error) {
-      handleRouteError(res, error, 'Failed to complete plate solving');
+      return handleRouteError(c, error, 'Failed to complete plate solving');
     }
   });
 
   // Check plate solving status and update results
-  router.get('/jobs', async (req, res) => {
+  app.get('/jobs', async (c) => {
     try {
       const jobs = await storage.getPlateSolvingJobs();
-      res.json(jobs);
+      return c.json(jobs);
     } catch (error) {
-      handleRouteError(res, error, 'Failed to fetch plate solving jobs');
+      return handleRouteError(c, error, 'Failed to fetch plate solving jobs');
     }
   });
 
   // Bulk submit images for plate solving
-  router.post('/bulk', async (req, res) => {
+  app.post('/bulk', async (c) => {
     try {
-      const { imageIds } = req.body;
+      const { imageIds } = await c.req.json();
 
       if (!Array.isArray(imageIds) || imageIds.length === 0) {
-        return res.status(400).json({ message: 'imageIds array is required' });
+        return c.json({ message: 'imageIds array is required' }, 400);
       }
 
       // Check if plate solving is enabled and API key is configured
       const astrometryConfig = await configService.getAstrometryConfig();
       if (!astrometryConfig.enabled || !astrometryConfig.apiKey) {
-        return res.status(400).json({
+        return c.json({
           message: 'Plate solving is not configured. Please enable it and provide an API key in the admin settings.',
-        });
+        }, 400);
       }
 
       const results = [];
@@ -104,31 +103,31 @@ export default (io?: SocketIOServer) => {
         }
       }
 
-      res.json({
+      return c.json({
         message: 'Bulk plate solving submission completed',
         results,
       });
     } catch (error) {
-      handleRouteError(res, error, 'Failed to submit images for plate solving');
+      return handleRouteError(c, error, 'Failed to submit images for plate solving');
     }
   });
 
   // Update plate solving job status
-  router.post('/update/:jobId', async (req, res) => {
+  app.post('/update/:jobId', async (c) => {
     try {
-      const jobId = parseInt(req.params.jobId);
+      const jobId = parseInt(c.req.param('jobId'));
       const { status, result } = await astrometryService.checkJobStatus(jobId);
 
-      // Emit real-time update via Socket.io if available
-      if (io) {
-        io.emit('plate-solving-update', { jobId, status, result });
+      // Emit real-time update via WebSocket if available
+      if (wsManager) {
+        wsManager.broadcast('plate-solving-update', { jobId, status, result });
       }
 
-      res.json({ status, result });
+      return c.json({ status, result });
     } catch (error) {
-      handleRouteError(res, error, 'Failed to update plate solving status');
+      return handleRouteError(c, error, 'Failed to update plate solving status');
     }
   });
 
-  return router;
+  return app;
 };

@@ -1,22 +1,13 @@
-import axios from 'axios';
 import { configService } from './config';
 import { storage } from './storage';
 import { filterRelevantTags } from './tags-utils';
 import type { AstroImage } from '../../../../packages/shared/src/types';
 
 class ImmichSyncService {
-  /**
-   * Filter image tags to only include meaningful ones for Immich.
-   * Excludes individual star names from plate solving.
-   * Keeps: catalog objects (NGC/IC/M/etc), 'astrophotography', named nebulae/objects.
-   */
   private filterTagsForSync(tags: string[]): string[] {
     return filterRelevantTags(tags);
   }
 
-  /**
-   * Build tags list from Skymmich metadata (object type, constellation, equipment names)
-   */
   private async buildMetadataTags(image: AstroImage): Promise<string[]> {
     const tags: string[] = [];
 
@@ -33,14 +24,9 @@ class ImmichSyncService {
     return tags;
   }
 
-  /**
-   * Build custom metadata key-value items from Skymmich data
-   * These go into PUT /api/assets/{id}/metadata as { items: [...] }
-   */
   private async buildMetadataItems(image: AstroImage): Promise<Array<{ key: string; value: object }>> {
     const items: Array<{ key: string; value: object }> = [];
 
-    // Basic image info
     if (image.objectType) {
       items.push({ key: 'objectType', value: { value: image.objectType } });
     }
@@ -48,7 +34,6 @@ class ImmichSyncService {
       items.push({ key: 'constellation', value: { value: image.constellation } });
     }
 
-    // Plate solving data
     if (image.ra !== null && image.ra !== undefined) {
       items.push({ key: 'ra', value: { value: String(image.ra) } });
     }
@@ -65,7 +50,6 @@ class ImmichSyncService {
       items.push({ key: 'rotation', value: { value: String(image.rotation) } });
     }
 
-    // Camera/telescope info
     if (image.telescope) {
       items.push({ key: 'telescope', value: { value: image.telescope } });
     }
@@ -97,7 +81,6 @@ class ImmichSyncService {
       items.push({ key: 'totalIntegration', value: { value: `${image.totalIntegration}h` } });
     }
 
-    // Equipment details
     try {
       const equipment = await storage.getEquipmentForImage(image.id);
       if (equipment.length > 0) {
@@ -106,7 +89,6 @@ class ImmichSyncService {
       }
     } catch { /* ignore */ }
 
-    // Acquisition summary
     try {
       const acquisitions = await storage.getImageAcquisitions(image.id);
       if (acquisitions.length > 0) {
@@ -123,9 +105,6 @@ class ImmichSyncService {
     return items;
   }
 
-  /**
-   * Sync metadata for a single image to Immich
-   */
   async syncImageMetadata(imageId: number): Promise<{ success: boolean; error?: string }> {
     const config = await configService.getImmichConfig();
     if (!config.host || !config.apiKey) {
@@ -141,10 +120,9 @@ class ImmichSyncService {
     }
 
     try {
-      const headers = { 'X-API-Key': config.apiKey };
+      const headers: Record<string, string> = { 'X-API-Key': config.apiKey, 'Content-Type': 'application/json' };
 
       // 1. Update native asset fields via PUT /api/assets/{id}
-      //    Supported: description, latitude, longitude, dateTimeOriginal, rating
       const assetPayload: Record<string, any> = {};
       if (config.syncDescription && image.description) {
         assetPayload.description = image.description;
@@ -159,26 +137,26 @@ class ImmichSyncService {
       }
 
       if (Object.keys(assetPayload).length > 0) {
-        await axios.put(
-          `${config.host}/api/assets/${image.immichId}`,
-          assetPayload,
-          { headers }
-        );
+        await fetch(`${config.host}/api/assets/${image.immichId}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(assetPayload),
+        });
         console.log(`Updated asset fields for image ${imageId}: ${Object.keys(assetPayload).join(', ')}`);
       }
 
       // 2. Write custom astro metadata via PUT /api/assets/{id}/metadata
       const metadataItems = await this.buildMetadataItems(image);
       if (metadataItems.length > 0) {
-        await axios.put(
-          `${config.host}/api/assets/${image.immichId}/metadata`,
-          { items: metadataItems },
-          { headers }
-        );
+        await fetch(`${config.host}/api/assets/${image.immichId}/metadata`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ items: metadataItems }),
+        });
         console.log(`Wrote ${metadataItems.length} metadata items for image ${imageId}`);
       }
 
-      // 3. Sync tags if enabled (filtered user tags + metadata-derived tags)
+      // 3. Sync tags if enabled
       if (config.syncTags) {
         const userTags = this.filterTagsForSync(image.tags || []);
         const metadataTags = await this.buildMetadataTags(image);
@@ -191,23 +169,19 @@ class ImmichSyncService {
       console.log(`Synced metadata to Immich for image ${imageId} (asset ${image.immichId})`);
       return { success: true };
     } catch (error: any) {
-      const msg = error.response?.data?.message || error.response?.data || error.message;
-      console.error(`Failed to sync metadata for image ${imageId}:`, JSON.stringify(msg));
+      const msg = error.message;
+      console.error(`Failed to sync metadata for image ${imageId}:`, msg);
       return { success: false, error: typeof msg === 'string' ? msg : JSON.stringify(msg) };
     }
   }
 
-  /**
-   * Sync tags to Immich (creates tags if they don't exist, then assigns to asset)
-   */
   private async syncTags(host: string, apiKey: string, immichAssetId: string, tags: string[]): Promise<void> {
-    const headers = { 'X-API-Key': apiKey };
+    const headers: Record<string, string> = { 'X-API-Key': apiKey, 'Content-Type': 'application/json' };
 
-    // Fetch existing tags once
     let existingTags: Array<{ id: string; name: string }> = [];
     try {
-      const listRes = await axios.get(`${host}/api/tags`, { headers });
-      existingTags = listRes.data || [];
+      const listRes = await fetch(`${host}/api/tags`, { headers: { 'X-API-Key': apiKey } });
+      existingTags = await listRes.json() as Array<{ id: string; name: string }> || [];
     } catch {
       console.warn('Failed to fetch existing Immich tags');
     }
@@ -220,35 +194,35 @@ class ImmichSyncService {
         if (existing) {
           tagId = existing.id;
         } else {
-          const createRes = await axios.post(
-            `${host}/api/tags`,
-            { name: tagName },
-            { headers }
-          );
-          tagId = createRes.data?.id;
+          const createRes = await fetch(`${host}/api/tags`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ name: tagName }),
+          });
+          const createData = await createRes.json() as Record<string, unknown>;
+          tagId = createData?.id as string | undefined;
           if (tagId) {
             existingTags.push({ id: tagId, name: tagName });
           }
         }
 
         if (tagId) {
-          await axios.put(
-            `${host}/api/tags/${tagId}/assets`,
-            { ids: [immichAssetId] },
-            { headers }
-          ).catch((e: any) => {
-            console.warn(`Failed to assign tag "${tagName}":`, e.response?.status, JSON.stringify(e.response?.data));
-          });
+          try {
+            await fetch(`${host}/api/tags/${tagId}/assets`, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({ ids: [immichAssetId] }),
+            });
+          } catch (e: any) {
+            console.warn(`Failed to assign tag "${tagName}":`, e.message);
+          }
         }
       } catch (err: any) {
-        console.warn(`Failed to sync tag "${tagName}":`, err.response?.status, JSON.stringify(err.response?.data) || err.message);
+        console.warn(`Failed to sync tag "${tagName}":`, err.message);
       }
     }
   }
 
-  /**
-   * Sync metadata for all images to Immich
-   */
   async syncAllImages(): Promise<{ synced: number; failed: number; errors: string[] }> {
     const images = await storage.getAstroImages();
     let synced = 0;

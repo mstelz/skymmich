@@ -1,26 +1,25 @@
-
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
 import { handleRouteError } from './route-utils';
 
-const router = Router();
+const app = new Hono();
 
 // Get equipment
-router.get('/', async (req, res) => {
+app.get('/', async (c) => {
   try {
     const equipment = await storage.getEquipment();
-    res.json(equipment);
+    return c.json(equipment);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch equipment');
+    return handleRouteError(c, error, 'Failed to fetch equipment');
   }
 });
 
 // Create new equipment
-router.post('/', async (req, res) => {
+app.post('/', async (c) => {
   try {
-    const { name, type, specifications, description, cost, acquisitionDate } = req.body;
+    const { name, type, specifications, description, cost, acquisitionDate } = await c.req.json();
     if (!name || !type) {
-      return res.status(400).json({ message: 'Name and type are required' });
+      return c.json({ message: 'Name and type are required' }, 400);
     }
     const equipment = await storage.createEquipment({
       name,
@@ -30,20 +29,20 @@ router.post('/', async (req, res) => {
       cost: cost ?? null,
       acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
     });
-    res.json(equipment);
+    return c.json(equipment);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to create equipment');
+    return handleRouteError(c, error, 'Failed to create equipment');
   }
 });
 
 // Update equipment
-router.put('/:id', async (req, res) => {
+app.put('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
-    const { name, type, specifications, description, cost, acquisitionDate } = req.body;
+    const id = parseInt(c.req.param('id'));
+    const { name, type, specifications, description, cost, acquisitionDate } = await c.req.json();
 
     if (!name || !type) {
-      return res.status(400).json({ message: 'Name and type are required' });
+      return c.json({ message: 'Name and type are required' }, 400);
     }
 
     const equipment = await storage.updateEquipment(id, {
@@ -56,29 +55,29 @@ router.put('/:id', async (req, res) => {
     });
 
     if (!equipment) {
-      return res.status(404).json({ message: 'Equipment not found' });
+      return c.json({ message: 'Equipment not found' }, 404);
     }
 
-    res.json(equipment);
+    return c.json(equipment);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to update equipment');
+    return handleRouteError(c, error, 'Failed to update equipment');
   }
 });
 
 // Delete equipment
-router.delete('/:id', async (req, res) => {
+app.delete('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     const success = await storage.deleteEquipment(id);
 
     if (!success) {
-      return res.status(404).json({ message: 'Equipment not found' });
+      return c.json({ message: 'Equipment not found' }, 404);
     }
 
-    res.json({ message: 'Equipment deleted successfully' });
+    return c.json({ message: 'Equipment deleted successfully' });
   } catch (error) {
-    handleRouteError(res, error, 'Failed to delete equipment');
+    return handleRouteError(c, error, 'Failed to delete equipment');
   }
 });
 
-export default router;
+export default app;

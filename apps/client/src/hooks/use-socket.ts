@@ -1,35 +1,105 @@
 import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+
+class WebSocketManager {
+  private ws: WebSocket | null = null;
+  private listeners = new Map<string, Set<(data: any) => void>>();
+  private reconnectDelay = 1000;
+  private maxReconnectDelay = 30000;
+  private shouldReconnect = true;
+
+  constructor() {
+    this.connect();
+  }
+
+  private connect() {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    this.ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+    this.ws.onopen = () => {
+      console.log('Connected to server via WebSocket');
+      this.reconnectDelay = 1000;
+    };
+
+    this.ws.onclose = () => {
+      console.log('Disconnected from server');
+      if (this.shouldReconnect) {
+        setTimeout(() => {
+          this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
+          this.connect();
+        }, this.reconnectDelay);
+      }
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    this.ws.onmessage = (event) => {
+      try {
+        const { event: eventName, data } = JSON.parse(event.data);
+        const handlers = this.listeners.get(eventName);
+        if (handlers) {
+          for (const handler of handlers) {
+            handler(data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to parse WebSocket message:', err);
+      }
+    };
+  }
+
+  on(event: string, handler: (data: any) => void) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)!.add(handler);
+  }
+
+  off(event: string, handler: (data: any) => void) {
+    this.listeners.get(event)?.delete(handler);
+  }
+
+  disconnect() {
+    this.shouldReconnect = false;
+    this.ws?.close();
+  }
+}
+
+// Singleton instance shared across all hook consumers
+let manager: WebSocketManager | null = null;
+let refCount = 0;
+
+function getManager(): WebSocketManager {
+  if (!manager) {
+    manager = new WebSocketManager();
+  }
+  refCount++;
+  return manager;
+}
+
+function releaseManager() {
+  refCount--;
+  if (refCount <= 0 && manager) {
+    manager.disconnect();
+    manager = null;
+    refCount = 0;
+  }
+}
 
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
+  const managerRef = useRef<WebSocketManager | null>(null);
 
   useEffect(() => {
-    // Create socket connection (automatically connects to the same host)
-    socketRef.current = io();
+    managerRef.current = getManager();
 
-    // Connection event handlers
-    socketRef.current.on('connect', () => {
-      console.log('Connected to server via Socket.io');
-    });
-
-    socketRef.current.on('disconnect', () => {
-      console.log('Disconnected from server');
-    });
-
-    socketRef.current.on('connect_error', (error) => {
-      console.error('Socket.io connection error:', error);
-    });
-
-    // Cleanup on unmount
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      releaseManager();
+      managerRef.current = null;
     };
   }, []);
 
-  return socketRef.current;
+  return managerRef.current;
 }
 
 export function usePlateSolvingUpdates(callback: (data: any) => void) {
@@ -38,7 +108,6 @@ export function usePlateSolvingUpdates(callback: (data: any) => void) {
   useEffect(() => {
     if (!socket) return;
 
-    // Listen for plate solving updates
     socket.on('plate-solving-update', callback);
 
     return () => {
@@ -53,11 +122,10 @@ export function useImmichSyncUpdates(callback: (data: any) => void) {
   useEffect(() => {
     if (!socket) return;
 
-    // Listen for Immich sync updates
     socket.on('immich-sync-complete', callback);
 
     return () => {
       socket.off('immich-sync-complete', callback);
     };
   }, [socket, callback]);
-} 
+}

@@ -1,7 +1,4 @@
-
-import type { Express } from 'express';
-import { createServer, type Server } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
+import type { Hono } from 'hono';
 import imageRoutes from './images';
 import plateSolvingRoutes from './plate-solving';
 import equipmentRoutes from './equipment';
@@ -14,21 +11,19 @@ import locationRoutes from './locations';
 import targetRoutes from './targets';
 import catalogRoutes from './catalog';
 import userTargetRoutes from './user-targets';
+import type { WsManager } from '../services/ws-manager';
 
-export async function registerRoutes(app: Express, io?: SocketIOServer): Promise<Server> {
-  app.use('/api/images', imageRoutes);
-  app.use('/api/plate-solving', plateSolvingRoutes(io));
-  app.use('/api/equipment', equipmentRoutes);
-  app.use('/api/equipment-groups', equipmentGroupRoutes);
-  app.use('/api/immich', immichRoutes);
-  app.use('/api/assets', assetsRoutes);
-  app.use('/api/sky-map', skyMapRoutes);
-  app.use('/api/locations', locationRoutes);
-  app.use('/api/targets', targetRoutes);
-  app.use('/api/catalog', catalogRoutes);
-  app.use('/api/user-targets', userTargetRoutes);
-  app.use('/api', systemRoutes(io));
-
-  const httpServer = createServer(app);
-  return httpServer;
+export function registerRoutes(app: Hono, wsManager?: WsManager) {
+  app.route('/api/images', imageRoutes);
+  app.route('/api/plate-solving', plateSolvingRoutes(wsManager));
+  app.route('/api/equipment', equipmentRoutes);
+  app.route('/api/equipment-groups', equipmentGroupRoutes);
+  app.route('/api/immich', immichRoutes);
+  app.route('/api/assets', assetsRoutes);
+  app.route('/api/sky-map', skyMapRoutes);
+  app.route('/api/locations', locationRoutes);
+  app.route('/api/targets', targetRoutes);
+  app.route('/api/catalog', catalogRoutes);
+  app.route('/api/user-targets', userTargetRoutes);
+  app.route('/api', systemRoutes(wsManager));
 }

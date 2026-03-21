@@ -1,102 +1,102 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
 import { handleRouteError } from './route-utils';
 
-const router = Router();
+const app = new Hono();
 
 // List all groups with members
-router.get('/', async (req, res) => {
+app.get('/', async (c) => {
   try {
     const groups = await storage.getEquipmentGroups();
-    res.json(groups);
+    return c.json(groups);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch equipment groups');
+    return handleRouteError(c, error, 'Failed to fetch equipment groups');
   }
 });
 
 // Get a single group
-router.get('/:id', async (req, res) => {
+app.get('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     const group = await storage.getEquipmentGroup(id);
     if (!group) {
-      return res.status(404).json({ message: 'Equipment group not found' });
+      return c.json({ message: 'Equipment group not found' }, 404);
     }
-    res.json(group);
+    return c.json(group);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch equipment group');
+    return handleRouteError(c, error, 'Failed to fetch equipment group');
   }
 });
 
 // Create a group
-router.post('/', async (req, res) => {
+app.post('/', async (c) => {
   try {
-    const { name, description, memberIds } = req.body;
+    const { name, description, memberIds } = await c.req.json();
     if (!name) {
-      return res.status(400).json({ message: 'Name is required' });
+      return c.json({ message: 'Name is required' }, 400);
     }
     const group = await storage.createEquipmentGroup({ name, description, memberIds });
     // Return the full group with members
     const full = await storage.getEquipmentGroup(group.id);
-    res.json(full);
+    return c.json(full);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to create equipment group');
+    return handleRouteError(c, error, 'Failed to create equipment group');
   }
 });
 
 // Update group name/description
-router.put('/:id', async (req, res) => {
+app.put('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
-    const { name, description } = req.body;
+    const id = parseInt(c.req.param('id'));
+    const { name, description } = await c.req.json();
     const group = await storage.updateEquipmentGroup(id, { name, description });
     if (!group) {
-      return res.status(404).json({ message: 'Equipment group not found' });
+      return c.json({ message: 'Equipment group not found' }, 404);
     }
     const full = await storage.getEquipmentGroup(id);
-    res.json(full);
+    return c.json(full);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to update equipment group');
+    return handleRouteError(c, error, 'Failed to update equipment group');
   }
 });
 
 // Delete a group
-router.delete('/:id', async (req, res) => {
+app.delete('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     await storage.deleteEquipmentGroup(id);
-    res.json({ message: 'Equipment group deleted successfully' });
+    return c.json({ message: 'Equipment group deleted successfully' });
   } catch (error) {
-    handleRouteError(res, error, 'Failed to delete equipment group');
+    return handleRouteError(c, error, 'Failed to delete equipment group');
   }
 });
 
 // Replace group membership
-router.put('/:id/members', async (req, res) => {
+app.put('/:id/members', async (c) => {
   try {
-    const id = parseInt(req.params.id);
-    const { memberIds } = req.body;
+    const id = parseInt(c.req.param('id'));
+    const { memberIds } = await c.req.json();
     if (!Array.isArray(memberIds)) {
-      return res.status(400).json({ message: 'memberIds must be an array' });
+      return c.json({ message: 'memberIds must be an array' }, 400);
     }
     await storage.setEquipmentGroupMembers(id, memberIds);
     const full = await storage.getEquipmentGroup(id);
-    res.json(full);
+    return c.json(full);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to update group members');
+    return handleRouteError(c, error, 'Failed to update group members');
   }
 });
 
 // Apply group to an image
-router.post('/:id/apply/:imageId', async (req, res) => {
+app.post('/:id/apply/:imageId', async (c) => {
   try {
-    const groupId = parseInt(req.params.id);
-    const imageId = parseInt(req.params.imageId);
+    const groupId = parseInt(c.req.param('id'));
+    const imageId = parseInt(c.req.param('imageId'));
     const added = await storage.applyEquipmentGroupToImage(groupId, imageId);
-    res.json({ added, message: `${added.length} equipment item(s) assigned` });
+    return c.json({ added, message: `${added.length} equipment item(s) assigned` });
   } catch (error) {
-    handleRouteError(res, error, 'Failed to apply equipment group');
+    return handleRouteError(c, error, 'Failed to apply equipment group');
   }
 });
 
-export default router;
+export default app;

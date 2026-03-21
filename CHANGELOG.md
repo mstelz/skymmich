@@ -5,6 +5,23 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-03-21
+
+### Changed
+- **Server Framework**: Migrated from Express to Hono with `@hono/node-server` for HTTP routing. All 13 route files converted to Hono's context-based handler API.
+- **HTTP Client**: Replaced axios with native `fetch` across all server services and routes. Uses `AbortSignal.timeout()` for request timeouts and native `FormData` for multipart uploads.
+- **WebSocket**: Replaced Socket.IO with native WebSocket using the `ws` package on the server and browser-native `WebSocket` on the client. Added automatic reconnection with exponential backoff.
+- **Asset Proxy**: Immich asset proxy now streams responses via `fetch()` passthrough instead of axios stream piping.
+- **Mobile Navigation**: Added hamburger menu for mobile viewports. Navigation links, Sync Immich, and Admin Settings are accessible from a slide-out drawer on the right. Desktop header is unchanged.
+- **Toast Position**: Toast notifications now appear at the bottom of the screen on mobile instead of the top.
+
+### Removed
+- **Dependencies**: Removed express, axios, form-data, socket.io, socket.io-client, cors, passport, passport-local, connect-pg-simple, memorystore, and their associated type packages.
+- **Stale Overrides**: Removed `qs` and `socket.io-parser` npm overrides that were only needed for Express/Socket.IO transitive dependencies.
+
+### Fixed
+- **Missing Dependency**: Added `pg` as an explicit dependency. It was previously resolved as a transitive dependency of `connect-pg-simple`.
+
 ## [0.7.2] - 2026-03-21
 
 ### Fixed

@@ -1,12 +1,11 @@
-
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
 import { handleRouteError } from './route-utils';
 
-const router = Router();
+const app = new Hono();
 
 // Get plate-solved images as sky map markers
-router.get('/markers', async (_req, res) => {
+app.get('/markers', async (c) => {
   try {
     const images = await storage.getAstroImages({ plateSolved: true });
 
@@ -23,10 +22,10 @@ router.get('/markers', async (_req, res) => {
         fieldOfView: img.fieldOfView,
       }));
 
-    res.json(markers);
+    return c.json(markers);
   } catch (error) {
-    handleRouteError(res, error, 'Failed to fetch sky map markers');
+    return handleRouteError(c, error, 'Failed to fetch sky map markers');
   }
 });
 
-export default router;
+export default app;
