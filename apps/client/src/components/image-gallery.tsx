@@ -54,9 +54,6 @@ export function ImageGallery({
     return new Date(date).toLocaleDateString();
   };
 
-  // TODO: Replace with your actual API token retrieval logic
-  const apiToken = localStorage.getItem("apiToken") || "";
-
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">

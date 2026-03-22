@@ -24,25 +24,37 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
+export interface QueryFilters {
+  objectType?: string;
+  tags?: string[];
+  plateSolved?: boolean;
+  constellation?: string;
+  equipmentId?: number;
+}
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const [url, objectType, tags, plateSolved, constellation, equipmentId] = queryKey as [string, string, string[], boolean | undefined, string, number | undefined];
+    const [url, maybeFilters] = queryKey as [string, QueryFilters?];
 
-    // Build query parameters
+    // Build query parameters from filters object (if present)
     const params = new URLSearchParams();
-    if (objectType) params.append('objectType', objectType);
-    if (tags && tags.length > 0) {
-      tags.forEach(tag => params.append('tags', tag));
+    if (maybeFilters && typeof maybeFilters === 'object' && !Array.isArray(maybeFilters)) {
+      const filters = maybeFilters;
+      if (filters.objectType) params.append('objectType', filters.objectType);
+      if (filters.tags && filters.tags.length > 0) {
+        filters.tags.forEach(tag => params.append('tags', tag));
+      }
+      if (filters.plateSolved !== undefined) params.append('plateSolved', filters.plateSolved.toString());
+      if (filters.constellation) params.append('constellation', filters.constellation);
+      if (filters.equipmentId) params.append('equipmentId', filters.equipmentId.toString());
     }
-    if (plateSolved !== undefined) params.append('plateSolved', plateSolved.toString());
-    if (constellation) params.append('constellation', constellation);
-    if (equipmentId) params.append('equipmentId', equipmentId.toString());
-    
+
     const fullUrl = params.toString() ? `${url}?${params.toString()}` : url;
-    
+
     const res = await fetch(fullUrl, {
       credentials: "include",
     });

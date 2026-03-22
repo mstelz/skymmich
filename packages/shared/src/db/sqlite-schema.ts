@@ -1,3 +1,5 @@
+// IMPORTANT: This schema must stay in sync with pg-schema.ts.
+// When adding/removing columns, update BOTH files.
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const astrophotographyImages = sqliteTable('astrophotography_images', {
@@ -53,8 +55,8 @@ export const equipment = sqliteTable('equipment', {
 
 export const imageEquipment = sqliteTable('image_equipment', {
     id: integer('id').primaryKey(),
-    imageId: integer('image_id'),
-    equipmentId: integer('equipment_id'),
+    imageId: integer('image_id').references(() => astrophotographyImages.id, { onDelete: 'cascade' }),
+    equipmentId: integer('equipment_id').references(() => equipment.id, { onDelete: 'cascade' }),
     settings: text('settings', { mode: 'json' }),
     notes: text('notes'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
@@ -62,7 +64,7 @@ export const imageEquipment = sqliteTable('image_equipment', {
 
 export const plateSolvingJobs = sqliteTable('plate_solving_jobs', {
     id: integer('id').primaryKey(),
-    imageId: integer('image_id'),
+    imageId: integer('image_id').references(() => astrophotographyImages.id),
     astrometrySubmissionId: text('astrometry_submission_id'),
     astrometryJobId: text('astrometry_job_id'),
     status: text('status').notNull().default('pending'),
@@ -89,8 +91,8 @@ export const notifications = sqliteTable('notifications', {
 
 export const imageAcquisition = sqliteTable('image_acquisition', {
     id: integer('id').primaryKey(),
-    imageId: integer('image_id').notNull(),
-    filterId: integer('filter_id'),
+    imageId: integer('image_id').notNull().references(() => astrophotographyImages.id, { onDelete: 'cascade' }),
+    filterId: integer('filter_id').references(() => equipment.id, { onDelete: 'set null' }),
     filterName: text('filter_name'),
     frameCount: integer('frame_count').notNull(),
     exposureTime: real('exposure_time').notNull(),
@@ -113,8 +115,8 @@ export const equipmentGroups = sqliteTable('equipment_groups', {
 
 export const equipmentGroupMembers = sqliteTable('equipment_group_members', {
     id: integer('id').primaryKey(),
-    groupId: integer('group_id').notNull(),
-    equipmentId: integer('equipment_id').notNull(),
+    groupId: integer('group_id').notNull().references(() => equipmentGroups.id, { onDelete: 'cascade' }),
+    equipmentId: integer('equipment_id').notNull().references(() => equipment.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 

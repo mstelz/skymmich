@@ -18,7 +18,7 @@ interface AstrometryCalibration {
 }
 
 export class AstrometryApi {
-  private baseUrl = "http://nova.astrometry.net/api";
+  private baseUrl = "https://nova.astrometry.net/api";
   private sessionKey: string | null = null;
 
   async login(apiKey: string): Promise<void> {

@@ -9,16 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-
-interface Notification {
-  id: number;
-  type: 'error' | 'warning' | 'info' | 'success';
-  title: string;
-  message: string;
-  details?: any;
-  timestamp: string;
-  acknowledged: boolean;
-}
+import type { Notification } from '@shared/types';
 
 interface NotificationsSectionProps {
   notifications: Notification[];
@@ -130,7 +121,7 @@ export function NotificationsSection({
               <h4 className="font-medium text-gray-900">{notification.title}</h4>
               <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
               <p className="text-xs text-gray-500 mt-2">
-                {formatTimestamp(notification.timestamp)}
+                {formatTimestamp(notification.createdAt)}
               </p>
             </div>
             <Button

@@ -18,7 +18,7 @@ chown -R skymmich:nodejs /app/config /app/logs /app/sidecars /app/cache /app/dis
 echo "Starting Skymmich container..."
 echo "Node.js version: $(node --version)"
 echo "Environment: ${NODE_ENV:-development}"
-echo "Database URL: ${DATABASE_URL:-using_default}"
+echo "Database URL: $(echo "${DATABASE_URL:-using_default}" | sed 's|://[^:]*:[^@]*@|://****:****@|')"
 echo "Plate solving enabled: ${ENABLE_PLATE_SOLVING:-true}"
 echo "XMP sidecar path: ${XMP_SIDECAR_PATH:-/app/sidecars}"
 

@@ -1,4 +1,5 @@
-import { writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
+import { writeFile, unlink } from 'fs/promises';
 import { dirname } from 'path';
 import { configService } from './config';
 import { filterRelevantTags } from './tags-utils';
@@ -229,15 +230,15 @@ export class XmpSidecarService {
       // Check if directory is writable
       try {
         const testFile = `${sidecarDir}/.test-write`;
-        writeFileSync(testFile, 'test', 'utf8');
-        unlinkSync(testFile);
+        await writeFile(testFile, 'test', 'utf8');
+        await unlink(testFile);
       } catch (writeError) {
         console.error(`Directory ${sidecarDir} is not writable:`, writeError);
         throw new Error(`Sidecar directory is not writable: ${writeError}`);
       }
 
       // Write the XMP file
-      writeFileSync(sidecarPath, xmpContent, 'utf8');
+      await writeFile(sidecarPath, xmpContent, 'utf8');
       
       console.log(`XMP sidecar written successfully: ${sidecarPath}`);
       return sidecarPath;

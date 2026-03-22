@@ -8,6 +8,15 @@ import { filterRelevantTags } from '../services/tags-utils';
 import { handleRouteError } from './route-utils';
 import type { WsManager } from '../services/ws-manager';
 
+function maskApiKey(key: string): string {
+  if (!key || key.length <= 4) return key ? '••••' : '';
+  return '••••' + key.slice(-4);
+}
+
+function isRedactedKey(key: string): boolean {
+  return key.startsWith('••••');
+}
+
 export default function systemRoutes(wsManager?: WsManager) {
   const app = new Hono();
 
@@ -32,6 +41,16 @@ export default function systemRoutes(wsManager?: WsManager) {
         }
       }
 
+      // Preserve existing API keys if the client sends back redacted values
+      if (settings.immich?.apiKey && isRedactedKey(settings.immich.apiKey)) {
+        const currentConfig = await configService.getConfig();
+        settings.immich.apiKey = currentConfig.immich.apiKey;
+      }
+      if (settings.astrometry?.apiKey && isRedactedKey(settings.astrometry.apiKey)) {
+        const currentConfig = await configService.getConfig();
+        settings.astrometry.apiKey = currentConfig.astrometry.apiKey;
+      }
+
       await configService.updateConfig(settings);
       return c.json({ message: 'Settings saved successfully' });
     } catch (error) {
@@ -39,11 +58,22 @@ export default function systemRoutes(wsManager?: WsManager) {
     }
   });
 
-  // Get admin settings
+  // Get admin settings (with redacted API keys)
   app.get('/admin/settings', async (c) => {
     try {
       const config = await configService.getConfig();
-      return c.json(config);
+      const redacted = {
+        ...config,
+        immich: {
+          ...config.immich,
+          apiKey: maskApiKey(config.immich.apiKey),
+        },
+        astrometry: {
+          ...config.astrometry,
+          apiKey: maskApiKey(config.astrometry.apiKey),
+        },
+      };
+      return c.json(redacted);
     } catch (error) {
       return handleRouteError(c, error, 'Failed to get settings');
     }
@@ -52,7 +82,13 @@ export default function systemRoutes(wsManager?: WsManager) {
   // Test Astrometry connection
   app.post('/test-astrometry-connection', async (c) => {
     try {
-      const { apiKey } = await c.req.json();
+      let { apiKey } = await c.req.json();
+
+      // If a redacted key was sent, use the stored key
+      if (apiKey && isRedactedKey(apiKey)) {
+        const config = await configService.getConfig();
+        apiKey = config.astrometry.apiKey;
+      }
 
       if (!apiKey) {
         return c.json({ message: 'API key is required' }, 400);
@@ -62,7 +98,7 @@ export default function systemRoutes(wsManager?: WsManager) {
       const loginData = new URLSearchParams();
       loginData.append('request-json', JSON.stringify({ apikey: apiKey }));
 
-      const response = await fetch('http://nova.astrometry.net/api/login', {
+      const response = await fetch('https://nova.astrometry.net/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: loginData,

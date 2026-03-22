@@ -1,6 +1,23 @@
 // Re-export database types
 export type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, EquipmentGroup, InsertEquipmentGroup, EquipmentGroupMember, InsertEquipmentGroupMember, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow, CatalogObject, InsertCatalogObject, UserTarget, InsertUserTarget } from '../db/pg-schema';
 
+// Notification types
+export type NotificationType = 'error' | 'warning' | 'info' | 'success';
+
+export interface Notification {
+  id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  details?: Record<string, unknown>;
+  createdAt: string;
+  acknowledged: boolean;
+}
+
+export type InsertNotification = Pick<Notification, 'type' | 'title' | 'message'> & {
+  details?: Record<string, unknown>;
+};
+
 // Equipment type string literal
 export type EquipmentType = 'telescope' | 'camera' | 'mount' | 'filter' | 'accessory' | 'software';
 

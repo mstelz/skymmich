@@ -7,16 +7,7 @@ import { useSocket } from "@/hooks/use-socket";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
-
-interface Notification {
-  id: number;
-  type: 'error' | 'warning' | 'info' | 'success';
-  title: string;
-  message: string;
-  details?: any;
-  timestamp: string;
-  acknowledged: boolean;
-}
+import type { Notification } from '@shared/types';
 
 const NAV_LINKS = [
   { href: '/', label: 'Gallery' },

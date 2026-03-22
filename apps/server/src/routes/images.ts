@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { readFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 import { storage } from '../services/storage';
 import { xmpSidecarService } from '../services/xmp-sidecar';
 import { configService } from '../services/config';
@@ -351,7 +351,7 @@ app.get('/:id/sidecar', async (c) => {
       return c.json({ message: 'No XMP sidecar found for this image' }, 404);
     }
 
-    const content = readFileSync(sidecarPath, 'utf8');
+    const content = await readFile(sidecarPath, 'utf8');
     const isDownload = c.req.query('download') === 'true';
 
     const headers: Record<string, string> = { 'Content-Type': 'application/xml' };

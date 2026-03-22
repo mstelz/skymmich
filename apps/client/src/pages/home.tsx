@@ -29,7 +29,7 @@ export default function Home() {
   type Tag = { tag: string; count: number };
 
   const { data: images = [], isLoading: imagesLoading, refetch: refetchImages } = useQuery<AstroImage[]>({
-    queryKey: ["/api/images", filters.objectType, filters.tags, filters.plateSolved, filters.constellation, filters.equipmentId],
+    queryKey: ["/api/images", { objectType: filters.objectType, tags: filters.tags, plateSolved: filters.plateSolved, constellation: filters.constellation, equipmentId: filters.equipmentId }],
     enabled: true,
   });
 

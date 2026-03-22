@@ -8,6 +8,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { Notification } from '@shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/header';
 import { NotificationsSection } from '@/components/admin/notifications-section';
@@ -52,16 +53,6 @@ export interface AdminSettings {
   app: {
     debugMode: boolean;
   };
-}
-
-interface Notification {
-  id: number;
-  type: 'error' | 'warning' | 'info' | 'success';
-  title: string;
-  message: string;
-  details?: any;
-  timestamp: string;
-  acknowledged: boolean;
 }
 
 export default function AdminPage() {

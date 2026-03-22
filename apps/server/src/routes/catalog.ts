@@ -184,6 +184,7 @@ app.post('/backfill-targets', async (c) => {
       const matches = await catalogService.matchTargetFromTags(tags);
       if (matches.length > 0) {
         await storage.updateAstroImage(image.id, { targetName: matches[0].name });
+        matched++;
       }
     }
 

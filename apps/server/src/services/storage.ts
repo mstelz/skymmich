@@ -525,42 +525,51 @@ class DbStorage {
   // Stats
   async getStats() {
     try {
-      const images = await this.getAstroImages();
-      const equipment = await this.getEquipment();
-      const plateSolvingJobs = await this.getPlateSolvingJobs();
-      
-      const plateSolvedImages = images.filter(img => img.plateSolved).length;
-      const pendingJobs = plateSolvingJobs.filter(job => job.status === 'pending').length;
-      const successfulJobs = plateSolvingJobs.filter(job => job.status === 'success').length;
-      const failedJobs = plateSolvingJobs.filter(job => job.status === 'failed').length;
-      
-      // Calculate total integration time
-      const totalIntegrationHours = images.reduce((total, img) => {
-        return total + (img.totalIntegration || 0);
-      }, 0);
-      
-      // Get object type distribution
+      // Use SQL aggregation instead of loading all rows into memory
+      const img = schema.astrophotographyImages;
+      const jobs = schema.plateSolvingJobs;
+
+      const [imageStats] = await db.select({
+        totalImages: sql<number>`count(*)`,
+        plateSolved: sql<number>`sum(case when ${img.plateSolved} = true then 1 else 0 end)`,
+        totalHours: sql<number>`coalesce(sum(${img.totalIntegration}), 0)`,
+        uniqueTargets: sql<number>`count(distinct case when ${img.title} is not null and ${img.title} != '' then ${img.title} end)`,
+      }).from(img).execute();
+
+      const [equipmentCount] = await db.select({
+        total: sql<number>`count(*)`,
+      }).from(schema.equipment).execute();
+
+      const [jobStats] = await db.select({
+        total: sql<number>`count(*)`,
+        pending: sql<number>`sum(case when ${jobs.status} = 'pending' then 1 else 0 end)`,
+        successful: sql<number>`sum(case when ${jobs.status} = 'success' then 1 else 0 end)`,
+        failed: sql<number>`sum(case when ${jobs.status} = 'failed' then 1 else 0 end)`,
+      }).from(jobs).execute();
+
+      // Object type distribution still needs grouping
+      const typeRows = await db.select({
+        objectType: sql<string>`coalesce(${img.objectType}, 'Unknown')`,
+        count: sql<number>`count(*)`,
+      }).from(img).groupBy(sql`coalesce(${img.objectType}, 'Unknown')`).execute();
+
       const objectTypeCounts: Record<string, number> = {};
-      images.forEach(img => {
-        const type = img.objectType || 'Unknown';
-        objectTypeCounts[type] = (objectTypeCounts[type] || 0) + 1;
-      });
-      
-      // Count unique targets (distinct non-empty image titles)
-      const uniqueTitles = new Set(images.map(img => img.title).filter(Boolean));
+      for (const row of typeRows) {
+        objectTypeCounts[row.objectType] = Number(row.count);
+      }
 
       return {
-        totalImages: images.length,
-        plateSolved: plateSolvedImages,
-        totalHours: Math.round(totalIntegrationHours * 100) / 100,
-        uniqueTargets: uniqueTitles.size,
-        totalEquipment: equipment.length,
+        totalImages: Number(imageStats.totalImages),
+        plateSolved: Number(imageStats.plateSolved),
+        totalHours: Math.round(Number(imageStats.totalHours) * 100) / 100,
+        uniqueTargets: Number(imageStats.uniqueTargets),
+        totalEquipment: Number(equipmentCount.total),
         objectTypeCounts,
         plateSolvingStats: {
-          total: plateSolvingJobs.length,
-          pending: pendingJobs,
-          successful: successfulJobs,
-          failed: failedJobs
+          total: Number(jobStats.total),
+          pending: Number(jobStats.pending),
+          successful: Number(jobStats.successful),
+          failed: Number(jobStats.failed),
         }
       };
     } catch (error) {

@@ -9,8 +9,7 @@ interface RemoteImageProps {
 }
 
 export const RemoteImage: React.FC<RemoteImageProps> = ({ src, alt, className, onClick, onLoad }) => {
-    const url = new URL(src, window.location.origin);
-    // Use the current window location as the base to ensure it works from any host
-    const newUrl = new URL(url.pathname, window.location.origin);
-  return <img src={newUrl.toString()} alt={alt} className={className} onClick={onClick} onLoad={onLoad} />;
+    // For relative paths, prepend origin; for absolute URLs, use as-is to preserve query params
+    const resolvedSrc = src.startsWith('http') ? src : new URL(src, window.location.origin).toString();
+  return <img src={resolvedSrc} alt={alt} className={className} onClick={onClick} onLoad={onLoad} />;
 };

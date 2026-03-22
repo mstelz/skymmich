@@ -46,34 +46,24 @@ class CronManager {
     this.scheduleJob('immich-sync', 'Immich Sync', cronExpr, async () => {
       try {
         console.log('[CRON] Starting Immich sync...');
-        const response = await fetch('http://localhost:5000/api/immich/sync-immich', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: '{}',
-          signal: AbortSignal.timeout(30000),
-        });
+        const { immichSyncService } = await import('./immich-sync');
+        const result = await immichSyncService.syncImagesFromImmich();
 
-        if (response.ok) {
-          const data = await response.json() as Record<string, unknown>;
-          console.log(`[CRON] Immich sync completed: ${data.message}`);
+        console.log(`[CRON] Immich sync completed: ${result.message}`);
 
-          if (wsManager) {
-            wsManager.broadcast('immich-sync-complete', {
-              success: true,
-              message: data.message,
-              syncedCount: data.syncedCount,
-              removedCount: data.removedCount
-            });
-          }
+        if (wsManager) {
+          wsManager.broadcast('immich-sync-complete', {
+            success: true,
+            message: result.message,
+            syncedCount: result.syncedCount,
+            removedCount: result.removedCount
+          });
+        }
 
-          const job = this.jobs.get('immich-sync');
-          if (job) {
-            job.lastRun = new Date();
-            delete job.lastError;
-          }
-        } else {
-          const data = await response.json().catch(() => ({})) as Record<string, unknown>;
-          throw new Error(`HTTP ${response.status}: ${data?.message || 'Unknown error'}`);
+        const job = this.jobs.get('immich-sync');
+        if (job) {
+          job.lastRun = new Date();
+          delete job.lastError;
         }
 
       } catch (error: unknown) {

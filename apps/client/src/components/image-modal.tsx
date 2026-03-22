@@ -186,7 +186,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                     <div className="text-green-400 flex items-center">
                       {plateSolvingJob?.submissionId ? (
                         <a
-                          href={`http://nova.astrometry.net/status/${plateSolvingJob.submissionId}`}
+                          href={`https://nova.astrometry.net/status/${plateSolvingJob.submissionId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:underline"
@@ -308,7 +308,7 @@ export function ImageModal({ image, onClose }: ImageModalProps) {
                     <div className="text-green-400 flex items-center">
                       {plateSolvingJob?.submissionId ? (
                         <a
-                          href={`http://nova.astrometry.net/status/${plateSolvingJob.submissionId}`}
+                          href={`https://nova.astrometry.net/status/${plateSolvingJob.submissionId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:underline"

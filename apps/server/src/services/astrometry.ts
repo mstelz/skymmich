@@ -77,7 +77,7 @@ export class AstrometryService {
     const loginData = new URLSearchParams();
     loginData.append('request-json', JSON.stringify({ apikey: this.astrometryApiKey }));
 
-    const loginResponse = await fetch("http://nova.astrometry.net/api/login", {
+    const loginResponse = await fetch("https://nova.astrometry.net/api/login", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -138,7 +138,7 @@ export class AstrometryService {
     form.append('request-json', JSON.stringify({ session: sessionKey, apikey: this.astrometryApiKey }));
     form.append('file', new Blob([imageBuffer], { type: contentType }), image.filename || `image_${image.id}.jpg`);
 
-    const uploadResponse = await fetch('http://nova.astrometry.net/api/upload', {
+    const uploadResponse = await fetch('https://nova.astrometry.net/api/upload', {
       method: 'POST',
       body: form,
       signal: AbortSignal.timeout(60000),
@@ -177,8 +177,11 @@ export class AstrometryService {
   async pollForPlateSolvingResult(submissionId: string): Promise<PlateSolvingResult | null> {
     const astrometryConfig = await configService.getAstrometryConfig();
     const pollInterval = astrometryConfig.pollInterval * 1000;
+    const maxAttempts = 720; // ~60 min at default 5s interval
+    let attempts = 0;
 
-    while (true) {
+    while (attempts < maxAttempts) {
+      attempts++;
       try {
         const statusResponse = await fetch(
           `https://nova.astrometry.net/api/submissions/${submissionId}`,
@@ -208,6 +211,9 @@ export class AstrometryService {
         await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
     }
+
+    console.warn(`Plate solving timed out after ${maxAttempts} attempts for submission ${submissionId}`);
+    return null;
   }
 
   async fetchCompleteResult(jobId: string): Promise<PlateSolvingResult> {
@@ -249,7 +255,7 @@ export class AstrometryService {
     let machineTags: string[] = [];
     try {
       const tagsResponse = await fetch(
-        `http://nova.astrometry.net/api/jobs/${jobId}/machine_tags/`,
+        `https://nova.astrometry.net/api/jobs/${jobId}/machine_tags/`,
         { headers: HEADERS }
       );
       const tagsData = await tagsResponse.json() as unknown;

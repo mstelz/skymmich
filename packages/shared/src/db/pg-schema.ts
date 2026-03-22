@@ -1,3 +1,5 @@
+// IMPORTANT: This schema must stay in sync with sqlite-schema.ts.
+// When adding/removing columns, update BOTH files.
 import { pgTable, serial, text, timestamp, real, integer, boolean, json } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
