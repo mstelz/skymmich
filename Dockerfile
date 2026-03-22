@@ -64,8 +64,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies, excluding better-sqlite3
-RUN npm pkg delete dependencies.better-sqlite3 && npm ci --omit=dev && npm cache clean --force
+# Install production dependencies (including better-sqlite3 for built-in SQLite support)
+RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
+    npm ci --omit=dev && \
+    apk del .build-deps && \
+    npm cache clean --force
 
 # Copy built application from builder stage (includes tools, config, and public assets)
 COPY --from=builder /build/dist ./dist

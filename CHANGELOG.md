@@ -5,6 +5,19 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-03-22
+
+### Changed
+- **Default Database**: SQLite is now the default database for all deployments including Docker and UnRAID. No external database setup required — data is stored in `/app/config/skymmich.db`.
+- **PostgreSQL Optional**: PostgreSQL remains fully supported as an optional external database. Use `docker-compose.postgres.yml` as a compose override or set `DATABASE_URL` to enable it.
+- **Docker Compose**: Simplified to a single-container setup by default. PostgreSQL service moved to a separate `docker-compose.postgres.yml` override file.
+- **UnRAID Template**: Removed PostgreSQL as a requirement. `DATABASE_URL` is now optional with an empty default.
+- **Dockerfile**: `better-sqlite3` is now included in the production image for built-in SQLite support.
+- **SQLite Path**: Configurable via `SQLITE_DB_PATH` env var, defaults to `/app/config/skymmich.db` in production and `local.db` in development.
+
+### Fixed
+- **Tag Filtering**: Image tag filtering now works on both SQLite (using `json_each`) and PostgreSQL (using native array overlap). Previously only PostgreSQL was supported.
+
 ## [0.8.0] - 2026-03-22
 
 ### Changed

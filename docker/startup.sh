@@ -18,7 +18,11 @@ chown -R skymmich:nodejs /app/config /app/logs /app/sidecars /app/cache /app/dis
 echo "Starting Skymmich container..."
 echo "Node.js version: $(node --version)"
 echo "Environment: ${NODE_ENV:-development}"
-echo "Database URL: $(echo "${DATABASE_URL:-using_default}" | sed 's|://[^:]*:[^@]*@|://****:****@|')"
+if [ -n "$DATABASE_URL" ]; then
+    echo "Database: PostgreSQL ($(echo "$DATABASE_URL" | sed 's|://[^:]*:[^@]*@|://****:****@|'))"
+else
+    echo "Database: SQLite (built-in at /app/config/skymmich.db)"
+fi
 echo "Plate solving enabled: ${ENABLE_PLATE_SOLVING:-true}"
 echo "XMP sidecar path: ${XMP_SIDECAR_PATH:-/app/sidecars}"
 
@@ -46,7 +50,7 @@ if [ -n "$DATABASE_URL" ]; then
         exit 1
     fi
 else
-    echo "No DATABASE_URL provided, using SQLite fallback"
+    echo "No DATABASE_URL provided, using built-in SQLite database"
 fi
 
 # Run database migrations as skymmich user
@@ -62,7 +66,7 @@ if [ -n "$DATABASE_URL" ]; then
         echo "PostgreSQL migration script not found"
     fi
 else
-    # SQLite migrations for local development
+    # SQLite migrations (handled automatically by the application on startup)
     if [ -f "/app/dist/tools/scripts/apply-migrations.ts" ]; then
         echo "Running SQLite migrations..."
         su-exec skymmich node --loader tsx /app/dist/tools/scripts/apply-migrations.ts || {

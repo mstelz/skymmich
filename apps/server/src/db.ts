@@ -6,6 +6,7 @@ import * as pgSchema from '@shared/db/pg-schema';
 let db: any;
 let schema: any;
 let initialized = false;
+export const isPostgres = !!process.env.DATABASE_URL;
 
 async function initializeDatabase() {
   if (initialized) return;
@@ -19,17 +20,18 @@ async function initializeDatabase() {
     schema = pgSchema;
     db = pgDrizzle(pool, { schema });
   } else {
-    // Fallback to SQLite for development (only if better-sqlite3 is available)
+    // Use built-in SQLite database
     try {
-      console.log('Using SQLite database (development)');
-      
+      const dbPath = process.env.SQLITE_DB_PATH || (process.env.NODE_ENV === 'production' ? '/app/config/skymmich.db' : 'local.db');
+      console.log(`Using SQLite database: ${dbPath}`);
+
       // Dynamic imports to handle missing dependencies gracefully
       const { drizzle: sqliteDrizzle } = await import('drizzle-orm/better-sqlite3');
       const { migrate } = await import('drizzle-orm/better-sqlite3/migrator');
       const Database = (await import('better-sqlite3')).default;
       const sqliteSchema = await import('@shared/db/sqlite-schema');
-      
-      const sqlite = new Database('local.db');
+
+      const sqlite = new Database(dbPath);
       schema = sqliteSchema;
       db = sqliteDrizzle(sqlite, { schema });
       
