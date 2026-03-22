@@ -5,7 +5,7 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - 2026-03-21
+## [0.8.0] - 2026-03-22
 
 ### Changed
 - **Server Framework**: Migrated from Express to Hono with `@hono/node-server` for HTTP routing. All 13 route files converted to Hono's context-based handler API.
@@ -21,6 +21,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Missing Dependency**: Added `pg` as an explicit dependency. It was previously resolved as a transitive dependency of `connect-pg-simple`.
+- **Connection Test Responses**: Added missing `success` field to Immich and Astrometry test connection responses so the frontend can correctly show green/red status styling.
+- **Catalog Backfill Counter**: Fixed matched count never incrementing during catalog backfill.
+- **Notification Timestamps**: Fixed field mismatch (`timestamp` → `createdAt`) in notification display.
+- **Plate Solving Timeout**: Added 60-minute timeout to plate solving poll loop to prevent infinite hangs.
+- **Remote Image URLs**: Fixed `RemoteImage` component stripping query parameters from image URLs.
+- **Redacted Key Handling**: Properly handle redacted API keys in test connection and album endpoints to avoid overwriting stored keys.
+- **Async File I/O**: Replaced blocking `readFileSync`/`writeFileSync` with async `fs` operations.
+- **Astrometry HTTPS**: Changed all Astrometry.net API calls from HTTP to HTTPS.
+- **API Key Masking**: Mask API keys in `GET /admin/settings` response, showing only the last 4 characters.
+- **Database URL Redaction**: Redact `DATABASE_URL` password in Docker startup logs.
+- **Stats Query**: Rewrote `getStats()` to use SQL aggregation instead of loading all rows into memory.
+- **Dead Code Removal**: Removed unused `apiToken` localStorage code from the client.
+- **Shared Notification Type**: Created shared `Notification` type, removing 3 duplicate interface definitions.
+- **Immich Sync Refactor**: Extracted Immich image sync into a service layer; cron calls service directly.
+- **Query Filters**: Replaced fragile positional `queryKey` array with typed `QueryFilters` object.
+- **Schema Improvements**: Added missing foreign key references to SQLite schema and sync comments between pg and sqlite files.
 
 ## [0.7.2] - 2026-03-21
 
