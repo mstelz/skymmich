@@ -108,10 +108,10 @@ export default function systemRoutes(wsManager?: WsManager) {
       const data = await response.json() as Record<string, unknown>;
 
       if (response.ok && data.status === 'success') {
-        return c.json({ message: 'Connection successful!' });
+        return c.json({ success: true, message: 'Connection successful!' });
       } else {
         return c.json({
-          message: `Connection failed: ${data.message || 'Unknown error'}`,
+          success: false, message: `Connection failed: ${data.message || 'Unknown error'}`,
         });
       }
     } catch (error: unknown) {

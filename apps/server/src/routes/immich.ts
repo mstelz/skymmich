@@ -59,9 +59,9 @@ app.post('/test-immich-connection', async (c) => {
     }
 
     if (response.ok) {
-      return c.json({ message: 'Connection successful!' });
+      return c.json({ success: true, message: 'Connection successful!' });
     } else {
-      return c.json({ message: `Connection failed with status: ${response.status}` });
+      return c.json({ success: false, message: `Connection failed with status: ${response.status}` });
     }
   } catch (error: unknown) {
     const err = error as Error & { code?: string };
