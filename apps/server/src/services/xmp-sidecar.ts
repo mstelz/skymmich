@@ -4,7 +4,7 @@ import { dirname } from 'path';
 import { configService } from './config';
 import { filterRelevantTags } from './tags-utils';
 import { AstrometryCalibration, AstrometryAnnotation } from './astrometry';
-import type { Equipment } from '../../../../packages/shared/src/types';
+import type { Equipment } from '@shared/types';
 
 export interface XmpSidecarData {
   calibration: AstrometryCalibration;

@@ -41,6 +41,7 @@ async function startServer() {
 
   app.use('/assets/*', serveStatic({ root: publicPath, rewriteRequestPath: (p) => p }));
   app.use('/favicon.ico', serveStatic({ root: publicPath, rewriteRequestPath: () => '/favicon.ico' }));
+  app.use('/logo.png', serveStatic({ root: publicPath, rewriteRequestPath: () => '/logo.png' }));
 
   // SPA fallback: serve index.html for all non-API routes
   app.get('*', async (c) => {

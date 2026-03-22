@@ -32,10 +32,12 @@ interface SkyMapMarker {
   fieldOfView: string | null;
 }
 
+interface FovResult { widthDeg: number; heightDeg: number }
+
 function calculateFov(
   telescope: Equipment,
   camera: Equipment
-): { widthDeg: number; heightDeg: number } | null {
+): FovResult | null {
   const tSpecs = telescope.specifications as Record<string, unknown> | null;
   const cSpecs = camera.specifications as Record<string, unknown> | null;
   if (!tSpecs || !cSpecs) return null;
@@ -55,6 +57,17 @@ function calculateFov(
   const widthDeg = 2 * Math.atan(sensorWidthMm / (2 * focalLength)) * (180 / Math.PI);
   const heightDeg = 2 * Math.atan(sensorHeightMm / (2 * focalLength)) * (180 / Math.PI);
   return { widthDeg, heightDeg };
+}
+
+function getMissingFovSpecs(telescope: Equipment, camera: Equipment): string[] {
+  const missing: string[] = [];
+  const tSpecs = telescope.specifications as Record<string, unknown> | null;
+  const cSpecs = camera.specifications as Record<string, unknown> | null;
+  if (!tSpecs || typeof tSpecs.focalLength !== "number") missing.push(`${telescope.name}: focal length`);
+  if (!cSpecs || typeof cSpecs.pixelSize !== "number") missing.push(`${camera.name}: pixel size`);
+  if (!cSpecs || typeof cSpecs.resolution !== "string" || !/^\d+\s*[xX×]\s*\d+$/.test(cSpecs.resolution as string))
+    missing.push(`${camera.name}: resolution`);
+  return missing;
 }
 
 export default function SkyMapPage() {
@@ -435,11 +448,14 @@ export default function SkyMapPage() {
                 </div>
               )}
 
-              {selectedTelescope && selectedCamera && !fovResult && (
-                <p className="text-[10px] text-amber-400/80 leading-tight">
-                  Missing specs — need focal length, pixel size, and resolution
-                </p>
-              )}
+              {selectedTelescope && selectedCamera && !fovResult && (() => {
+                const missing = getMissingFovSpecs(selectedTelescope, selectedCamera);
+                return (
+                  <p className="text-[10px] text-amber-400/80 leading-tight">
+                    Missing specs — {missing.join(", ")}
+                  </p>
+                );
+              })()}
             </div>
           )}
 

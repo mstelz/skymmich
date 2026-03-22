@@ -1,7 +1,7 @@
 import { drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 const { Pool } = pg;
-import * as pgSchema from '../../../packages/shared/src/db/pg-schema';
+import * as pgSchema from '@shared/db/pg-schema';
 
 let db: any;
 let schema: any;
@@ -27,7 +27,7 @@ async function initializeDatabase() {
       const { drizzle: sqliteDrizzle } = await import('drizzle-orm/better-sqlite3');
       const { migrate } = await import('drizzle-orm/better-sqlite3/migrator');
       const Database = (await import('better-sqlite3')).default;
-      const sqliteSchema = await import('../../../packages/shared/src/db/sqlite-schema');
+      const sqliteSchema = await import('@shared/db/sqlite-schema');
       
       const sqlite = new Database('local.db');
       schema = sqliteSchema;

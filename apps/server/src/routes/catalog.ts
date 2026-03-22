@@ -80,20 +80,29 @@ app.get('/status', async (c) => {
   }
 });
 
-// Global throttle for external survey image fetches (cache misses only)
-let lastFetchTime = 0;
-const FETCH_THROTTLE_MS = 500;
+// Concurrency limiter for external survey image fetches (cache hits bypass this via static middleware)
+const MAX_CONCURRENT_FETCHES = 25;
+let activeFetches = 0;
+const fetchWaiters: (() => void)[] = [];
+
+async function acquireFetchSlot(): Promise<void> {
+  if (activeFetches < MAX_CONCURRENT_FETCHES) {
+    activeFetches++;
+    return;
+  }
+  await new Promise<void>(resolve => fetchWaiters.push(resolve));
+  activeFetches++;
+}
+
+function releaseFetchSlot(): void {
+  activeFetches--;
+  const next = fetchWaiters.shift();
+  if (next) next();
+}
 
 // Fetch and cache a survey thumbnail (only reached on cache miss — static middleware handles hits)
-// lgtm[js/missing-rate-limiting] - throttled by lastFetchTime above; cache hits served by static middleware
 app.get('/thumbnail/:name', async (c) => {
   try {
-    const now = Date.now();
-    if (now - lastFetchTime < FETCH_THROTTLE_MS) {
-      return c.json({ message: 'Too many requests' }, 429);
-    }
-    lastFetchTime = now;
-
     const name = decodeURIComponent(c.req.param('name'));
     const safeFilename = name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.jpg';
 
@@ -108,18 +117,23 @@ app.get('/thumbnail/:name', async (c) => {
 
     const url = `https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/color&ra=${obj.raDeg}&dec=${obj.decDeg}&fov=${fov.toFixed(3)}&width=300&height=200&format=jpg`;
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      return c.json({ message: 'Failed to fetch survey image' }, 502);
+    await acquireFetchSlot();
+    let buffer: Buffer;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        return c.json({ message: 'Failed to fetch survey image' }, 502);
+      }
+      buffer = Buffer.from(await response.arrayBuffer());
+    } finally {
+      releaseFetchSlot();
     }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
 
     // Save to cache dir — next request will be served by static middleware
     // lgtm[js/path-injection] - safeFilename is sanitized to [a-zA-Z0-9_-] only, no path traversal possible
     await fs.writeFile(path.join(THUMBNAIL_CACHE_DIR, safeFilename), buffer);
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=31536000, immutable',

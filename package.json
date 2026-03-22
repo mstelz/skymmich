@@ -10,7 +10,7 @@
     "dev:worker:standalone": "NODE_ENV=development tsx --env-file=.env.worker apps/server/src/workers/worker.ts",
     "dev:frontend": "vite",
     "dev": "concurrently \"npm run dev:server:watch\" \"npm run dev:frontend\" \"npm run dev:worker\"",
-    "build": "vite build && esbuild apps/server/src/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && esbuild apps/server/src/workers/worker.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "vite build && tsx tools/scripts/build.ts",
     "build:docker": "npm run build && npm run copy-assets",
     "copy-assets": "cp -r tools dist/ && cp drizzle.config.ts dist/",
     "start": "NODE_ENV=production node dist/index.js",

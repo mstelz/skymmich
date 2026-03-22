@@ -1,7 +1,7 @@
 import { configService } from './config';
 import { storage } from './storage';
 import { filterRelevantTags } from './tags-utils';
-import type { AstroImage } from '../../../../packages/shared/src/types';
+import type { AstroImage } from '@shared/types';
 
 class ImmichSyncService {
   private filterTagsForSync(tags: string[]): string[] {

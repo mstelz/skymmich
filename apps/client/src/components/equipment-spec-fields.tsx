@@ -77,6 +77,7 @@ export function EquipmentSpecFields({
                   type="text"
                   value={specifications[field.key] ?? ""}
                   onChange={(e) => updateField(field.key, e.target.value || undefined)}
+                  placeholder={field.placeholder}
                   className={`bg-input border-border text-foreground ${inputSize}`}
                 />
               )}

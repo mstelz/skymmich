@@ -72,6 +72,7 @@ export interface SpecFieldDefinition {
   label: string;
   type: 'number' | 'text' | 'boolean' | 'select';
   unit?: string;
+  placeholder?: string;
   options?: string[];
 }
 
@@ -86,7 +87,7 @@ export const EQUIPMENT_SPEC_FIELDS: Record<EquipmentType, SpecFieldDefinition[]>
     { key: 'sensorType', label: 'Sensor Type', type: 'select', options: ['CMOS', 'CCD'] },
     { key: 'sensorSize', label: 'Sensor Size', type: 'text' },
     { key: 'pixelSize', label: 'Pixel Size', type: 'number', unit: 'µm' },
-    { key: 'resolution', label: 'Resolution', type: 'text' },
+    { key: 'resolution', label: 'Resolution', type: 'text', unit: 'px', placeholder: 'e.g. 6200x4152' },
     { key: 'cooled', label: 'Cooled', type: 'boolean' },
   ],
   mount: [

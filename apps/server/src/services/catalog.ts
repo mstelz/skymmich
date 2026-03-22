@@ -1,8 +1,8 @@
 import { db, schema } from '../db';
 import { eq, like, or, sql, and, lte, gte, isNotNull, inArray, asc, desc, SQL } from 'drizzle-orm';
 import { storage } from './storage';
-import type { InsertCatalogObject, CatalogObject } from '../../../../packages/shared/src/types';
-import { normalizeObjectName, raToDecimalDegrees, decToDecimalDegrees, parseNGCCSV, sortCatalogMatchesByPriority } from '../../../../packages/shared/src/catalog-utils';
+import type { InsertCatalogObject, CatalogObject } from '@shared/types';
+import { normalizeObjectName, raToDecimalDegrees, decToDecimalDegrees, parseNGCCSV, sortCatalogMatchesByPriority } from '@shared/catalog-utils';
 
 // Re-export for consumers that imported from here
 export { normalizeObjectName, raToDecimalDegrees, decToDecimalDegrees };
