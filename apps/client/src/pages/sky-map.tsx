@@ -1,11 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, X, ExternalLink } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, X, ExternalLink, Minimize2, Maximize2, Telescope, Camera, Eye, EyeOff } from "lucide-react";
 import { Header } from "@/components/header";
 import { Link } from "wouter";
+import type { Equipment } from "@shared/schema";
 
 declare global {
   interface Window {
@@ -24,17 +32,86 @@ interface SkyMapMarker {
   fieldOfView: string | null;
 }
 
+function calculateFov(
+  telescope: Equipment,
+  camera: Equipment
+): { widthDeg: number; heightDeg: number } | null {
+  const tSpecs = telescope.specifications as Record<string, unknown> | null;
+  const cSpecs = camera.specifications as Record<string, unknown> | null;
+  if (!tSpecs || !cSpecs) return null;
+
+  const focalLength = typeof tSpecs.focalLength === "number" ? tSpecs.focalLength : null;
+  const pixelSize = typeof cSpecs.pixelSize === "number" ? cSpecs.pixelSize : null;
+  const resolution = typeof cSpecs.resolution === "string" ? cSpecs.resolution : null;
+  if (!focalLength || !pixelSize || !resolution) return null;
+
+  const match = resolution.match(/^(\d+)\s*[xX×]\s*(\d+)$/);
+  if (!match) return null;
+
+  const hPixels = parseInt(match[1], 10);
+  const vPixels = parseInt(match[2], 10);
+  const sensorWidthMm = (pixelSize * hPixels) / 1000;
+  const sensorHeightMm = (pixelSize * vPixels) / 1000;
+  const widthDeg = 2 * Math.atan(sensorWidthMm / (2 * focalLength)) * (180 / Math.PI);
+  const heightDeg = 2 * Math.atan(sensorHeightMm / (2 * focalLength)) * (180 / Math.PI);
+  return { widthDeg, heightDeg };
+}
+
 export default function SkyMapPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const aladinRef = useRef<any>(null);
+  const fovOverlayRef = useRef<any>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [scriptError, setScriptError] = useState(false);
   const [webglError, setWebglError] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<SkyMapMarker | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedTelescopeId, setSelectedTelescopeId] = useState<string | undefined>(undefined);
+  const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
+  const [fovEnabled, setFovEnabled] = useState(true);
+
+  // Detect Aladin Lite's CSS-based fullscreen (adds "aladin-fullscreen" class to the container)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new MutationObserver(() => {
+      setIsFullscreen(container.classList.contains("aladin-fullscreen"));
+    });
+    observer.observe(container, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, [scriptLoaded]);
 
   const { data: markers = [], isLoading } = useQuery<SkyMapMarker[]>({
     queryKey: ["/api/sky-map/markers"],
   });
+
+  const { data: equipmentList = [] } = useQuery<Equipment[]>({
+    queryKey: ["/api/equipment"],
+  });
+
+  const telescopes = useMemo(
+    () => equipmentList.filter((e) => e.type === "telescope"),
+    [equipmentList]
+  );
+  const cameras = useMemo(
+    () => equipmentList.filter((e) => e.type === "camera"),
+    [equipmentList]
+  );
+
+  const selectedTelescope = useMemo(
+    () => telescopes.find((t) => String(t.id) === selectedTelescopeId) ?? null,
+    [telescopes, selectedTelescopeId]
+  );
+  const selectedCamera = useMemo(
+    () => cameras.find((c) => String(c.id) === selectedCameraId) ?? null,
+    [cameras, selectedCameraId]
+  );
+
+  const fovResult = useMemo(() => {
+    if (!selectedTelescope || !selectedCamera) return null;
+    return calculateFov(selectedTelescope, selectedCamera);
+  }, [selectedTelescope, selectedCamera]);
 
   // Check WebGL2 availability
   useEffect(() => {
@@ -95,6 +172,8 @@ export default function SkyMapPage() {
           survey: "P/DSS2/color",
           fov: 180,
           projection: "AIT",
+          showZoomControl: true,
+          showLayersControl: true,
         });
         aladinRef.current.on("objectClicked", handleObjectClicked);
       } catch (err) {
@@ -143,22 +222,109 @@ export default function SkyMapPage() {
     catalog.addSources(sources);
   }, [scriptLoaded, markers, isLoading, handleObjectClicked]);
 
+  // FOV overlay effect
+  useEffect(() => {
+    const aladin = aladinRef.current;
+    if (!aladin || !scriptLoaded) return;
+
+    // Clear previous overlay footprints
+    if (fovOverlayRef.current) {
+      try {
+        fovOverlayRef.current.removeAll();
+      } catch {
+        // best-effort
+      }
+    }
+
+    if (!fovEnabled || !fovResult) return;
+
+    // Create overlay once, reuse across re-renders
+    if (!fovOverlayRef.current) {
+      const overlay = window.A.graphicOverlay({ color: "#22d3ee", lineWidth: 2 });
+      aladin.addOverlay(overlay);
+      fovOverlayRef.current = overlay;
+    }
+
+    const overlay = fovOverlayRef.current;
+    let cancelled = false;
+
+    const drawFovBox = (ra: number, dec: number) => {
+      if (cancelled) return;
+      try {
+        overlay.removeAll();
+      } catch {
+        // best-effort
+      }
+      const cosDec = Math.cos((dec * Math.PI) / 180);
+      const halfW = fovResult.widthDeg / 2;
+      const halfH = fovResult.heightDeg / 2;
+      const raCorr = cosDec > 0.001 ? halfW / cosDec : halfW;
+      overlay.addFootprints([
+        window.A.polygon(
+          [
+            [ra - raCorr, dec - halfH],
+            [ra + raCorr, dec - halfH],
+            [ra + raCorr, dec + halfH],
+            [ra - raCorr, dec + halfH],
+          ],
+          { color: "#22d3ee", lineWidth: 2 }
+        ),
+      ]);
+    };
+
+    // Draw at current center
+    try {
+      const [ra, dec] = aladin.getRaDec();
+      drawFovBox(ra, dec);
+    } catch {
+      // getRaDec may not be available yet; wait for positionChanged
+    }
+
+    // Redraw on pan/zoom — positionChanged passes an object with ra/dec
+    const onPositionChanged = (pos: any) => {
+      if (pos && typeof pos.ra === "number" && typeof pos.dec === "number") {
+        drawFovBox(pos.ra, pos.dec);
+      } else {
+        try {
+          const [ra, dec] = aladin.getRaDec();
+          drawFovBox(ra, dec);
+        } catch {
+          // give up
+        }
+      }
+    };
+    aladin.on("positionChanged", onPositionChanged);
+
+    return () => {
+      cancelled = true;
+      try {
+        overlay.removeAll();
+      } catch {
+        // best-effort
+      }
+    };
+  }, [scriptLoaded, fovEnabled, fovResult]);
+
+  const hasEquipment = telescopes.length > 0 || cameras.length > 0;
+
   return (
     <div className="dark min-h-screen bg-background text-foreground">
-      <Header />
-      <main className="flex flex-col" style={{ height: "calc(100vh - 4rem)" }}>
-        <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Sky Map</h1>
-            <p className="text-muted-foreground text-sm">
-              {markers.length > 0
-                ? `${markers.length} object${markers.length !== 1 ? "s" : ""} plotted`
-                : "Visualize your plate-solved images on the sky"}
-            </p>
+      {!isFullscreen && <Header />}
+      <main className="flex flex-col" style={{ height: isFullscreen ? "100vh" : "calc(100vh - 4rem)" }}>
+        {!isFullscreen && (
+          <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Sky Map</h1>
+              <p className="text-muted-foreground text-sm">
+                {markers.length > 0
+                  ? `${markers.length} object${markers.length !== 1 ? "s" : ""} plotted`
+                  : "Visualize your plate-solved images on the sky"}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex-1 relative mx-4 sm:mx-6 lg:mx-8 mb-4 rounded-lg overflow-hidden border border-border">
+        <div className={`flex-1 relative ${isFullscreen ? "" : "mx-4 sm:mx-6 lg:mx-8 mb-4 rounded-lg border border-border"} overflow-hidden`}>
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
               <div className="flex flex-col items-center gap-2">
@@ -210,6 +376,97 @@ export default function SkyMapPage() {
             id="aladin-container"
             className="w-full h-full"
           />
+
+          {/* Equipment selector - bottom left, avoids Aladin's built-in top controls */}
+          {hasEquipment && scriptLoaded && (
+            <div className="absolute top-4 left-4 z-50 flex flex-col gap-2 w-48">
+              {telescopes.length > 0 && (
+                <Select value={selectedTelescopeId} onValueChange={setSelectedTelescopeId}>
+                  <SelectTrigger className="h-8 text-xs bg-background/80 backdrop-blur-sm border-border/50">
+                    <Telescope className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                    <SelectValue placeholder="Telescope" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {telescopes.map((t) => (
+                      <SelectItem key={t.id} value={String(t.id)}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {cameras.length > 0 && (
+                <Select value={selectedCameraId} onValueChange={setSelectedCameraId}>
+                  <SelectTrigger className="h-8 text-xs bg-background/80 backdrop-blur-sm border-border/50">
+                    <Camera className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                    <SelectValue placeholder="Camera" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cameras.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {selectedTelescope && selectedCamera && (
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 text-xs opacity-80 hover:opacity-100 flex-1"
+                    onClick={() => setFovEnabled(!fovEnabled)}
+                  >
+                    {fovEnabled ? (
+                      <Eye className="h-3.5 w-3.5 mr-1.5" />
+                    ) : (
+                      <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    FOV {fovEnabled ? "On" : "Off"}
+                  </Button>
+                  {fovResult && fovEnabled && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 whitespace-nowrap bg-background/80 backdrop-blur-sm">
+                      {(fovResult.widthDeg * 60).toFixed(1)}' × {(fovResult.heightDeg * 60).toFixed(1)}'
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {selectedTelescope && selectedCamera && !fovResult && (
+                <p className="text-[10px] text-amber-400/80 leading-tight">
+                  Missing specs — need focal length, pixel size, and resolution
+                </p>
+              )}
+            </div>
+          )}
+
+          <Button
+            variant="secondary"
+            size="sm"
+            className="absolute top-4 right-4 z-50 opacity-80 hover:opacity-100"
+            onClick={() => {
+              // Click Aladin's hidden fullscreen toggle to enter/exit
+              const btn = containerRef.current?.querySelector<HTMLButtonElement>(
+                ".aladin-fullScreen-control .aladin-btn"
+              );
+              btn?.click();
+            }}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="h-4 w-4 mr-1.5" />
+                Exit Fullscreen
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-4 w-4 mr-1.5" />
+                Fullscreen
+              </>
+            )}
+          </Button>
 
           {selectedMarker && (
             <Card className="absolute top-4 right-4 z-20 w-72 shadow-lg">

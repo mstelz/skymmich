@@ -186,6 +186,44 @@
   }
 }
 
+/* Aladin Lite fullscreen: ensure it renders above the sticky header (z-40) */
+.aladin-fullscreen {
+  z-index: 50 !important;
+}
+
+/* Hide Aladin's built-in projection, fullscreen, and coordinate frame controls */
+.aladin-projection-control,
+.aladin-fullScreen-control,
+.aladin-cooFrame {
+  display: none !important;
+}
+
+/* Coordinates at bottom left, zoom controls stacked above */
+.aladin-location {
+  position: absolute !important;
+  bottom: 0.5rem !important;
+  left: 0.5rem !important;
+  top: unset !important;
+  right: unset !important;
+}
+
+.aladin-fov {
+  position: absolute !important;
+  bottom: 3.5rem !important;
+  left: 0.5rem !important;
+  top: unset !important;
+  right: unset !important;
+}
+
+/* Overlays/stack control to bottom right */
+.aladin-stack-control {
+  position: absolute !important;
+  bottom: 0.5rem !important;
+  right: 0.5rem !important;
+  top: unset !important;
+  left: unset !important;
+}
+
 /* Animation for image hover effects */
 @keyframes image-scale {
   from {
