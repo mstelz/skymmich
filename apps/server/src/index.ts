@@ -1,51 +1,59 @@
-import express from "express";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import cors from "cors";
-import path from "path";
-import { registerRoutes } from "./routes";
-import { cronManager, setSocketIO as setCronSocketIO } from './services/cron-manager';
-// Vite imports are loaded dynamically to avoid bundling them in production
-import { setSocketIO } from "./services/astrometry";
-import { workerManager } from "./services/worker-manager";
-import { catalogService } from "./services/catalog";
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
+import path from 'path';
+import fs from 'fs';
+import { registerRoutes } from './routes';
+import { WsManager } from './services/ws-manager';
+import { cronManager, setWsManager as setCronWsManager } from './services/cron-manager';
+import { setWsManager } from './services/astrometry';
+import { workerManager } from './services/worker-manager';
+import { catalogService } from './services/catalog';
 
-const app = express();
-const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === 'production' ? undefined : '*',
-    methods: ["GET", "POST"]
-  }
-});
+const app = new Hono();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use('*', cors());
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
-});
-
-// Setup routes
-registerRoutes(app, io);
+// Setup routes (wsManager set after server starts)
+// We'll register routes after creating wsManager
+let wsManager: WsManager;
 
 // Main startup function
 async function startServer() {
+  const PORT = parseInt(process.env.PORT || '5000', 10);
+
+  // Start Hono with @hono/node-server — returns a Node http.Server
+  const server = serve({
+    fetch: app.fetch,
+    port: PORT,
+  });
+
+  // Create WebSocket manager attached to the Node HTTP server
+  wsManager = new WsManager(server as any);
+
+  // Register routes with wsManager
+  registerRoutes(app, wsManager);
+
   // Serve static files (in production, frontend is pre-built to dist/public)
   const publicPath = path.resolve(process.cwd(), 'dist/public');
-  app.use(express.static(publicPath));
-  
-  // Serve index.html for all non-API routes (SPA)
-  app.get('/{*splat}', (req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/')) {
-      return next();
+
+  app.use('/assets/*', serveStatic({ root: publicPath, rewriteRequestPath: (p) => p }));
+  app.use('/favicon.ico', serveStatic({ root: publicPath, rewriteRequestPath: () => '/favicon.ico' }));
+
+  // SPA fallback: serve index.html for all non-API routes
+  app.get('*', async (c) => {
+    if (c.req.path.startsWith('/api/')) {
+      return c.json({ message: 'Not found' }, 404);
     }
-    res.sendFile(path.join(publicPath, 'index.html'));
+    const indexPath = path.join(publicPath, 'index.html');
+    try {
+      const html = fs.readFileSync(indexPath, 'utf8');
+      return c.html(html);
+    } catch {
+      return c.text('Frontend not built. Run npm run build first.', 404);
+    }
   });
 
   // Initialize cron manager
@@ -63,28 +71,22 @@ async function startServer() {
     }
   }).catch(err => console.error('Failed to check catalog status:', err));
 
-  // Socket.io connection handling
-  io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
-    
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
-    });
-  });
-
-  // Set Socket.io instance in astrometry service for real-time updates
-  setSocketIO(io);
-
-  // Set Socket.io instance in cron manager for real-time updates
-  setCronSocketIO(io);
+  // Set WebSocket manager in services for real-time updates
+  setWsManager(wsManager);
+  setCronWsManager(wsManager);
 
   // Start worker manager in production (in development, worker runs separately)
-  if (process.env.NODE_ENV === "production") {
-    console.log("Starting worker manager...");
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Starting worker manager...');
     workerManager.start().catch(error => {
-      console.error("Failed to start worker manager:", error);
+      console.error('Failed to start worker manager:', error);
     });
   }
+
+  console.log(`Skymmich server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
+  console.log(`Worker manager available in production mode`);
 }
 
 // Start the server
@@ -93,29 +95,24 @@ startServer().catch(console.error);
 // Graceful shutdown handling
 const gracefulShutdown = async (signal: string) => {
   console.log(`Received ${signal}. Starting graceful shutdown...`);
-  
-  // Stop accepting new connections
-  server.close(() => {
-    console.log("HTTP server closed");
-  });
-  
+
   // Stop worker manager
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === 'production') {
     try {
       await workerManager.gracefulShutdown();
     } catch (error) {
-      console.error("Error during worker shutdown:", error);
+      console.error('Error during worker shutdown:', error);
     }
   }
-  
+
   // Stop cron manager
   try {
     cronManager.shutdown();
   } catch (error) {
-    console.error("Error during cron manager shutdown:", error);
+    console.error('Error during cron manager shutdown:', error);
   }
-  
-  console.log("Graceful shutdown complete");
+
+  console.log('Graceful shutdown complete');
   process.exit(0);
 };
 
@@ -134,13 +131,5 @@ process.on('unhandledRejection', (reason, promise) => {
   gracefulShutdown('unhandledRejection');
 });
 
-// Export io for use in other modules
-export { io };
-
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Skymmich server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
-  console.log(`Worker manager available in production mode`);
-});
+// Export wsManager for use in other modules
+export { wsManager };

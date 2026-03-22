@@ -149,14 +149,14 @@ GET /api/plate-solving/jobs
 ### Frontend
 - React with TypeScript
 - TanStack Query for data fetching
-- Real-time updates via Socket.io
+- Real-time updates via WebSocket
 - Responsive design with mobile support
 
 ### Backend
-- Express.js API endpoints
+- Hono API endpoints
 - Integration with existing Astrometry.net service
 - Job tracking and status management
-- Real-time notifications via Socket.io
+- Real-time notifications via WebSocket
 - Configurable worker behavior
 
 ### Data Flow
@@ -164,7 +164,7 @@ GET /api/plate-solving/jobs
 2. Frontend calls bulk API endpoint with selected image IDs
 3. Backend validates images and submits each to Astrometry.net
 4. Jobs are tracked in the database with status updates
-5. Real-time updates are sent to the frontend via Socket.io
+5. Real-time updates are sent to the frontend via WebSocket
 6. User can monitor progress and see completion status
 
 ### Worker Process

@@ -22,13 +22,13 @@ The project is structured as a monorepo-like full-stack application with distinc
     *   **Routing**: `wouter`
     *   **Styling**: Tailwind CSS with `shadcn/ui` components (indicated by `components.json` and the UI component files).
     *   **Data Fetching**: `@tanstack/react-query` for managing server state.
-    *   **Real-time**: `socket.io-client` for WebSocket communication.
+    *   **Real-time**: Native browser WebSocket with automatic reconnection and exponential backoff.
     *   **Build Tool**: Vite
 
 *   **Backend**:
-    *   **Framework**: Express.js with TypeScript
+    *   **Framework**: Hono with `@hono/node-server` and TypeScript
     *   **Database**: PostgreSQL, managed with the **Drizzle ORM**. The use of `@neondatabase/serverless` suggests it's designed for or deployed on a serverless Postgres platform like Neon.
-    *   **Real-time**: `socket.io` for WebSocket communication with the client.
+    *   **Real-time**: Native WebSocket using the `ws` package for communication with the client.
     *   **Background Jobs**: A separate Node.js process (`server/worker.ts`) handles asynchronous tasks, specifically communicating with the Astrometry.net API.
 
 *   **Development & Build**:

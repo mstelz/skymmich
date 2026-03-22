@@ -1,68 +1,68 @@
-
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
+import { handleRouteError } from './route-utils';
 
-const router = Router();
+const app = new Hono();
 
 // Get all locations
-router.get('/', async (_req, res) => {
+app.get('/', async (c) => {
   try {
     const locations = await storage.getLocations();
-    res.json(locations);
+    return c.json(locations);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch locations' });
+    return handleRouteError(c, error, 'Failed to fetch locations');
   }
 });
 
 // Get a specific location
-router.get('/:id', async (req, res) => {
+app.get('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     const location = await storage.getLocation(id);
     if (!location) {
-      return res.status(404).json({ message: 'Location not found' });
+      return c.json({ message: 'Location not found' }, 404);
     }
-    res.json(location);
+    return c.json(location);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch location' });
+    return handleRouteError(c, error, 'Failed to fetch location');
   }
 });
 
 // Create a new location
-router.post('/', async (req, res) => {
+app.post('/', async (c) => {
   try {
-    const locationData = req.body;
+    const locationData = await c.req.json();
     const location = await storage.createLocation(locationData);
-    res.json(location);
+    return c.json(location);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create location' });
+    return handleRouteError(c, error, 'Failed to create location');
   }
 });
 
 // Update a location
-router.patch('/:id', async (req, res) => {
+app.patch('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
-    const updates = req.body;
+    const id = parseInt(c.req.param('id'));
+    const updates = await c.req.json();
     const location = await storage.updateLocation(id, updates);
     if (!location) {
-      return res.status(404).json({ message: 'Location not found' });
+      return c.json({ message: 'Location not found' }, 404);
     }
-    res.json(location);
+    return c.json(location);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update location' });
+    return handleRouteError(c, error, 'Failed to update location');
   }
 });
 
 // Delete a location
-router.delete('/:id', async (req, res) => {
+app.delete('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     await storage.deleteLocation(id);
-    res.json({ success: true });
+    return c.json({ message: 'Location deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete location' });
+    return handleRouteError(c, error, 'Failed to delete location');
   }
 });
 
-export default router;
+export default app;

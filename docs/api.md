@@ -681,19 +681,23 @@ Currently, there are no rate limits implemented. However, be mindful of:
 
 ## WebSocket Events
 
-Skymmich uses Socket.IO for real-time updates. Connect to the main server URL and listen for these events:
+Skymmich uses native WebSocket for real-time updates. Connect to `ws://<host>/ws` and listen for JSON messages:
 
 ### Plate Solving Updates
 ```javascript
-socket.on('plate-solving-update', (data) => {
-  console.log('Plate solving update:', data);
-  // data: { jobId, status, result, imageId, message }
-});
+const ws = new WebSocket(`ws://${location.host}/ws`);
+ws.onmessage = (event) => {
+  const { event: type, data } = JSON.parse(event.data);
+  if (type === 'plate-solving-update') {
+    console.log('Plate solving update:', data);
+    // data: { jobId, status, result, imageId, message }
+  }
+};
 ```
 
 ## SDK Usage
 
-For TypeScript/JavaScript applications, you can use the API with axios or fetch:
+For TypeScript/JavaScript applications, you can use the API with fetch:
 
 ```javascript
 // Get all images

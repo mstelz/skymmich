@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Telescope, Upload, Settings, Github, Loader2 } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Settings, Upload, Github, Loader2, Menu } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/use-socket";
@@ -18,15 +18,24 @@ interface Notification {
   acknowledged: boolean;
 }
 
+const NAV_LINKS = [
+  { href: '/', label: 'Gallery' },
+  { href: '/targets', label: 'Targets' },
+  { href: '/equipment', label: 'Equipment' },
+  { href: '/plate-solving', label: 'Plate Solving' },
+  { href: '/sky-map', label: 'Sky Map' },
+  { href: '/locations', label: 'Locations' },
+] as const;
+
 export function Header() {
   const [location] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const socket = useSocket();
   const { toast } = useToast();
 
   const isActive = (path: string) => location === path;
 
-  // Use React Query for notifications - aligns with patterns in home.tsx, equipment.tsx, etc.
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
   });
@@ -35,7 +44,6 @@ export function Header() {
     queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
   };
 
-  // Listen for real-time notification updates via Socket.io
   useEffect(() => {
     if (!socket) return;
 
@@ -48,7 +56,6 @@ export function Header() {
     };
   }, [socket]);
 
-  // Handle sync action
   const handleSync = async () => {
     setSyncing(true);
     try {
@@ -60,7 +67,6 @@ export function Header() {
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
         toast({ title: 'Sync completed', description: data.message || 'Successfully synced images from Immich' });
-        // Refresh gallery and stats - uses same queryClient pattern we'll use for notifications
         queryClient.invalidateQueries({ queryKey: ["/api/images"] });
         queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       } else {
@@ -88,78 +94,52 @@ export function Header() {
     <header className="bg-card border-b border-border sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <img src="/logo.png" alt="Skymmich Logo" className="h-8 w-8" />
-              <h1 className="text-xl font-bold text-foreground">Skymmich</h1>
-            </Link>
-          </div>
-          
+          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <img src="/logo.png" alt="Skymmich Logo" className="h-8 w-8" />
+            <h1 className="text-xl font-bold text-foreground">Skymmich</h1>
+          </Link>
+
+          {/* Desktop navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link 
-              href="/" 
-              className={`transition-colors ${isActive('/') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Gallery
-            </Link>
-            <Link
-              href="/targets"
-              className={`transition-colors ${isActive('/targets') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Targets
-            </Link>
-            <Link
-              href="/equipment"
-              className={`transition-colors ${isActive('/equipment') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Equipment
-            </Link>
-            <Link
-              href="/plate-solving"
-              className={`transition-colors ${isActive('/plate-solving') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Plate Solving
-            </Link>
-            <Link
-              href="/sky-map"
-              className={`transition-colors ${isActive('/sky-map') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Sky Map
-            </Link>
-            <Link
-              href="/locations"
-              className={`transition-colors ${isActive('/locations') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Locations
-            </Link>
+            {NAV_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`transition-colors ${isActive(href) ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                {label}
+              </Link>
+            ))}
           </nav>
-          
+
+          {/* Right-side actions */}
           <div className="flex items-center space-x-3">
-            <Button onClick={handleSync} disabled={syncing} className="sky-button-primary">
+            <Button onClick={handleSync} disabled={syncing} className="sky-button-primary hidden md:inline-flex">
               {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
               {syncing ? 'Syncing...' : 'Sync Immich'}
             </Button>
-            <a 
-              href="https://github.com/mstelz/skymmich" 
-              target="_blank" 
+            <a
+              href="https://github.com/mstelz/skymmich"
+              target="_blank"
               rel="noopener noreferrer"
               title="View on GitHub"
+              className="hidden md:inline-flex"
             >
               <Button variant="ghost" size="icon">
                 <Github className="h-5 w-5" />
               </Button>
             </a>
-            <Link href="/admin">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+            <Link href="/admin" className="hidden md:inline-flex">
+              <Button
+                variant="ghost"
+                size="icon"
                 className="relative"
                 title={unacknowledgedCount > 0 ? `${unacknowledgedCount} unacknowledged notification${unacknowledgedCount > 1 ? 's' : ''}` : 'Admin Settings'}
               >
                 <span className="relative inline-block">
                   <Settings className="h-7 w-7" />
                   {unacknowledgedCount > 0 && (
-                    <span 
+                    <span
                       className="absolute -top-1.5 -right-1.5 bg-red-600 text-white h-4 w-4 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white"
                       style={{ minWidth: '1rem', minHeight: '1rem' }}
                     >
@@ -169,6 +149,64 @@ export function Header() {
                 </span>
               </Button>
             </Link>
+
+            {/* Mobile hamburger menu */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64 p-0">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                <div className="flex items-center space-x-2 px-4 h-16 border-b border-border">
+                  <img src="/logo.png" alt="Skymmich Logo" className="h-8 w-8" />
+                  <span className="text-xl font-bold text-foreground">Skymmich</span>
+                </div>
+                <nav className="flex flex-col py-2">
+                  {NAV_LINKS.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`px-4 py-3 text-sm font-medium transition-colors ${
+                        isActive(href)
+                          ? 'bg-accent text-foreground'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                  <div className="border-t border-border my-2" />
+                  <button
+                    onClick={() => { setMobileOpen(false); handleSync(); }}
+                    disabled={syncing}
+                    className="px-4 py-3 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground flex items-center gap-2 text-left"
+                  >
+                    {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {syncing ? 'Syncing...' : 'Sync Immich'}
+                  </button>
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className={`px-4 py-3 text-sm font-medium transition-colors flex items-center justify-between ${
+                      isActive('/admin')
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    }`}
+                  >
+                    Admin Settings
+                    {unacknowledgedCount > 0 && (
+                      <span className="bg-red-600 text-white h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold">
+                        {unacknowledgedCount > 9 ? '9+' : unacknowledgedCount}
+                      </span>
+                    )}
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

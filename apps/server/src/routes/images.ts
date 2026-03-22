@@ -1,13 +1,11 @@
-
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { readFileSync } from 'fs';
 import { storage } from '../services/storage';
 import { xmpSidecarService } from '../services/xmp-sidecar';
 import { configService } from '../services/config';
+import { handleRouteError } from './route-utils';
 
-import axios from 'axios';
-
-const router = Router();
+const app = new Hono();
 
 // Helper to update Immich asset metadata
 async function updateImmichAssetMetadata(immichId: string, metadata: { latitude?: number; longitude?: number }) {
@@ -18,67 +16,68 @@ async function updateImmichAssetMetadata(immichId: string, metadata: { latitude?
       return;
     }
 
-    // Immich PUT /assets expects an array of ids and the changes
-    await axios.put(
-      `${config.host}/api/assets`,
-      {
+    await fetch(`${config.host}/api/assets`, {
+      method: 'PUT',
+      headers: { 'X-API-Key': config.apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         ids: [immichId],
         latitude: metadata.latitude,
         longitude: metadata.longitude,
-      },
-      {
-        headers: { 'X-API-Key': config.apiKey },
-      }
-    );
+      }),
+    });
     console.log(`Synced metadata to Immich for asset ${immichId}`);
-  } catch (error: any) {
-    console.error(`Failed to sync metadata to Immich for asset ${immichId}:`, error.response?.data || error.message);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error(`Failed to sync metadata to Immich for asset ${immichId}:`, err.message);
   }
 }
 
 // Get all astrophotography images with optional filters
-router.get('/', async (req, res) => {
+app.get('/', async (c) => {
   try {
-    const { objectType, tags, plateSolved, constellation, equipmentId } = req.query;
-    const filters: any = {};
+    const objectType = c.req.query('objectType');
+    const tags = c.req.queries('tags');
+    const plateSolved = c.req.query('plateSolved');
+    const constellation = c.req.query('constellation');
+    const equipmentId = c.req.query('equipmentId');
+    const filters: { objectType?: string; tags?: string[]; plateSolved?: boolean; constellation?: string; equipmentId?: number } = {};
 
-    if (objectType) filters.objectType = objectType as string;
-    if (tags) filters.tags = Array.isArray(tags) ? (tags as string[]) : [tags as string];
+    if (objectType) filters.objectType = objectType;
+    if (tags && tags.length > 0) filters.tags = tags;
     if (plateSolved !== undefined) filters.plateSolved = plateSolved === 'true';
-    if (constellation) filters.constellation = constellation as string;
-    if (equipmentId) filters.equipmentId = parseInt(equipmentId as string);
+    if (constellation) filters.constellation = constellation;
+    if (equipmentId) filters.equipmentId = parseInt(equipmentId);
 
     const images = await storage.getAstroImages(filters);
-    res.json(images);
+    return c.json(images);
   } catch (error) {
-    console.error('Failed to fetch images:', error);
-    res.status(500).json({ message: 'Failed to fetch images' });
+    return handleRouteError(c, error, 'Failed to fetch images');
   }
 });
 
 // Get a specific image
-router.get('/:id', async (req, res) => {
+app.get('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     const image = await storage.getAstroImage(id);
     if (!image) {
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
-    res.json(image);
+    return c.json(image);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch image' });
+    return handleRouteError(c, error, 'Failed to fetch image');
   }
 });
 
 // Update a specific image
-router.patch('/:id', async (req, res) => {
+app.patch('/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
-    const updates = req.body;
+    const id = parseInt(c.req.param('id'));
+    const updates = await c.req.json();
 
     const updatedImage = await storage.updateAstroImage(id, updates);
     if (!updatedImage) {
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
 
     // Sync to Immich if coordinates were updated
@@ -89,32 +88,30 @@ router.patch('/:id', async (req, res) => {
       });
     }
 
-    res.json(updatedImage);
+    return c.json(updatedImage);
   } catch (error) {
-    console.error('Failed to update image:', error);
-    res.status(500).json({ message: 'Failed to update image' });
+    return handleRouteError(c, error, 'Failed to update image');
   }
 });
 
 // Get plate solving job data for an image
-router.get('/:id/plate-solving-job', async (req, res) => {
+app.get('/:id/plate-solving-job', async (c) => {
   try {
-    const imageId = parseInt(req.params.id);
+    const imageId = parseInt(c.req.param('id'));
     const image = await storage.getAstroImage(imageId);
 
     if (!image) {
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
 
-    // Find the plate solving job for this image
-    const jobs = await storage.getPlateSolvingJobs();
-    const job = jobs.find((j) => j.imageId === imageId && j.status === 'success');
+    // Find the successful plate solving job for this image directly
+    const job = await storage.getLatestPlateSolvingJob(imageId, 'success');
 
     if (!image.plateSolved || !job) {
-      return res.status(400).json({ message: 'Image has not been successfully plate solved' });
+      return c.json({ message: 'Image has not been successfully plate solved' }, 400);
     }
 
-    res.json({
+    return c.json({
       jobId: job.id,
       submissionId: job.astrometrySubmissionId,
       astrometryJobId: job.astrometryJobId,
@@ -123,39 +120,33 @@ router.get('/:id/plate-solving-job', async (req, res) => {
       completedAt: job.completedAt,
     });
   } catch (error) {
-    const err = error as any;
-    console.error('Plate solving job fetch error:', err.response?.data || err.message);
-    res.status(500).json({
-      message: 'Failed to fetch plate solving job data',
-      error: err.response?.data?.message || err.message,
-    });
+    return handleRouteError(c, error, 'Failed to fetch plate solving job data');
   }
 });
 
 // Get image annotations from stored plate solving data
-router.get('/:id/annotations', async (req, res) => {
+app.get('/:id/annotations', async (c) => {
   try {
-    const imageId = parseInt(req.params.id);
+    const imageId = parseInt(c.req.param('id'));
     const image = await storage.getAstroImage(imageId);
 
     if (!image) {
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
 
-    // Find the plate solving job for this image
-    const jobs = await storage.getPlateSolvingJobs();
-    const job = jobs.find((j) => j.imageId === imageId && j.status === 'success');
+    // Find the successful plate solving job for this image directly
+    const job = await storage.getLatestPlateSolvingJob(imageId, 'success');
 
     if (!image.plateSolved || !job) {
-      return res.status(400).json({ message: 'Image has not been plate solved' });
+      return c.json({ message: 'Image has not been plate solved' }, 400);
     }
 
-    if (!job || !job.result) {
-      return res.status(400).json({ message: 'No successful plate solving data found' });
+    if (!job.result) {
+      return c.json({ message: 'No successful plate solving data found' }, 400);
     }
 
-    const result = job.result as any;
-    const annotations = result.annotations || [];
+    const result = job.result as Record<string, unknown>;
+    const annotations = (result.annotations as unknown[]) || [];
     const calibration = {
       ra: result.ra,
       dec: result.dec,
@@ -164,7 +155,7 @@ router.get('/:id/annotations', async (req, res) => {
       orientation: result.orientation,
     };
 
-    res.json({
+    return c.json({
       annotations: annotations,
       calibration: calibration,
       imageDimensions: {
@@ -173,23 +164,18 @@ router.get('/:id/annotations', async (req, res) => {
       },
     });
   } catch (error) {
-    const err = error as any;
-    console.error('Annotation fetch error:', err.response?.data || err.message);
-    res.status(500).json({
-      message: 'Failed to fetch image annotations',
-      error: err.response?.data?.message || err.message,
-    });
+    return handleRouteError(c, error, 'Failed to fetch image annotations');
   }
 });
 
 // Get equipment for a specific image
-router.get('/:id/equipment', async (req, res) => {
+app.get('/:id/equipment', async (c) => {
   try {
-    const imageId = parseInt(req.params.id);
+    const imageId = parseInt(c.req.param('id'));
     const image = await storage.getAstroImage(imageId);
 
     if (!image) {
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
 
     const equipment = await storage.getEquipmentForImage(imageId);
@@ -205,103 +191,92 @@ router.get('/:id/equipment', async (req, res) => {
       };
     });
 
-    res.json(equipmentWithDetails);
+    return c.json(equipmentWithDetails);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch image equipment' });
+    return handleRouteError(c, error, 'Failed to fetch image equipment');
   }
 });
 
 // Add equipment to an image
-router.post('/:id/equipment', async (req, res) => {
+app.post('/:id/equipment', async (c) => {
   try {
-    console.log('POST /api/images/:id/equipment called');
-    console.log('params:', req.params);
-    console.log('body:', req.body);
-
-    const imageId = parseInt(req.params.id);
-    const { equipmentId, settings, notes } = req.body;
-
-    console.log('Parsed values:', { imageId, equipmentId, settings, notes });
+    const imageId = parseInt(c.req.param('id'));
+    const { equipmentId, settings, notes } = await c.req.json();
 
     const image = await storage.getAstroImage(imageId);
     if (!image) {
-      console.log('Image not found for ID:', imageId);
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
 
     const equipment = await storage.getEquipment();
     const targetEquipment = equipment.find((eq) => eq.id === equipmentId);
     if (!targetEquipment) {
-      console.log('Equipment not found for ID:', equipmentId);
-      return res.status(404).json({ message: 'Equipment not found' });
+      return c.json({ message: 'Equipment not found' }, 404);
     }
 
-    console.log('Adding equipment to image:', { imageId, equipmentId, settings, notes });
     const imageEquipment = await storage.addEquipmentToImage(imageId, equipmentId, settings, notes);
-    console.log('Equipment added successfully:', imageEquipment);
-    res.json(imageEquipment);
+    return c.json(imageEquipment);
   } catch (error) {
-    console.error('Error adding equipment to image:', error);
-    res.status(500).json({ message: 'Failed to add equipment to image' });
+    return handleRouteError(c, error, 'Failed to add equipment to image');
   }
 });
 
 // Remove equipment from an image
-router.delete('/:imageId/equipment/:equipmentId', async (req, res) => {
+app.delete('/:imageId/equipment/:equipmentId', async (c) => {
   try {
-    const imageId = parseInt(req.params.imageId);
-    const equipmentId = parseInt(req.params.equipmentId);
+    const imageId = parseInt(c.req.param('imageId'));
+    const equipmentId = parseInt(c.req.param('equipmentId'));
 
     const success = await storage.removeEquipmentFromImage(imageId, equipmentId);
     if (!success) {
-      return res.status(404).json({ message: 'Equipment relationship not found' });
+      return c.json({ message: 'Equipment relationship not found' }, 404);
     }
 
-    res.json({ message: 'Equipment removed from image' });
+    return c.json({ message: 'Equipment removed from image' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to remove equipment from image' });
+    return handleRouteError(c, error, 'Failed to remove equipment from image');
   }
 });
 
 // Update equipment settings for an image
-router.put('/:imageId/equipment/:equipmentId', async (req, res) => {
+app.put('/:imageId/equipment/:equipmentId', async (c) => {
   try {
-    const imageId = parseInt(req.params.imageId);
-    const equipmentId = parseInt(req.params.equipmentId);
-    const { settings, notes } = req.body;
+    const imageId = parseInt(c.req.param('imageId'));
+    const equipmentId = parseInt(c.req.param('equipmentId'));
+    const { settings, notes } = await c.req.json();
 
     const imageEquipment = await storage.updateImageEquipment(imageId, equipmentId, { settings, notes });
     if (!imageEquipment) {
-      return res.status(404).json({ message: 'Equipment relationship not found' });
+      return c.json({ message: 'Equipment relationship not found' }, 404);
     }
 
-    res.json(imageEquipment);
+    return c.json(imageEquipment);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update equipment settings' });
+    return handleRouteError(c, error, 'Failed to update equipment settings');
   }
 });
 
 // --- Image Acquisition Routes ---
 
 // Get acquisition entries for an image
-router.get('/:id/acquisitions', async (req, res) => {
+app.get('/:id/acquisitions', async (c) => {
   try {
-    const imageId = parseInt(req.params.id);
+    const imageId = parseInt(c.req.param('id'));
     const acquisitions = await storage.getImageAcquisitions(imageId);
-    res.json(acquisitions);
+    return c.json(acquisitions);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch acquisition entries' });
+    return handleRouteError(c, error, 'Failed to fetch acquisition entries');
   }
 });
 
 // Add acquisition entry to an image
-router.post('/:id/acquisitions', async (req, res) => {
+app.post('/:id/acquisitions', async (c) => {
   try {
-    const imageId = parseInt(req.params.id);
-    const { filterId, filterName, frameCount, exposureTime, gain, offset, binning, sensorTemp, date, notes } = req.body;
+    const imageId = parseInt(c.req.param('id'));
+    const { filterId, filterName, frameCount, exposureTime, gain, offset, binning, sensorTemp, date, notes } = await c.req.json();
 
     if (!frameCount || !exposureTime) {
-      return res.status(400).json({ message: 'frameCount and exposureTime are required' });
+      return c.json({ message: 'frameCount and exposureTime are required' }, 400);
     }
 
     const acquisition = await storage.createImageAcquisition({
@@ -317,17 +292,17 @@ router.post('/:id/acquisitions', async (req, res) => {
       date: date ? new Date(date) : null,
       notes: notes || null,
     });
-    res.json(acquisition);
+    return c.json(acquisition);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create acquisition entry' });
+    return handleRouteError(c, error, 'Failed to create acquisition entry');
   }
 });
 
 // Update an acquisition entry
-router.put('/:imageId/acquisitions/:id', async (req, res) => {
+app.put('/:imageId/acquisitions/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
-    const { filterId, filterName, frameCount, exposureTime, gain, offset, binning, sensorTemp, date, notes } = req.body;
+    const id = parseInt(c.req.param('id'));
+    const { filterId, filterName, frameCount, exposureTime, gain, offset, binning, sensorTemp, date, notes } = await c.req.json();
 
     const acquisition = await storage.updateImageAcquisition(id, {
       filterId, filterName, frameCount, exposureTime,
@@ -337,58 +312,57 @@ router.put('/:imageId/acquisitions/:id', async (req, res) => {
     });
 
     if (!acquisition) {
-      return res.status(404).json({ message: 'Acquisition entry not found' });
+      return c.json({ message: 'Acquisition entry not found' }, 404);
     }
-    res.json(acquisition);
+    return c.json(acquisition);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update acquisition entry' });
+    return handleRouteError(c, error, 'Failed to update acquisition entry');
   }
 });
 
 // Delete an acquisition entry
-router.delete('/:imageId/acquisitions/:id', async (req, res) => {
+app.delete('/:imageId/acquisitions/:id', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     const success = await storage.deleteImageAcquisition(id);
     if (!success) {
-      return res.status(404).json({ message: 'Acquisition entry not found' });
+      return c.json({ message: 'Acquisition entry not found' }, 404);
     }
-    res.json({ message: 'Acquisition entry deleted' });
+    return c.json({ message: 'Acquisition entry deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to delete acquisition entry' });
+    return handleRouteError(c, error, 'Failed to delete acquisition entry');
   }
 });
 
 // Get XMP sidecar for an image
-router.get('/:id/sidecar', async (req, res) => {
+app.get('/:id/sidecar', async (c) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(c.req.param('id'));
     const image = await storage.getAstroImage(id);
 
     if (!image) {
-      return res.status(404).json({ message: 'Image not found' });
+      return c.json({ message: 'Image not found' }, 404);
     }
 
     const sidecarConfig = await configService.getSidecarConfig();
     const sidecarPath = await xmpSidecarService.resolveSidecarPath(image, sidecarConfig);
 
     if (!sidecarPath) {
-      return res.status(404).json({ message: 'No XMP sidecar found for this image' });
+      return c.json({ message: 'No XMP sidecar found for this image' }, 404);
     }
 
     const content = readFileSync(sidecarPath, 'utf8');
-    const isDownload = req.query.download === 'true';
+    const isDownload = c.req.query('download') === 'true';
 
+    const headers: Record<string, string> = { 'Content-Type': 'application/xml' };
     if (isDownload) {
-      res.setHeader('Content-Disposition', `attachment; filename="${image.filename}.xmp"`);
+      headers['Content-Disposition'] = `attachment; filename="${image.filename}.xmp"`;
     }
 
-    res.setHeader('Content-Type', 'application/xml');
-    res.send(content);
+    return new Response(content, { headers });
   } catch (error) {
-    console.error('Failed to fetch sidecar:', error);
-    res.status(500).json({ message: 'Failed to fetch sidecar' });
+    return handleRouteError(c, error, 'Failed to fetch sidecar');
   }
 });
 
-export default router;
+export default app;

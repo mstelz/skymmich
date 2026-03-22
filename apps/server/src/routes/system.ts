@@ -1,137 +1,117 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { storage } from '../services/storage';
 import { configService } from '../services/config';
 import { cronManager } from '../services/cron-manager';
 import { workerManager } from '../services/worker-manager';
 import { astrometryService } from '../services/astrometry';
 import { filterRelevantTags } from '../services/tags-utils';
-import axios from 'axios';
-import { Server as SocketIOServer } from 'socket.io';
+import { handleRouteError } from './route-utils';
+import type { WsManager } from '../services/ws-manager';
 
-export default function systemRoutes(io?: SocketIOServer) {
-  const router = Router();
+export default function systemRoutes(wsManager?: WsManager) {
+  const app = new Hono();
 
   // Save admin settings
-  router.post('/admin/settings', async (req, res) => {
+  app.post('/admin/settings', async (c) => {
     try {
-      const settings = req.body;
+      const settings = await c.req.json();
 
       // Validate Immich host URL if provided
       if (settings.immich?.host) {
         try {
           const url = new URL(settings.immich.host);
           if (!['http:', 'https:'].includes(url.protocol)) {
-            return res.status(400).json({
-              success: false,
+            return c.json({
               message: 'Only HTTP and HTTPS protocols are allowed for Immich host',
-            });
+            }, 400);
           }
         } catch {
-          return res.status(400).json({
-            success: false,
+          return c.json({
             message: 'Invalid Immich host URL format',
-          });
+          }, 400);
         }
       }
 
       await configService.updateConfig(settings);
-      res.json({ success: true, message: 'Settings saved successfully' });
-    } catch (error: any) {
-      console.error('Failed to save admin settings:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to save settings',
-      });
+      return c.json({ message: 'Settings saved successfully' });
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to save settings');
     }
   });
 
   // Get admin settings
-  router.get('/admin/settings', async (req, res) => {
+  app.get('/admin/settings', async (c) => {
     try {
       const config = await configService.getConfig();
-      res.json(config);
-    } catch (error: any) {
-      console.error('Failed to get admin settings:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get settings',
-      });
+      return c.json(config);
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to get settings');
     }
   });
 
   // Test Astrometry connection
-  router.post('/test-astrometry-connection', async (req, res) => {
+  app.post('/test-astrometry-connection', async (c) => {
     try {
-      const { apiKey } = req.body;
+      const { apiKey } = await c.req.json();
 
       if (!apiKey) {
-        return res.status(400).json({
-          success: false,
-          message: 'API key is required',
-        });
+        return c.json({ message: 'API key is required' }, 400);
       }
 
       // Test the connection by trying to login (same as working plate solve)
       const loginData = new URLSearchParams();
       loginData.append('request-json', JSON.stringify({ apikey: apiKey }));
 
-      const response = await axios.post('http://nova.astrometry.net/api/login', loginData, {
+      const response = await fetch('http://nova.astrometry.net/api/login', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        timeout: 10000, // 10 second timeout
-        validateStatus: (status) => true, // Don't throw on any status code
+        body: loginData,
+        signal: AbortSignal.timeout(10000),
       });
 
-      if (response.status === 200 && response.data.status === 'success') {
-        res.json({
-          success: true,
-          message: 'Connection successful!',
-        });
+      const data = await response.json() as Record<string, unknown>;
+
+      if (response.ok && data.status === 'success') {
+        return c.json({ message: 'Connection successful!' });
       } else {
-        res.json({
-          success: false,
-          message: `Connection failed: ${response.data.message || 'Unknown error'}`,
+        return c.json({
+          message: `Connection failed: ${data.message || 'Unknown error'}`,
         });
       }
-    } catch (error: any) {
-      console.error('Astrometry connection test error:', error.response?.data || error.message);
+    } catch (error: unknown) {
+      const err = error as Error & { code?: string };
 
       let errorMessage = 'Connection failed';
-      if (error.code === 'ECONNREFUSED') {
+      if (err.code === 'ECONNREFUSED') {
         errorMessage = 'Cannot connect to Astrometry.net server.';
-      } else if (error.code === 'ENOTFOUND') {
+      } else if (err.code === 'ENOTFOUND') {
         errorMessage = 'Astrometry.net server not found.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
 
-      res.status(500).json({
-        success: false,
-        message: errorMessage,
-      });
+      return c.json({ message: errorMessage }, 500);
     }
   });
 
   // Get stats
-  router.get('/stats', async (req, res) => {
+  app.get('/stats', async (c) => {
     try {
       const stats = await storage.getStats();
-      res.json(stats);
+      return c.json(stats);
     } catch (error) {
-      res.status(500).json({ message: 'Failed to fetch stats' });
+      return handleRouteError(c, error, 'Failed to fetch stats');
     }
   });
 
   // Get popular tags
-  router.get('/tags', async (req, res) => {
+  app.get('/tags', async (c) => {
     try {
       const images = await storage.getAstroImages();
       const tagCounts: Record<string, number> = {};
 
       images.forEach((image) => {
         if (Array.isArray(image.tags)) {
-          // Only count relevant tags for the popular tags list
           const relevantTags = filterRelevantTags(image.tags);
           relevantTags.forEach((tag) => {
             tagCounts[tag] = (tagCounts[tag] || 0) + 1;
@@ -144,98 +124,79 @@ export default function systemRoutes(io?: SocketIOServer) {
         .slice(0, 20)
         .map(([tag, count]) => ({ tag, count }));
 
-      res.json(popularTags);
+      return c.json(popularTags);
     } catch (error) {
-      console.error('Failed to fetch tags:', error);
-      res.status(500).json({ message: 'Failed to fetch tags' });
+      return handleRouteError(c, error, 'Failed to fetch tags');
     }
   });
 
   // Get constellations
-  router.get('/constellations', async (req, res) => {
+  app.get('/constellations', async (c) => {
     try {
       const images = await storage.getAstroImages();
       const constellations = Array.from(
         new Set(images.filter((img) => img.constellation).map((img) => img.constellation!)),
       ).sort();
-      res.json(constellations);
+      return c.json(constellations);
     } catch (error) {
-      res.status(500).json({ message: 'Failed to fetch constellations' });
+      return handleRouteError(c, error, 'Failed to fetch constellations');
     }
   });
 
   // Get notifications
-  router.get('/notifications', async (req, res) => {
+  app.get('/notifications', async (c) => {
     try {
       const notifications = await storage.getNotifications();
-      res.json(notifications);
-    } catch (error: any) {
-      console.error('Failed to get notifications:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get notifications',
-      });
+      return c.json(notifications);
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to get notifications');
     }
   });
 
   // Acknowledge all notifications
-  router.post('/notifications/acknowledge-all', async (req, res) => {
+  app.post('/notifications/acknowledge-all', async (c) => {
     try {
       await storage.acknowledgeAllNotifications();
-      // Emit event to notify all connected clients
-      if (io) {
-        io.emit('notifications-updated');
+      if (wsManager) {
+        wsManager.broadcast('notifications-updated', {});
       }
-      res.json({ success: true, message: 'All notifications acknowledged' });
-    } catch (error: any) {
-      console.error('Failed to acknowledge all notifications:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to acknowledge all notifications',
-      });
+      return c.json({ message: 'All notifications acknowledged' });
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to acknowledge all notifications');
     }
   });
 
   // Acknowledge notification
-  router.post('/notifications/:id/acknowledge', async (req, res) => {
+  app.post('/notifications/:id/acknowledge', async (c) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(c.req.param('id'));
       await storage.acknowledgeNotification(id);
-      // Emit event to notify all connected clients
-      if (io) {
-        io.emit('notifications-updated');
+      if (wsManager) {
+        wsManager.broadcast('notifications-updated', {});
       }
-      res.json({ success: true, message: 'Notification acknowledged' });
-    } catch (error: any) {
-      console.error('Failed to acknowledge notification:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to acknowledge notification',
-      });
+      return c.json({ message: 'Notification acknowledged' });
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to acknowledge notification');
     }
   });
 
   // Get cron job status
-  router.get('/admin/cron-jobs', async (req, res) => {
+  app.get('/admin/cron-jobs', async (c) => {
     try {
       const jobs = cronManager.getAllJobs();
-      res.json(jobs);
-    } catch (error: any) {
-      console.error('Failed to get cron jobs:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to get cron jobs',
-      });
+      return c.json(jobs);
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to get cron jobs');
     }
   });
 
   // Health check endpoint for container monitoring
-  router.get('/health', async (req, res) => {
+  app.get('/health', async (c) => {
     try {
       // Check database connection
       let databaseStatus = 'healthy';
       try {
-        await storage.getStats(); // Simple database query
+        await storage.getStats();
       } catch (dbError) {
         console.error('Database health check failed:', dbError);
         databaseStatus = 'unhealthy';
@@ -259,18 +220,17 @@ export default function systemRoutes(io?: SocketIOServer) {
         nodeVersion: process.version,
       };
 
-      // Return 503 if database is unhealthy
       const statusCode = databaseStatus === 'healthy' ? 200 : 503;
-      res.status(statusCode).json(healthStatus);
+      return c.json(healthStatus, statusCode as 200);
     } catch (error) {
       console.error('Health check error:', error);
-      res.status(503).json({
+      return c.json({
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         error: 'Health check failed',
-      });
+      }, 503);
     }
   });
 
-  return router;
+  return app;
 }

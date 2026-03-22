@@ -229,9 +229,9 @@ All images are automatically built, tested, and scanned for vulnerabilities usin
 │  ├─ Tailwind CSS + shadcn/ui        │◄──►│  Data Storage       │
 │  └─ Real-time WebSocket client      │    │  Connection Pool    │
 ├─────────────────────────────────────┤    │  Health Checks      │
-│  Backend (Express.js + Node.js)     │    └─────────────────────┘
+│  Backend (Hono + Node.js)           │    └─────────────────────┘
 │  ├─ RESTful API endpoints           │
-│  ├─ Socket.io server                │    ┌─────────────────────┐
+│  ├─ WebSocket server (ws)           │    ┌─────────────────────┐
 │  ├─ Image proxy & thumbnails        │    │   External APIs     │
 │  └─ Session management              │◄──►├─────────────────────┤
 ├─────────────────────────────────────┤    │  Immich Server      │

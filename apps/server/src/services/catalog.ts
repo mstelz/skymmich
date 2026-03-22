@@ -114,7 +114,7 @@ class CatalogService {
    */
   async checkForUpdates(): Promise<{ hasUpdate: boolean; currentSha: string; latestSha: string }> {
     const settings = await storage.getAdminSettings();
-    const currentSha = settings.catalog_commitSha || '';
+    const currentSha = (settings.catalog_commitSha as string) || '';
 
     const apiResponse = await fetch(GITHUB_API_URL, {
       headers: { 'User-Agent': 'Skymmich/1.0' },
@@ -325,9 +325,9 @@ class CatalogService {
   async getStatus(): Promise<{ count: number; lastUpdated: string | null; commitSha: string | null }> {
     const settings = await storage.getAdminSettings();
     return {
-      count: settings.catalog_objectCount || 0,
-      lastUpdated: settings.catalog_lastUpdated || null,
-      commitSha: settings.catalog_commitSha || null,
+      count: (settings.catalog_objectCount as number) || 0,
+      lastUpdated: (settings.catalog_lastUpdated as string) || null,
+      commitSha: (settings.catalog_commitSha as string) || null,
     };
   }
 }

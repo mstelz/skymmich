@@ -1,5 +1,3 @@
-import axios from 'axios';
-import FormData from 'form-data';
 import { storage } from './storage';
 import { xmpSidecarService } from './xmp-sidecar';
 import { configService } from './config';
@@ -7,12 +5,12 @@ import { getConstellationFromCoordinates } from './constellation-utils';
 import { filterRelevantTags } from './tags-utils';
 import { catalogService } from './catalog';
 
-// Import io from the main server file
-let io: any = null;
+import type { WsManager } from './ws-manager';
 
-// Function to set io instance (called from server/index.ts)
-export function setSocketIO(socketIO: any) {
-  io = socketIO;
+let wsManager: WsManager | null = null;
+
+export function setWsManager(wm: WsManager) {
+  wsManager = wm;
 }
 
 export interface AstrometryCalibration {
@@ -45,6 +43,8 @@ export interface PlateSolvingResult {
   machineTags: string[];
 }
 
+const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' };
+
 export class AstrometryService {
   private astrometryApiKey: string;
   private immichApiKey: string;
@@ -52,9 +52,7 @@ export class AstrometryService {
   private useConfigService: boolean;
 
   constructor(useConfigService: boolean = true) {
-    // Always use config service now - worker handles standalone mode detection
     this.useConfigService = useConfigService;
-    // Initialize with empty values, will be loaded from config service when needed
     this.astrometryApiKey = "";
     this.immichApiKey = "";
     this.immichHost = "";
@@ -71,31 +69,35 @@ export class AstrometryService {
 
   private async login(): Promise<string> {
     await this.ensureConfigLoaded();
-    
+
     if (!this.astrometryApiKey) {
       throw new Error("Astrometry.net API key not configured");
     }
 
     const loginData = new URLSearchParams();
     loginData.append('request-json', JSON.stringify({ apikey: this.astrometryApiKey }));
-    
-    const loginResponse = await axios.post("http://nova.astrometry.net/api/login", loginData, {
-      headers: { 
+
+    const loginResponse = await fetch("http://nova.astrometry.net/api/login", {
+      method: 'POST',
+      headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)'
-      }
+        ...HEADERS,
+      },
+      body: loginData,
     });
 
-    if (loginResponse.data.status !== "success") {
+    const loginResult = await loginResponse.json() as Record<string, unknown>;
+
+    if (loginResult.status !== "success") {
       throw new Error("Failed to authenticate with Astrometry.net");
     }
 
-    return loginResponse.data.session;
+    return loginResult.session as string;
   }
 
-  async submitImageForPlateSolving(image: any): Promise<{ submissionId: string; jobId: number }> {
+  async submitImageForPlateSolving(image: { id: number; fullUrl?: string | null; immichId?: string | null; title?: string | null; filename?: string | null }): Promise<{ submissionId: string; jobId: number }> {
     await this.ensureConfigLoaded();
-    
+
     if (!image.fullUrl) {
       throw new Error("Image does not have a fullUrl");
     }
@@ -115,42 +117,40 @@ export class AstrometryService {
     if (image.fullUrl.startsWith('http')) {
       fullImageUrl = image.fullUrl;
     } else {
-      // Ensure the immichHost doesn't end with a slash and the fullUrl starts with one
       const cleanHost = this.immichHost.endsWith('/') ? this.immichHost.slice(0, -1) : this.immichHost;
       const cleanPath = image.fullUrl.startsWith('/') ? image.fullUrl : `/${image.fullUrl}`;
       fullImageUrl = `${cleanHost}${cleanPath}`;
     }
 
     // Download image from Immich
-    const imageResponse = await axios.get(fullImageUrl, {
-      responseType: "arraybuffer",
+    const imageResponse = await fetch(fullImageUrl, {
       headers: { 'X-API-Key': this.immichApiKey },
-      timeout: 30000, // 30 second timeout
+      signal: AbortSignal.timeout(30000),
     });
-    const imageBuffer = Buffer.from(imageResponse.data);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download image from Immich: ${imageResponse.status}`);
+    }
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
     // Submit image to Astrometry.net via file upload
     const form = new FormData();
     form.append('request-json', JSON.stringify({ session: sessionKey, apikey: this.astrometryApiKey }));
-    form.append('file', imageBuffer, {
-      filename: image.filename || `image_${image.id}.jpg`,
-      contentType: imageResponse.headers['content-type'] || 'image/jpeg',
+    form.append('file', new Blob([imageBuffer], { type: contentType }), image.filename || `image_${image.id}.jpg`);
+
+    const uploadResponse = await fetch('http://nova.astrometry.net/api/upload', {
+      method: 'POST',
+      body: form,
+      signal: AbortSignal.timeout(60000),
     });
 
-    const uploadResponse = await axios.post(
-      'http://nova.astrometry.net/api/upload',
-      form,
-      { 
-        headers: form.getHeaders(),
-        timeout: 60000 // 60 second timeout
-      }
-    );
+    const uploadResult = await uploadResponse.json() as Record<string, unknown>;
 
-    if (uploadResponse.data.status !== "success") {
+    if (uploadResult.status !== "success") {
       throw new Error("Failed to submit image to Astrometry.net");
     }
 
-    const submissionId = uploadResponse.data.subid.toString();
+    const submissionId = String(uploadResult.subid);
 
     // Create plate solving job record
     const job = await storage.createPlateSolvingJob({
@@ -161,9 +161,9 @@ export class AstrometryService {
       result: null,
     });
 
-    // Emit real-time update via Socket.io
-    if (io) {
-      io.emit('plate-solving-update', {
+    // Emit real-time update via WebSocket
+    if (wsManager) {
+      wsManager.broadcast('plate-solving-update', {
         jobId: job.id,
         status: "processing",
         imageId: image.id,
@@ -175,52 +175,35 @@ export class AstrometryService {
   }
 
   async pollForPlateSolvingResult(submissionId: string): Promise<PlateSolvingResult | null> {
-    // Get configurable values from config service
     const astrometryConfig = await configService.getAstrometryConfig();
-    const pollInterval = astrometryConfig.pollInterval * 1000; // Convert to milliseconds
+    const pollInterval = astrometryConfig.pollInterval * 1000;
 
-    // Keep polling until Astrometry.net explicitly marks the job as failed or successful
     while (true) {
       try {
-        const statusResponse = await axios.get(
+        const statusResponse = await fetch(
           `https://nova.astrometry.net/api/submissions/${submissionId}`,
-          {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
-          }
+          { headers: HEADERS }
         );
-
-        const astrometryStatus = statusResponse.data;
+        const astrometryStatus = await statusResponse.json() as Record<string, unknown>;
 
         console.log(`Polling submission ${submissionId} - jobs:`, astrometryStatus.jobs, 'calibrations:', astrometryStatus.job_calibrations);
 
-        if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
-          // Job completed successfully
-          const jobId = astrometryStatus.jobs?.[0]?.toString();
+        if (astrometryStatus.job_calibrations && (astrometryStatus.job_calibrations as unknown[]).length > 0) {
+          const jobId = (astrometryStatus.jobs as unknown[])?.[0]?.toString();
           if (!jobId) {
             throw new Error("No job ID found in successful submission");
           }
-
           return await this.fetchCompleteResult(jobId);
-        } else if (astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
-          const jobStatus = astrometryStatus.jobs[0];
+        } else if (astrometryStatus.jobs && (astrometryStatus.jobs as unknown[]).length > 0) {
+          const jobStatus = (astrometryStatus.jobs as unknown[])[0];
           if (jobStatus === null) {
-            // Job failed
             return null;
           }
-          // If job exists but is not null, it's still processing
-          // Continue polling
-        } else {
-          // No jobs array yet - submission is still being processed
-          // This is normal for newly submitted images, continue polling
         }
 
-        // Wait before polling again
         await new Promise(resolve => setTimeout(resolve, pollInterval));
-      } catch (error: any) {
-        if (error.response?.status === 404) {
-          // Job expired or not found
-          return null;
-        }
+      } catch (error: unknown) {
+        const err = error as { cause?: { code?: string } };
         console.error("Error polling for plate solving result:", error);
         await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
@@ -229,39 +212,34 @@ export class AstrometryService {
 
   async fetchCompleteResult(jobId: string): Promise<PlateSolvingResult> {
     // Get calibration details
-    const calibrationResponse = await axios.get(
+    const calibrationResponse = await fetch(
       `https://nova.astrometry.net/api/jobs/${jobId}/calibration`,
-      {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
-      }
+      { headers: HEADERS }
     );
-    const calibration: AstrometryCalibration = calibrationResponse.data;
+    const calibration: AstrometryCalibration = await calibrationResponse.json() as AstrometryCalibration;
 
     // Fetch annotations
     let annotations: AstrometryAnnotation[] = [];
     try {
-      const annotationsResponse = await axios.get(
+      const annotationsResponse = await fetch(
         `https://nova.astrometry.net/api/jobs/${jobId}/annotations`,
-        {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
-        }
+        { headers: HEADERS }
       );
-      
-      let annotationsData = annotationsResponse.data;
-      
-      // Ensure annotations is always an array
+      let annotationsData = await annotationsResponse.json() as unknown;
+
       if (!Array.isArray(annotationsData)) {
-        const arr = Object.values(annotationsData).find(v => Array.isArray(v));
+        const arr = Object.values(annotationsData as Record<string, unknown>).find(v => Array.isArray(v));
         annotationsData = arr || [];
       }
-      
-      // Process annotations to include pixel coordinates if available
-      annotations = (annotationsData as any[]).map((annotation: any) => ({
-        ...annotation,
-        ra: annotation.ra ? parseFloat(annotation.ra) : null,
-        dec: annotation.dec ? parseFloat(annotation.dec) : null,
-        pixelX: annotation.pixel_x || null,
-        pixelY: annotation.pixel_y || null,
+
+      annotations = (annotationsData as Record<string, unknown>[]).map((annotation) => ({
+        type: String(annotation.type || ''),
+        names: Array.isArray(annotation.names) ? annotation.names as string[] : [],
+        pixelx: annotation.pixelx != null ? Number(annotation.pixelx) : (annotation.pixel_x != null ? Number(annotation.pixel_x) : 0),
+        pixely: annotation.pixely != null ? Number(annotation.pixely) : (annotation.pixel_y != null ? Number(annotation.pixel_y) : 0),
+        ra: annotation.ra ? parseFloat(String(annotation.ra)) : 0,
+        dec: annotation.dec ? parseFloat(String(annotation.dec)) : 0,
+        radius: annotation.radius != null ? Number(annotation.radius) : undefined,
       }));
     } catch (error) {
       console.error(`Failed to fetch annotations for job ${jobId}:`, error);
@@ -270,18 +248,17 @@ export class AstrometryService {
     // Fetch machine tags
     let machineTags: string[] = [];
     try {
-      const tagsResponse = await axios.get(
+      const tagsResponse = await fetch(
         `http://nova.astrometry.net/api/jobs/${jobId}/machine_tags/`,
-        {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
-        }
+        { headers: HEADERS }
       );
-      if (Array.isArray(tagsResponse.data)) {
-        machineTags = tagsResponse.data;
-      } else if (typeof tagsResponse.data === 'string') {
-        machineTags = tagsResponse.data.split(',').map((t: string) => t.trim());
-      } else if (tagsResponse.data && Array.isArray(tagsResponse.data.tags)) {
-        machineTags = tagsResponse.data.tags;
+      const tagsData = await tagsResponse.json() as unknown;
+      if (Array.isArray(tagsData)) {
+        machineTags = tagsData;
+      } else if (typeof tagsData === 'string') {
+        machineTags = tagsData.split(',').map((t: string) => t.trim());
+      } else if (tagsData && typeof tagsData === 'object' && Array.isArray((tagsData as Record<string, unknown>).tags)) {
+        machineTags = (tagsData as Record<string, unknown>).tags as string[];
       }
     } catch (error) {
       console.error(`Failed to fetch machine tags for job ${jobId}:`, error);
@@ -300,31 +277,26 @@ export class AstrometryService {
       throw new Error(`Job ${jobId} not found`);
     }
 
-    // Update job with result and annotations
-    await storage.updatePlateSolvingJob(job.id, { 
-      status: "success", 
+    await storage.updatePlateSolvingJob(job.id, {
+      status: "success",
       result: {
         ...result.calibration,
         annotations: result.annotations as any
       } as any
     });
 
-    // Update the original image with plate solving results
     if (job.imageId) {
       const image = await storage.getAstroImage(job.imageId);
       if (image) {
         const existingTags: string[] = image.tags || [];
-        // Only keep relevant tags from plate solving
         const relevantMachineTags = filterRelevantTags(result.machineTags);
-        // Merge and deduplicate tags
         const allTags = Array.from(new Set([...existingTags, ...relevantMachineTags])).filter(Boolean);
-        
-        // Determine constellation from RA/Dec coordinates
+
         let constellation = null;
         if (result.calibration.ra && result.calibration.dec) {
           constellation = getConstellationFromCoordinates(result.calibration.ra, result.calibration.dec);
         }
-        
+
         await storage.updateAstroImage(job.imageId, {
           plateSolved: true,
           ra: result.calibration.ra ? result.calibration.ra.toString() : null,
@@ -337,10 +309,6 @@ export class AstrometryService {
           tags: allTags as any,
         });
 
-        // Auto-match target from catalog using plate solving tags.
-        // matchTargetFromTags checks ALL tags against the catalog (not just the first),
-        // collects every match, then ranks them: Messier objects first, then by
-        // brightest V-magnitude. We auto-set targetName to the top-ranked result.
         try {
           const matches = await catalogService.matchTargetFromTags(allTags);
           if (matches.length > 0) {
@@ -350,7 +318,6 @@ export class AstrometryService {
           console.error(`Failed to auto-match target for image ${image.id}:`, error);
         }
 
-        // Write XMP sidecar file with equipment information
         try {
           const sidecarConfig = await configService.getSidecarConfig();
           if (sidecarConfig.enabled && job.astrometryJobId) {
@@ -359,12 +326,10 @@ export class AstrometryService {
           }
         } catch (error) {
           console.error(`Failed to write XMP sidecar for image ${image.id}:`, error);
-          // Don't fail the entire operation if sidecar writing fails
         }
 
-        // Emit real-time update via Socket.io
-        if (io) {
-          io.emit('plate-solving-update', {
+        if (wsManager) {
+          wsManager.broadcast('plate-solving-update', {
             jobId: job.id,
             status: "success",
             imageId: job.imageId,
@@ -378,19 +343,16 @@ export class AstrometryService {
     }
   }
 
-  async completePlateSolvingWorkflow(image: any): Promise<PlateSolvingResult> {
-    // Submit image
+  async completePlateSolvingWorkflow(image: { id: number; fullUrl?: string | null; immichId?: string | null; title?: string | null; filename?: string | null }): Promise<PlateSolvingResult> {
     const { submissionId, jobId } = await this.submitImageForPlateSolving(image);
-    
-    // Poll for completion
+
     const result = await this.pollForPlateSolvingResult(submissionId);
     if (!result) {
       throw new Error("Plate solving failed");
     }
 
-    // Update job and image with results
     await this.updateJobAndImage(jobId, result);
-    
+
     return result;
   }
 
@@ -401,20 +363,16 @@ export class AstrometryService {
     }
 
     try {
-      const statusResponse = await axios.get(
+      const statusResponse = await fetch(
         `https://nova.astrometry.net/api/submissions/${job.astrometrySubmissionId}`,
-        {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
-        }
+        { headers: HEADERS }
       );
-
-      const astrometryStatus = statusResponse.data;
+      const astrometryStatus = await statusResponse.json() as Record<string, unknown>;
 
       console.log(`Job ${job.id} status check - submission: ${job.astrometrySubmissionId}, jobs:`, astrometryStatus.jobs);
 
-      // If jobId is not set, set it from the jobs array
-      if ((!job.astrometryJobId || job.astrometryJobId === "null") && astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
-        const newJobId = astrometryStatus.jobs[0]?.toString();
+      if ((!job.astrometryJobId || job.astrometryJobId === "null") && astrometryStatus.jobs && (astrometryStatus.jobs as unknown[]).length > 0) {
+        const newJobId = (astrometryStatus.jobs as unknown[])[0]?.toString();
         if (newJobId) {
           await storage.updatePlateSolvingJob(job.id, { astrometryJobId: newJobId });
           job.astrometryJobId = newJobId;
@@ -433,35 +391,35 @@ export class AstrometryService {
           submissionUrl,
           jobUrl,
         };
-        await storage.updatePlateSolvingJob(job.id, { status: "failed", result: result as any });
-        if (io) {
-          io.emit('plate-solving-update', { jobId: job.id, status: "failed", result });
+        await storage.updatePlateSolvingJob(job.id, { status: "failed", result });
+        if (wsManager) {
+          wsManager.broadcast('plate-solving-update', { jobId: job.id, status: "failed", result });
         }
         return { status: "failed" as const };
       };
 
-      // Check individual job status if we have a job ID
       if (job.astrometryJobId) {
         try {
-          const jobStatusResponse = await axios.get(
+          const jobStatusResponse = await fetch(
             `https://nova.astrometry.net/api/jobs/${job.astrometryJobId}`,
-            {
-              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Skymmich/1.0)' }
-            }
+            { headers: HEADERS }
           );
 
-          const jobStatus = jobStatusResponse.data;
+          if (jobStatusResponse.status === 404) {
+            return markFailed(`Job not found on Astrometry.net. It may have expired (jobs expire after ~30 days).`);
+          }
+
+          const jobStatus = await jobStatusResponse.json() as Record<string, unknown>;
           if (jobStatus.status === "failure") {
             return markFailed(`Plate solving failed. Astrometry.net could not solve this image. This usually means the field of view or scale hints were incorrect, or the image quality was insufficient.`);
           }
 
           if (jobStatus.status === "success") {
-            // Job succeeded on Astrometry.net - fetch the full result
             const result = await this.fetchCompleteResult(job.astrometryJobId);
             await this.updateJobAndImage(job.id, result);
 
-            if (io) {
-              io.emit('plate-solving-update', {
+            if (wsManager) {
+              wsManager.broadcast('plate-solving-update', {
                 jobId: job.id,
                 status: "success",
                 result: { ...result.calibration, annotations: result.annotations }
@@ -470,22 +428,17 @@ export class AstrometryService {
 
             return { status: "success", result };
           }
-          // Otherwise still processing, fall through
-        } catch (jobError: any) {
-          if (jobError.response?.status === 404) {
-            return markFailed(`Job not found on Astrometry.net. It may have expired (jobs expire after ~30 days).`);
-          }
+        } catch (jobError: unknown) {
           // If we can't check individual job status, continue with submission status check
         }
       }
 
-      if (astrometryStatus.job_calibrations && astrometryStatus.job_calibrations.length > 0) {
-        // Job completed successfully via submission status
+      if (astrometryStatus.job_calibrations && (astrometryStatus.job_calibrations as unknown[]).length > 0) {
         const result = await this.fetchCompleteResult(job.astrometryJobId!);
         await this.updateJobAndImage(job.id, result);
 
-        if (io) {
-          io.emit('plate-solving-update', {
+        if (wsManager) {
+          wsManager.broadcast('plate-solving-update', {
             jobId: job.id,
             status: "success",
             result: { ...result.calibration, annotations: result.annotations }
@@ -493,28 +446,23 @@ export class AstrometryService {
         }
 
         return { status: "success", result };
-      } else if (astrometryStatus.jobs && astrometryStatus.jobs.length > 0) {
-        const firstJob = astrometryStatus.jobs[0];
+      } else if (astrometryStatus.jobs && (astrometryStatus.jobs as unknown[]).length > 0) {
+        const firstJob = (astrometryStatus.jobs as unknown[])[0];
         if (firstJob === null) {
-          // jobs: [null] can mean the job hasn't been assigned yet OR it truly failed.
-          // Check if the submission also has processing_finished set to confirm failure.
           if (astrometryStatus.processing_finished) {
             return markFailed(`Plate solving failed. Astrometry.net could not solve this image.`);
           }
-          // Not finished yet — treat as still processing
           return { status: "processing" };
         }
-        // If job exists but is not null, it's still processing
         return { status: "processing" };
       } else {
-        // No jobs array yet - submission is still being processed
         return { status: "processing" };
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error checking job status:", error);
       throw error;
     }
   }
 }
 
-export const astrometryService = new AstrometryService(); 
+export const astrometryService = new AstrometryService();

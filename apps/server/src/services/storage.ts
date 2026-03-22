@@ -1,5 +1,5 @@
 import { db, schema } from '../db';
-import { eq, and, inArray, lte } from 'drizzle-orm';
+import { eq, and, inArray, lte, desc, sql } from 'drizzle-orm';
 import { like, or } from 'drizzle-orm';
 import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, EquipmentGroup, InsertEquipmentGroup, EquipmentGroupMember, InsertEquipmentGroupMember, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow, CatalogObject, InsertCatalogObject, UserTarget } from "../../../../packages/shared/src/types";
 import { computeImageSummary } from '../../../../packages/shared/src/image-utils';
@@ -8,38 +8,41 @@ import { groupAndEnrichTargets } from '../../../../packages/shared/src/image-uti
 class DbStorage {
   // Astrophotography images
   async getAstroImages(filters?: { objectType?: string; tags?: string[]; plateSolved?: boolean; constellation?: string; equipmentId?: number }): Promise<AstroImage[]> {
-    const query = db.select().from(schema.astrophotographyImages);
+    const conditions = [];
 
     if (filters) {
       if (filters.objectType) {
-        query.where(eq(schema.astrophotographyImages.objectType, filters.objectType));
+        conditions.push(eq(schema.astrophotographyImages.objectType, filters.objectType));
       }
       if (filters.plateSolved !== undefined) {
-        query.where(eq(schema.astrophotographyImages.plateSolved, filters.plateSolved));
+        conditions.push(eq(schema.astrophotographyImages.plateSolved, filters.plateSolved));
       }
       if (filters.constellation) {
-        query.where(eq(schema.astrophotographyImages.constellation, filters.constellation));
+        conditions.push(eq(schema.astrophotographyImages.constellation, filters.constellation));
+      }
+      if (filters.tags && filters.tags.length > 0) {
+        // Use SQL array overlap: image.tags && ARRAY[tag1, tag2, ...]
+        const tagArray = sql`ARRAY[${sql.join(filters.tags.map(t => sql`${t}`), sql`, `)}]::text[]`;
+        conditions.push(sql`${schema.astrophotographyImages.tags} && ${tagArray}`);
+      }
+      if (filters.equipmentId) {
+        // Use a subquery instead of loading all image_equipment rows into memory
+        conditions.push(
+          sql`${schema.astrophotographyImages.id} IN (
+            SELECT ${schema.imageEquipment.imageId} FROM ${schema.imageEquipment}
+            WHERE ${schema.imageEquipment.equipmentId} = ${filters.equipmentId}
+          )`
+        );
       }
     }
 
-    let images = await query.execute();
+    const whereClause = conditions.length > 0
+      ? conditions.length === 1 ? conditions[0] : and(...conditions)
+      : undefined;
 
-    if (filters && filters.tags && filters.tags.length > 0) {
-      images = images.filter((image: AstroImage) => {
-        const tags = image.tags;
-        return filters.tags?.some(tag => tags?.includes(tag));
-      });
-    }
-
-    // Filter by equipment (post-query via image_equipment join)
-    if (filters?.equipmentId) {
-      const imageEquipmentRows = await db.select().from(schema.imageEquipment)
-        .where(eq(schema.imageEquipment.equipmentId, filters.equipmentId)).execute();
-      const imageIds = new Set(imageEquipmentRows.map((r: any) => r.imageId));
-      images = images.filter((img: AstroImage) => imageIds.has(img.id));
-    }
-
-    return images;
+    return await db.select().from(schema.astrophotographyImages)
+      .where(whereClause)
+      .execute();
   }
 
   async getAstroImage(id: number): Promise<AstroImage | undefined> {
@@ -127,7 +130,7 @@ class DbStorage {
     return equipment;
   }
 
-  async addEquipmentToImage(imageId: number, equipmentId: number, settings?: any, notes?: string): Promise<ImageEquipment> {
+  async addEquipmentToImage(imageId: number, equipmentId: number, settings?: Record<string, unknown>, notes?: string): Promise<ImageEquipment> {
     const values = {
         imageId,
         equipmentId,
@@ -159,26 +162,44 @@ class DbStorage {
 
   // Equipment Groups
   async getEquipmentGroups(): Promise<(EquipmentGroup & { members: Equipment[] })[]> {
-    const groups = await db.select().from(schema.equipmentGroups).execute();
-    const result = [];
-    for (const group of groups) {
-      const memberRows = await db.select().from(schema.equipmentGroupMembers)
-        .where(eq(schema.equipmentGroupMembers.groupId, group.id)).execute();
-      const equipmentIds = memberRows.map((m: EquipmentGroupMember) => m.equipmentId);
-      let members: Equipment[] = [];
-      if (equipmentIds.length > 0) {
-        members = await db.select().from(schema.equipment)
-          .where(inArray(schema.equipment.id, equipmentIds)).execute();
-      }
-      result.push({ ...group, members });
+    const groups: EquipmentGroup[] = await db.select().from(schema.equipmentGroups).execute();
+    if (groups.length === 0) return [];
+
+    const groupIds = groups.map((g: EquipmentGroup) => g.id);
+
+    // Fetch all memberships and equipment in 2 queries instead of 2N
+    const allMemberRows = await db.select().from(schema.equipmentGroupMembers)
+      .where(inArray(schema.equipmentGroupMembers.groupId, groupIds)).execute();
+
+    const allEquipmentIds = [...new Set(allMemberRows.map((m: EquipmentGroupMember) => m.equipmentId))];
+    let allEquipment: Equipment[] = [];
+    if (allEquipmentIds.length > 0) {
+      allEquipment = await db.select().from(schema.equipment)
+        .where(inArray(schema.equipment.id, allEquipmentIds)).execute();
     }
-    return result;
+
+    const equipmentById = new Map(allEquipment.map(e => [e.id, e]));
+    const membersByGroupId = new Map<number, Equipment[]>();
+    for (const m of allMemberRows) {
+      const eq = equipmentById.get(m.equipmentId);
+      if (eq) {
+        const list = membersByGroupId.get(m.groupId) || [];
+        list.push(eq);
+        membersByGroupId.set(m.groupId, list);
+      }
+    }
+
+    return groups.map((group: EquipmentGroup) => ({
+      ...group,
+      members: membersByGroupId.get(group.id) || [],
+    }));
   }
 
   async getEquipmentGroup(id: number): Promise<(EquipmentGroup & { members: Equipment[] }) | undefined> {
     const groups = await db.select().from(schema.equipmentGroups)
       .where(eq(schema.equipmentGroups.id, id)).execute();
     if (!groups[0]) return undefined;
+
     const memberRows = await db.select().from(schema.equipmentGroupMembers)
       .where(eq(schema.equipmentGroupMembers.groupId, id)).execute();
     const equipmentIds = memberRows.map((m: EquipmentGroupMember) => m.equipmentId);
@@ -261,6 +282,19 @@ class DbStorage {
     return result[0] ? result[0] : undefined;
   }
 
+  async getLatestPlateSolvingJob(imageId: number, status?: string): Promise<PlateSolvingJob | undefined> {
+    const conditions = [eq(schema.plateSolvingJobs.imageId, imageId)];
+    if (status) {
+      conditions.push(eq(schema.plateSolvingJobs.status, status));
+    }
+    const result = await db.select().from(schema.plateSolvingJobs)
+      .where(and(...conditions))
+      .orderBy(desc(schema.plateSolvingJobs.submittedAt))
+      .limit(1)
+      .execute();
+    return result[0] || undefined;
+  }
+
   async createPlateSolvingJob(job: InsertPlateSolvingJob): Promise<PlateSolvingJob> {
     const values = {
         ...job,
@@ -284,15 +318,15 @@ class DbStorage {
   }
 
   // Admin settings
-  async getAdminSettings(): Promise<any> {
+  async getAdminSettings(): Promise<Record<string, unknown>> {
     const settings = await db.select().from(schema.adminSettings).execute();
-    return settings.reduce((acc: any, setting: any) => {
+    return settings.reduce((acc: Record<string, unknown>, setting: { key: string; value: unknown }) => {
       acc[setting.key] = setting.value;
       return acc;
-    }, {});
+    }, {} as Record<string, unknown>);
   }
 
-  async updateAdminSettings(settings: any): Promise<void> {
+  async updateAdminSettings(settings: Record<string, unknown>): Promise<void> {
     for (const key in settings) {
       const value = settings[key];
       await db.insert(schema.adminSettings)
@@ -303,18 +337,18 @@ class DbStorage {
   }
 
   // Notifications
-  async getNotifications(): Promise<any[]> {
+  async getNotifications() {
     const notifications = await db.select().from(schema.notifications).where(eq((schema.notifications).acknowledged, false)).execute();
     return notifications;
   }
 
-  async createNotification(notification: any): Promise<any> {
+  async createNotification(notification: { type: string; title: string; message: string; details?: unknown }) {
     const values = {
         ...notification,
         details: notification.details,
     };
     const result = await db.insert(schema.notifications).values(values).returning().execute();
-    return result[0] ? result[0] : undefined;
+    return result[0] || undefined;
   }
 
   async acknowledgeNotification(id: number): Promise<void> {
@@ -481,7 +515,7 @@ class DbStorage {
   }
 
   // Targets (images grouped by target name)
-  async getTargets(): Promise<any[]> {
+  async getTargets() {
     const images = await this.getAstroImages();
     const catalogObjects = await this.getCatalogObjects();
 
@@ -489,7 +523,7 @@ class DbStorage {
   }
 
   // Stats
-  async getStats(): Promise<any> {
+  async getStats() {
     try {
       const images = await this.getAstroImages();
       const equipment = await this.getEquipment();
