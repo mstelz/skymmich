@@ -144,7 +144,7 @@ docker exec -i skymmich-db psql -U skymmich skymmich < backup.sql
 
 A migration script is included for moving data between database engines in either direction.
 
-**Important:** The target database must already have its schema created. Start the application once against the target database to initialize the schema before running the migration.
+**Important:** SQLite targets automatically run the bundled Drizzle migrations during the copy. PostgreSQL targets must still have their schema created ahead of time (start Skymmich once with the postgres override so the tables exist).
 
 ### PostgreSQL → SQLite (switching to the new default)
 ```bash
@@ -184,10 +184,39 @@ docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up -d
 
 ### Local Development
 ```bash
-npx tsx tools/scripts/migrate-db.ts \
+node tools/scripts/migrate-db.js \
   --from sqlite:local.db \
   --to postgresql://skymmich:password@localhost:5432/skymmich
 ```
+
+### Automatic Migration During Container Startup
+
+Set the `AUTO_DB_MIGRATE_FROM` environment variable on the Skymmich container to have the startup script run the migration automatically before the application boots. The target defaults to whichever database the container is configured to use (PostgreSQL when `DATABASE_URL` is set, otherwise the built-in SQLite database at `/app/config/skymmich.db`).
+
+Optional environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTO_DB_MIGRATE_FROM` | _(required)_ | Source connection string (e.g. `postgresql://...` or `sqlite:/app/config/skymmich.db`). |
+| `AUTO_DB_MIGRATE_TO` | auto-detected | Override the destination connection string. |
+| `AUTO_DB_MIGRATE_ONCE` | `true` | When `true`, the migration runs only the first time and writes a marker file. |
+| `AUTO_DB_MIGRATE_MARKER` | `/app/config/.auto-db-migrated` | Marker file path used when `AUTO_DB_MIGRATE_ONCE=true`. Remove this file to re-run the automatic migration. |
+| `AUTO_DB_MIGRATE_RESET_SQLITE` | `true` | When migrating into SQLite, delete the target DB file before copying data. Set to `false` to keep the existing file. |
+
+Examples:
+
+```bash
+# Migrate once from PostgreSQL back to the built-in SQLite database
+AUTO_DB_MIGRATE_FROM=postgresql://skymmich:password@skymmich-db:5432/skymmich \
+  docker compose -f docker-compose.prod.yml up -d
+
+# Migrate from SQLite to PostgreSQL before switching to the postgres override
+AUTO_DB_MIGRATE_FROM=sqlite:/app/config/skymmich.db \
+  DATABASE_URL=postgresql://skymmich:password@skymmich-db:5432/skymmich \
+  docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up -d
+```
+
+After the automatic migration completes the container continues starting normally. Remove the environment variable (or delete the marker file) once the data has been copied.
 
 ## Troubleshooting
 

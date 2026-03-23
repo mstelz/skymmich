@@ -3,6 +3,61 @@
 # Skymmich Container Startup Script
 set -e
 
+mask_connection_string() {
+    echo "$1" | sed 's|://[^:]*:[^@]*@|://****:****@|'
+}
+
+run_auto_db_migration() {
+    if [ -z "$AUTO_DB_MIGRATE_FROM" ]; then
+        return
+    fi
+
+    MIGRATE_SCRIPT="/app/dist/tools/scripts/migrate-db.js"
+    if [ ! -f "$MIGRATE_SCRIPT" ]; then
+        echo "Automatic database migration requested, but $MIGRATE_SCRIPT was not found."
+        exit 1
+    fi
+
+    AUTO_DB_MIGRATE_MARKER=${AUTO_DB_MIGRATE_MARKER:-/app/config/.auto-db-migrated}
+    AUTO_DB_MIGRATE_ONCE=${AUTO_DB_MIGRATE_ONCE:-true}
+
+    if [ "$AUTO_DB_MIGRATE_ONCE" = "true" ] && [ -f "$AUTO_DB_MIGRATE_MARKER" ]; then
+        echo "Automatic database migration already completed (marker $AUTO_DB_MIGRATE_MARKER exists); skipping."
+        return
+    fi
+
+    if [ -n "$AUTO_DB_MIGRATE_TO" ]; then
+        AUTO_DB_MIGRATE_TARGET="$AUTO_DB_MIGRATE_TO"
+    elif [ -n "$DATABASE_URL" ]; then
+        AUTO_DB_MIGRATE_TARGET="$DATABASE_URL"
+    else
+        SQLITE_TARGET_PATH=${SQLITE_DB_PATH:-/app/config/skymmich.db}
+        AUTO_DB_MIGRATE_TARGET="sqlite:$SQLITE_TARGET_PATH"
+    fi
+
+    if [ "${AUTO_DB_MIGRATE_RESET_SQLITE:-true}" = "true" ] && [ "${AUTO_DB_MIGRATE_TARGET#sqlite:}" != "$AUTO_DB_MIGRATE_TARGET" ]; then
+        SQLITE_TARGET_PATH="${AUTO_DB_MIGRATE_TARGET#sqlite:}"
+        echo "  Removing existing SQLite database at $SQLITE_TARGET_PATH before migration..."
+        rm -f "$SQLITE_TARGET_PATH"
+    fi
+
+    echo "Running automatic database migration..."
+    echo "  From: $(mask_connection_string "$AUTO_DB_MIGRATE_FROM")"
+    echo "  To: $(mask_connection_string "$AUTO_DB_MIGRATE_TARGET")"
+
+    if ! su-exec skymmich node "$MIGRATE_SCRIPT" --from "$AUTO_DB_MIGRATE_FROM" --to "$AUTO_DB_MIGRATE_TARGET"; then
+        echo "Automatic database migration failed; aborting startup."
+        exit 1
+    fi
+
+    if [ "$AUTO_DB_MIGRATE_ONCE" = "true" ]; then
+        mkdir -p "$(dirname "$AUTO_DB_MIGRATE_MARKER")"
+        touch "$AUTO_DB_MIGRATE_MARKER"
+    fi
+
+    echo "Automatic database migration completed successfully."
+}
+
 # Handle PUID and PGID for proper volume permissions
 PUID=${PUID:-1001}
 PGID=${PGID:-1001}
@@ -65,17 +120,9 @@ if [ -n "$DATABASE_URL" ]; then
     else
         echo "PostgreSQL migration script not found"
     fi
-else
-    # SQLite migrations (handled automatically by the application on startup)
-    if [ -f "/app/dist/tools/scripts/apply-migrations.ts" ]; then
-        echo "Running SQLite migrations..."
-        su-exec skymmich node --loader tsx /app/dist/tools/scripts/apply-migrations.ts || {
-            echo "SQLite migration failed, but continuing..."
-        }
-    else
-        echo "SQLite migration script not found"
-    fi
 fi
+
+run_auto_db_migration
 
 # Set up signal handlers for graceful shutdown
 cleanup() {

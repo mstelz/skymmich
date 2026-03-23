@@ -5,11 +5,13 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.0] - 2026-03-22
+## [0.9.0] - 2026-03-23
 
 ### Added
 - **Database Admin Section**: New admin panel section showing database engine, file size, and last modified timestamp. Includes a one-click backup download button for SQLite databases.
-- **Database Migration Script**: New `migrate-db` tool for migrating data between PostgreSQL and SQLite in either direction. Handles schema differences (timestamps, booleans, arrays, JSON) automatically.
+- **Database Migration Script**: New `migrate-db` tool for migrating data between PostgreSQL and SQLite in either direction. Discovers tables and column types dynamically from database metadata — no manual updates needed when the schema changes. SQLite targets automatically run Drizzle migrations to ensure the schema exists.
+- **Auto-Migration on Startup**: Set `AUTO_DB_MIGRATE_FROM` environment variable to automatically migrate data during Docker container startup. Supports one-time migration with a marker file, optional SQLite reset, and credential masking in logs.
+- **Target Name Column**: New `target_name` column on astrophotography images (migration 0008).
 
 ### Changed
 - **Default Database**: SQLite is now the default database for all deployments including Docker and UnRAID. No external database setup required — data is stored in `/app/config/skymmich.db`.
@@ -18,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UnRAID Template**: Removed PostgreSQL as a requirement. `DATABASE_URL` is now optional with an empty default.
 - **Dockerfile**: `better-sqlite3` is now included in the production image for built-in SQLite support.
 - **SQLite Path**: Configurable via `SQLITE_DB_PATH` env var, defaults to `/app/config/skymmich.db` in production and `local.db` in development.
+- **SQLite Migrations Path**: Migrations folder is now resolved dynamically across multiple candidate paths, fixing issues when running inside Docker.
+- **Build Order**: `build:docker` now runs vite, copy-assets, then esbuild in the correct order to ensure the migration script is bundled properly.
 - **XMP Sidecar**: Marked as experimental in documentation — feature is under active development and may not work as intended in all configurations.
 
 ### Fixed

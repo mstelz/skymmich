@@ -23,4 +23,10 @@ await Promise.all([
     ...commonOptions,
     entryPoints: ['apps/server/src/workers/worker.ts'],
   }),
+  esbuild.build({
+    ...commonOptions,
+    entryPoints: ['tools/scripts/migrate-db.js'],
+    outdir: 'dist',
+    outbase: '.',
+  }),
 ]);

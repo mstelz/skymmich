@@ -2,6 +2,20 @@ import { drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 const { Pool } = pg;
 import * as pgSchema from '@shared/db/pg-schema';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SQLITE_MIGRATIONS_CANDIDATES = [
+  path.resolve(process.cwd(), 'tools/migrations/sqlite'),
+  path.resolve(process.cwd(), 'dist/tools/migrations/sqlite'),
+  path.resolve(__dirname, '../../..', 'tools/migrations/sqlite'),
+];
+const SQLITE_MIGRATIONS_PATH = SQLITE_MIGRATIONS_CANDIDATES.find(candidate =>
+  fs.existsSync(path.join(candidate, 'meta', '_journal.json'))
+) || SQLITE_MIGRATIONS_CANDIDATES[0];
 
 let db: any;
 let schema: any;
@@ -39,7 +53,7 @@ async function initializeDatabase() {
       
       // Run migrations (Drizzle tracks which have been applied and only runs new ones)
       try {
-        migrate(db, { migrationsFolder: './tools/migrations/sqlite' });
+        migrate(db, { migrationsFolder: SQLITE_MIGRATIONS_PATH });
         console.log('Migrations completed successfully');
       } catch (migrationError) {
         console.error('Migration error:', migrationError);

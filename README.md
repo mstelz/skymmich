@@ -202,12 +202,12 @@ Skymmich includes a bidirectional migration script for moving data between SQLit
 
 ```bash
 # PostgreSQL → SQLite
-npx tsx tools/scripts/migrate-db.ts \
+node tools/scripts/migrate-db.js \
   --from postgresql://user:pass@host:5432/skymmich \
   --to sqlite:path/to/skymmich.db
 
 # SQLite → PostgreSQL
-npx tsx tools/scripts/migrate-db.ts \
+node tools/scripts/migrate-db.js \
   --from sqlite:path/to/local.db \
   --to postgresql://user:pass@host:5432/skymmich
 ```
@@ -218,8 +218,9 @@ node /app/dist/tools/scripts/migrate-db.js \
   --from postgresql://... \
   --to sqlite:/app/config/skymmich.db
 ```
+To avoid running the command manually inside the container, set the `AUTO_DB_MIGRATE_FROM` environment variable (and optional `AUTO_DB_MIGRATE_TO`) on the Skymmich service. The Docker startup script runs the migration before launching the app, deletes any existing SQLite target file (unless `AUTO_DB_MIGRATE_RESET_SQLITE=false`), and writes a marker to `/app/config/.auto-db-migrated` so it only happens once unless you delete that file or set `AUTO_DB_MIGRATE_ONCE=false`.
 
-The script handles all type conversions (timestamps, booleans, JSON, arrays) and respects foreign key ordering automatically.
+The script handles all type conversions (timestamps, booleans, JSON, arrays) and respects foreign key ordering automatically. SQLite targets run the bundled Drizzle migrations during the copy; PostgreSQL targets should be initialized once beforehand so the schema exists.
 
 ## Container Images
 

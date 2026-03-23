@@ -11,7 +11,7 @@
     "dev:frontend": "vite",
     "dev": "concurrently \"npm run dev:server:watch\" \"npm run dev:frontend\" \"npm run dev:worker\"",
     "build": "vite build && tsx tools/scripts/build.ts",
-    "build:docker": "npm run build && npm run copy-assets",
+    "build:docker": "vite build && npm run copy-assets && tsx tools/scripts/build.ts",
     "copy-assets": "cp -r tools dist/ && cp drizzle.config.ts dist/",
     "start": "NODE_ENV=production node dist/index.js",
     "start:worker": "NODE_ENV=production node dist/worker.js",
@@ -26,6 +26,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
+    "db:migrate": "node tools/scripts/migrate-db.js",
     "seed": "tsx tools/scripts/seed.ts",
     "seed:reset": "tsx tools/scripts/seed.ts --reset"
   },

@@ -17,6 +17,11 @@ services:
     environment:
       - NODE_ENV=production
       - XMP_SIDECAR_PATH=/app/sidecars
+      - AUTO_DB_MIGRATE_FROM=${AUTO_DB_MIGRATE_FROM:-}
+      - AUTO_DB_MIGRATE_TO=${AUTO_DB_MIGRATE_TO:-}
+      - AUTO_DB_MIGRATE_ONCE=${AUTO_DB_MIGRATE_ONCE:-true}
+      - AUTO_DB_MIGRATE_MARKER=${AUTO_DB_MIGRATE_MARKER:-/app/config/.auto-db-migrated}
+      - AUTO_DB_MIGRATE_RESET_SQLITE=${AUTO_DB_MIGRATE_RESET_SQLITE:-true}
     volumes:
       - skymmich-config:/app/config
       - skymmich-logs:/app/logs

@@ -11,7 +11,7 @@
   <Project>https://github.com/mstelz/skymmich</Project>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
-  <Date>2026-03-22</Date>
+  <Date>2026-03-23</Date>
   <Changes>
     ### v0.9.0
     - CHANGE: SQLite is now the default database — no external PostgreSQL required

@@ -1,5 +1,5 @@
 {
-  "version": "7",
+  "version": "8",
   "dialect": "sqlite",
   "entries": [
     {
@@ -56,6 +56,13 @@
       "version": "6",
       "when": 1773969073911,
       "tag": "0007_abandoned_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1773970000000,
+      "tag": "0008_add_target_name",
       "breakpoints": true
     }
   ]
