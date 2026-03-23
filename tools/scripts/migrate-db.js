@@ -267,11 +267,19 @@ function createSqliteConnection(path, options = {}) {
       return db.prepare(`SELECT * FROM "${table}" ORDER BY id`).all();
     },
 
-    async insertRows(table, rows) {
+    async insertRows(table, rows, sourceColumns) {
       if (rows.length === 0) return 0;
 
       // When inserting into SQLite, convert PG native types to SQLite equivalents.
-      // We don't need column metadata here — PG values carry their JS types.
+      // Most PG values carry their JS types (Date, boolean, Array, object) and can
+      // be converted without metadata. The exception is PG json columns: the driver
+      // auto-parses them, so a JSON string "hello" becomes the bare JS string hello,
+      // indistinguishable from a text column. Drizzle's json-mode text columns
+      // expect valid JSON text, so we need source column info to re-stringify them.
+      const jsonCols = new Set(
+        (sourceColumns || []).filter(c => c.type === 'json').map(c => c.name)
+      );
+
       const colNames = Object.keys(rows[0]);
       const placeholders = colNames.map(() => '?').join(', ');
       const stmt = db.prepare(`INSERT INTO "${table}" (${colNames.join(', ')}) VALUES (${placeholders})`);
@@ -282,6 +290,10 @@ function createSqliteConnection(path, options = {}) {
           const values = colNames.map(col => {
             const val = row[col];
             if (val === null || val === undefined) return null;
+            // PG json → re-stringify so Drizzle's json-mode text columns can parse
+            if (jsonCols.has(col)) {
+              return JSON.stringify(val);
+            }
             // PG Date → Unix integer
             if (val instanceof Date) {
               return Math.floor(val.getTime() / 1000);
@@ -341,6 +353,7 @@ async function migrate(fromStr, toStr) {
     const sourceTables = await source.introspect();
     const targetTables = await target.introspect();
     const targetTableNames = new Set(targetTables.map(t => t.name));
+    const sourceColMap = new Map(sourceTables.map(t => [t.name, t.columns]));
     const targetColMap = new Map(targetTables.map(t => [t.name, t.columns]));
 
     // Only migrate tables that exist in both source and target
@@ -360,9 +373,11 @@ async function migrate(fromStr, toStr) {
           continue;
         }
 
-        // Use target column info for type conversions when inserting into PG
+        // PG→SQLite: pass source columns so SQLite can re-stringify json values
+        // SQLite→PG: pass target columns so PG can convert types back
+        const sourceCols = sourceColMap.get(table.name) || table.columns;
         const targetCols = targetColMap.get(table.name) || table.columns;
-        const inserted = await target.insertRows(table.name, rows, targetCols);
+        const inserted = await target.insertRows(table.name, rows, target.type === 'sqlite' ? sourceCols : targetCols);
         totalRows += inserted;
         tablesWithData++;
         console.log(`  ✓ ${table.name}: ${inserted} rows`);
