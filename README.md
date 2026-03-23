@@ -196,6 +196,31 @@ After startup, access the admin interface at `/admin` to configure:
 
 > **Tip**: Configuration via admin interface takes precedence over environment variables and persists across container restarts.
 
+## Database Migration
+
+Skymmich includes a bidirectional migration script for moving data between SQLite and PostgreSQL:
+
+```bash
+# PostgreSQL → SQLite
+npx tsx tools/scripts/migrate-db.ts \
+  --from postgresql://user:pass@host:5432/skymmich \
+  --to sqlite:path/to/skymmich.db
+
+# SQLite → PostgreSQL
+npx tsx tools/scripts/migrate-db.ts \
+  --from sqlite:path/to/local.db \
+  --to postgresql://user:pass@host:5432/skymmich
+```
+
+Inside a Docker container:
+```bash
+node /app/dist/tools/scripts/migrate-db.js \
+  --from postgresql://... \
+  --to sqlite:/app/config/skymmich.db
+```
+
+The script handles all type conversions (timestamps, booleans, JSON, arrays) and respects foreign key ordering automatically.
+
 ## Container Images
 
 Skymmich provides ready-to-use container images through GitHub Container Registry:
