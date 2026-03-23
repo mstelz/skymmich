@@ -17,6 +17,7 @@ import { AstrometrySection } from '@/components/admin/astrometry-section';
 import { SidecarSection } from '@/components/admin/sidecar-section';
 import { CatalogSection } from '@/components/admin/catalog-section';
 import { AppSettingsSection } from '@/components/admin/app-settings-section';
+import { DatabaseSection } from '@/components/admin/database-section';
 
 export interface ImmichAlbum {
   id: string;
@@ -319,6 +320,8 @@ export default function AdminPage() {
             catalogStatus={catalogStatus}
             refetchCatalogStatus={refetchCatalogStatus}
           />
+
+          <DatabaseSection />
 
           <AppSettingsSection
             settings={settings}

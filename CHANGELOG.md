@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.0] - 2026-03-22
 
+### Added
+- **Database Admin Section**: New admin panel section showing database engine, file size, and last modified timestamp. Includes a one-click backup download button for SQLite databases.
+- **Database Migration Script**: New `migrate-db` tool for migrating data between PostgreSQL and SQLite in either direction. Handles schema differences (timestamps, booleans, arrays, JSON) automatically.
+
 ### Changed
 - **Default Database**: SQLite is now the default database for all deployments including Docker and UnRAID. No external database setup required — data is stored in `/app/config/skymmich.db`.
 - **PostgreSQL Optional**: PostgreSQL remains fully supported as an optional external database. Use `docker-compose.postgres.yml` as a compose override or set `DATABASE_URL` to enable it.
@@ -14,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UnRAID Template**: Removed PostgreSQL as a requirement. `DATABASE_URL` is now optional with an empty default.
 - **Dockerfile**: `better-sqlite3` is now included in the production image for built-in SQLite support.
 - **SQLite Path**: Configurable via `SQLITE_DB_PATH` env var, defaults to `/app/config/skymmich.db` in production and `local.db` in development.
+- **XMP Sidecar**: Marked as experimental in documentation — feature is under active development and may not work as intended in all configurations.
 
 ### Fixed
 - **Tag Filtering**: Image tag filtering now works on both SQLite (using `json_each`) and PostgreSQL (using native array overlap). Previously only PostgreSQL was supported.

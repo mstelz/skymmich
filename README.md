@@ -35,7 +35,8 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 - **Interactive Sky Map**: Explore your collection on a high-fidelity celestial atlas powered by Aladin Lite v3
 - **Astrophotography Filtering**: Filter by telescopes, cameras, targets, constellations, and acquisition details
 - **Deep Zoom Viewer**: High-resolution exploration of your deep-sky images with OpenSeaDragon
-- **Metadata Preservation**: Automatic EXIF and XMP sidecar handling for astrophotography workflows
+- **Metadata Preservation**: Automatic EXIF handling for astrophotography workflows
+  > **Note**: XMP sidecar generation is currently experimental and may not work as intended in all configurations. This feature is under active development.
 - **Zero Duplication**: View images directly from Immich without storage overhead
 
 ### **Plate Solving**
@@ -158,6 +159,7 @@ npm run dev:worker:standalone
 - **Docker**: 20.10+ (for containerized deployment)
 - **Database**: Built-in SQLite (default, no setup required). PostgreSQL 15+ optionally supported.
   - Automatic schema management with Drizzle ORM
+  - Migration script included for moving data between SQLite and PostgreSQL (see [Docker docs](docker/README.md#migrating-between-sqlite-and-postgresql))
 
 ### Development Requirements
 - **Node.js**: 20+ (for building from source)
@@ -388,10 +390,15 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [x] XMP sidecar generation for astrophotography metadata
 - [ ] XMP sidecar viewer and editor for astrophotography metadata
 
+### Integrations
+- [ ] **NINA Plugin**: Sync session data (targets, equipment, acquisition details) directly from N.I.N.A. to Skymmich
+- [ ] **Local Plate Solving**: Integration with local solvers (ASTAP, PixInsight) for offline solving without Astrometry.net
+
 ### Advanced Features
 - [ ] Advanced search and filtering with saved queries
 - [ ] Bulk image processing workflows and batch operations
-- [ ] Advanced plate solving with local solvers (ASTAP, PixInsight integration)
+- [ ] View saved/tagged targets on the Sky Map
+- [ ] Raw data and calibration frame management
 - [ ] Mobile app companion for field use
 - [ ] Community features (sharing, public galleries)
 

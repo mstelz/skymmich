@@ -6,6 +6,8 @@ import { workerManager } from '../services/worker-manager';
 import { astrometryService } from '../services/astrometry';
 import { filterRelevantTags } from '../services/tags-utils';
 import { handleRouteError } from './route-utils';
+import { isPostgres, sqliteDbPath } from '../db';
+import { stat, readFile } from 'node:fs/promises';
 import type { WsManager } from '../services/ws-manager';
 
 function maskApiKey(key: string): string {
@@ -223,6 +225,55 @@ export default function systemRoutes(wsManager?: WsManager) {
       return c.json(jobs);
     } catch (error) {
       return handleRouteError(c, error, 'Failed to get cron jobs');
+    }
+  });
+
+  // Database info (type, size, path)
+  app.get('/admin/database', async (c) => {
+    try {
+      const dbType = isPostgres ? 'postgresql' : 'sqlite';
+      const info: Record<string, unknown> = { type: dbType };
+
+      if (!isPostgres && sqliteDbPath) {
+        info.path = sqliteDbPath;
+        try {
+          const stats = await stat(sqliteDbPath);
+          info.sizeBytes = stats.size;
+          info.lastModified = stats.mtime.toISOString();
+        } catch {
+          info.sizeBytes = 0;
+        }
+      }
+
+      return c.json(info);
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to get database info');
+    }
+  });
+
+  // Download SQLite database backup
+  app.get('/admin/database/backup', async (c) => {
+    try {
+      if (isPostgres) {
+        return c.json({ message: 'Backup download is only available for SQLite databases. Use pg_dump for PostgreSQL.' }, 400);
+      }
+      if (!sqliteDbPath) {
+        return c.json({ message: 'SQLite database path not configured' }, 500);
+      }
+
+      const dbBuffer = await readFile(sqliteDbPath);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `skymmich-backup-${timestamp}.db`;
+
+      return new Response(dbBuffer, {
+        headers: {
+          'Content-Type': 'application/x-sqlite3',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Length': String(dbBuffer.length),
+        },
+      });
+    } catch (error) {
+      return handleRouteError(c, error, 'Failed to create database backup');
     }
   });
 

@@ -6,6 +6,7 @@ import * as pgSchema from '@shared/db/pg-schema';
 let db: any;
 let schema: any;
 let initialized = false;
+let sqliteDbPath: string | null = null;
 export const isPostgres = !!process.env.DATABASE_URL;
 
 async function initializeDatabase() {
@@ -31,6 +32,7 @@ async function initializeDatabase() {
       const Database = (await import('better-sqlite3')).default;
       const sqliteSchema = await import('@shared/db/sqlite-schema');
 
+      sqliteDbPath = dbPath;
       const sqlite = new Database(dbPath);
       schema = sqliteSchema;
       db = sqliteDrizzle(sqlite, { schema });
@@ -56,4 +58,4 @@ async function initializeDatabase() {
 // Initialize immediately
 await initializeDatabase();
 
-export { db, schema };
+export { db, schema, sqliteDbPath };

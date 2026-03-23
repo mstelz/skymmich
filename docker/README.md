@@ -140,6 +140,55 @@ docker exec skymmich-db pg_dump -U skymmich skymmich > backup.sql
 docker exec -i skymmich-db psql -U skymmich skymmich < backup.sql
 ```
 
+## Migrating Between SQLite and PostgreSQL
+
+A migration script is included for moving data between database engines in either direction.
+
+**Important:** The target database must already have its schema created. Start the application once against the target database to initialize the schema before running the migration.
+
+### PostgreSQL → SQLite (switching to the new default)
+```bash
+# Stop the application first
+docker compose down
+
+# Run migration inside the container
+docker run --rm \
+  -v skymmich-config:/app/config \
+  --network skymmich-network \
+  ghcr.io/mstelz/skymmich:latest \
+  node /app/dist/tools/scripts/migrate-db.js \
+    --from postgresql://skymmich:password@skymmich-db:5432/skymmich \
+    --to sqlite:/app/config/skymmich.db
+
+# Then start with the default compose (no PostgreSQL)
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### SQLite → PostgreSQL
+```bash
+# Stop the application first
+docker compose down
+
+# Run migration inside the container
+docker run --rm \
+  -v skymmich-config:/app/config \
+  --network skymmich-network \
+  ghcr.io/mstelz/skymmich:latest \
+  node /app/dist/tools/scripts/migrate-db.js \
+    --from sqlite:/app/config/skymmich.db \
+    --to postgresql://skymmich:password@skymmich-db:5432/skymmich
+
+# Then start with the postgres override
+docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up -d
+```
+
+### Local Development
+```bash
+npx tsx tools/scripts/migrate-db.ts \
+  --from sqlite:local.db \
+  --to postgresql://skymmich:password@localhost:5432/skymmich
+```
+
 ## Troubleshooting
 
 ### Container Won't Start
