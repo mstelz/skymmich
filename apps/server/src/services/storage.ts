@@ -1,4 +1,4 @@
-import { db, schema } from '../db';
+import { db, schema, isPostgres } from '../db';
 import { eq, and, inArray, lte, desc, sql } from 'drizzle-orm';
 import { like, or } from 'drizzle-orm';
 import type { AstroImage, InsertAstroImage, Equipment, InsertEquipment, ImageEquipment, InsertImageEquipment, PlateSolvingJob, InsertPlateSolvingJob, EquipmentGroup, InsertEquipmentGroup, EquipmentGroupMember, InsertEquipmentGroupMember, Location, InsertLocation, ImageAcquisitionRow, InsertImageAcquisitionRow, CatalogObject, InsertCatalogObject, UserTarget } from "@shared/types";
@@ -20,9 +20,17 @@ class DbStorage {
         conditions.push(eq(schema.astrophotographyImages.constellation, filters.constellation));
       }
       if (filters.tags && filters.tags.length > 0) {
-        // Use SQL array overlap: image.tags && ARRAY[tag1, tag2, ...]
-        const tagArray = sql`ARRAY[${sql.join(filters.tags.map(t => sql`${t}`), sql`, `)}]::text[]`;
-        conditions.push(sql`${schema.astrophotographyImages.tags} && ${tagArray}`);
+        if (isPostgres) {
+          // PostgreSQL: native array overlap
+          const tagArray = sql`ARRAY[${sql.join(filters.tags.map(t => sql`${t}`), sql`, `)}]::text[]`;
+          conditions.push(sql`${schema.astrophotographyImages.tags} && ${tagArray}`);
+        } else {
+          // SQLite: tags stored as JSON array, check each tag with json_each
+          const tagConditions = filters.tags.map(tag =>
+            sql`EXISTS (SELECT 1 FROM json_each(${schema.astrophotographyImages.tags}) WHERE value = ${tag})`
+          );
+          conditions.push(or(...tagConditions)!);
+        }
       }
       if (filters.equipmentId) {
         // Use a subquery instead of loading all image_equipment rows into memory

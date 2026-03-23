@@ -35,7 +35,8 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 - **Interactive Sky Map**: Explore your collection on a high-fidelity celestial atlas powered by Aladin Lite v3
 - **Astrophotography Filtering**: Filter by telescopes, cameras, targets, constellations, and acquisition details
 - **Deep Zoom Viewer**: High-resolution exploration of your deep-sky images with OpenSeaDragon
-- **Metadata Preservation**: Automatic EXIF and XMP sidecar handling for astrophotography workflows
+- **Metadata Preservation**: Automatic EXIF handling for astrophotography workflows
+  > **Note**: XMP sidecar generation is currently experimental and may not work as intended in all configurations. This feature is under active development.
 - **Zero Duplication**: View images directly from Immich without storage overhead
 
 ### **Plate Solving**
@@ -58,7 +59,7 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 ### **Security & Deployment**
 - **Docker Ready**: Multi-stage containerization with health checks
 - **UnRAID Support**: Ready-to-use container templates
-- **Database Options**: PostgreSQL for production, SQLite for development
+- **Database Options**: Built-in SQLite (default), optional PostgreSQL support
 
 ## Quick Start
 
@@ -66,16 +67,13 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 
 ### Option 1: Docker Compose (Recommended)
 
-Complete production setup with PostgreSQL database:
+Single container setup with built-in SQLite database — no external database needed:
 
 ```bash
 # Download production compose file
 curl -o docker-compose.prod.yml https://raw.githubusercontent.com/mstelz/Skymmich/main/docker-compose.prod.yml
 
-# Configure environment (set your database password and API keys)
-# Edit docker-compose.prod.yml environment section with your settings
-
-# Start services (PostgreSQL + Skymmich from ghcr.io)
+# Start Skymmich
 docker compose -f docker-compose.prod.yml up -d
 
 # Access the application
@@ -83,35 +81,39 @@ open http://localhost:5000
 ```
 
 **What this includes:**
-- PostgreSQL 15 database with persistent storage
 - Skymmich application from GitHub Container Registry
+- Built-in SQLite database with persistent storage
 - Health checks and automatic restarts
-- Secure networking between containers
-- Volume mounts for configuration and logs
+- Volume mounts for configuration, logs, and database
+
+> **PostgreSQL option**: If you prefer PostgreSQL, download [`docker-compose.postgres.yml`](docker-compose.postgres.yml) and layer it on:
+> ```bash
+> echo "POSTGRES_PASSWORD=your_secure_password" > .env
+> docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up -d
+> ```
 
 ### Option 2: Docker Container
 
 Single container deployment using GitHub Container Registry:
 
-> **Database Required**: You'll need a running PostgreSQL database. If you don't have one, use Option 1 (Docker Compose) instead, which includes PostgreSQL automatically.
-
 ```bash
 # Pull the latest image
 docker pull ghcr.io/mstelz/skymmich:latest
 
-# Run with Docker (requires existing PostgreSQL)
+# Run with Docker (uses built-in SQLite database)
 docker run -d \
   --name skymmich \
   -p 5000:5000 \
   -e NODE_ENV=production \
-  -e DATABASE_URL="postgresql://user:password@your-postgres-host:5432/skymmich" \
-  -e IMMICH_URL="http://your-immich-server:2283" \
-  -e IMMICH_API_KEY="your-immich-api-key" \
+  -v skymmich-config:/app/config \
+  -v skymmich-cache:/app/cache \
   ghcr.io/mstelz/skymmich:latest
 
 # Access the application
 open http://localhost:5000
 ```
+
+> To use PostgreSQL instead, add `-e DATABASE_URL="postgresql://user:password@host:5432/skymmich"` to the command above.
 
 ### Option 3: UnRAID Template
 
@@ -119,14 +121,11 @@ open http://localhost:5000
 
 For now, manual installation:
 
-1. **Install PostgreSQL**: Use any PostgreSQL template from Community Applications
-   - **Database Name**: `skymmich`
-   - **Username**: `skymmich`
-   - **Password**: Strong password (remember for step 2)
-   - **Container Name**: `postgres` (default)
-2. **Install Skymmich**: Use template URL `https://raw.githubusercontent.com/mstelz/Skymmich/main/docker/unraid-templates/skymmich.xml`
-3. **Configure**: Update DATABASE_URL with your PostgreSQL password and optional API keys
-4. **Access**: Navigate to `http://your-server:2284`
+1. **Install Skymmich**: Add container using template URL `https://raw.githubusercontent.com/mstelz/Skymmich/main/docker/unraid-templates/skymmich.xml`
+2. **Configure**: Optionally set Immich URL and API keys (can also be done via admin UI)
+3. **Access**: Navigate to `http://your-server:2284`
+
+> No external database needed — Skymmich uses a built-in SQLite database stored in the config directory. To use PostgreSQL instead, set the `DATABASE_URL` field in the template.
 
 ### Option 4: Development Setup
 
@@ -158,9 +157,9 @@ npm run dev:worker:standalone
 ### Core Requirements
 - **Immich Server**: Self-hosted photo management server (currently the only supported photo source)
 - **Docker**: 20.10+ (for containerized deployment)
-- **Database**: PostgreSQL 15+ (production) or SQLite (development/testing)
+- **Database**: Built-in SQLite (default, no setup required). PostgreSQL 15+ optionally supported.
   - Automatic schema management with Drizzle ORM
-  - Unified schema works across both database types
+  - Migration script included for moving data between SQLite and PostgreSQL (see [Docker docs](docker/README.md#migrating-between-sqlite-and-postgresql))
 
 ### Development Requirements
 - **Node.js**: 20+ (for building from source)
@@ -176,7 +175,7 @@ npm run dev:worker:standalone
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | _(auto)_ | PostgreSQL connection string |
+| `DATABASE_URL` | _(empty)_ | Optional PostgreSQL connection string. Leave empty to use built-in SQLite. |
 | `PORT` | `5000` | HTTP server port |
 | `NODE_ENV` | `development` | Application environment |
 | `IMMICH_URL` | _(optional)_ | Immich server base URL |
@@ -196,6 +195,32 @@ After startup, access the admin interface at `/admin` to configure:
 - **Sync Scheduling**: Automated Immich synchronization frequency
 
 > **Tip**: Configuration via admin interface takes precedence over environment variables and persists across container restarts.
+
+## Database Migration
+
+Skymmich includes a bidirectional migration script for moving data between SQLite and PostgreSQL:
+
+```bash
+# PostgreSQL → SQLite
+node tools/scripts/migrate-db.js \
+  --from postgresql://user:pass@host:5432/skymmich \
+  --to sqlite:path/to/skymmich.db
+
+# SQLite → PostgreSQL
+node tools/scripts/migrate-db.js \
+  --from sqlite:path/to/local.db \
+  --to postgresql://user:pass@host:5432/skymmich
+```
+
+Inside a Docker container:
+```bash
+node /app/dist/tools/scripts/migrate-db.js \
+  --from postgresql://... \
+  --to sqlite:/app/config/skymmich.db
+```
+To avoid running the command manually inside the container, set the `AUTO_DB_MIGRATE_FROM` environment variable (and optional `AUTO_DB_MIGRATE_TO`) on the Skymmich service. The Docker startup script runs the migration before launching the app, deletes any existing SQLite target file (unless `AUTO_DB_MIGRATE_RESET_SQLITE=false`), and writes a marker to `/app/config/.auto-db-migrated` so it only happens once unless you delete that file or set `AUTO_DB_MIGRATE_ONCE=false`.
+
+The script handles all type conversions (timestamps, booleans, JSON, arrays) and respects foreign key ordering automatically. SQLite targets run the bundled Drizzle migrations during the copy; PostgreSQL targets should be initialized once beforehand so the schema exists.
 
 ## Container Images
 
@@ -221,25 +246,28 @@ All images are automatically built, tested, and scanned for vulnerabilities usin
 ## Architecture
 
 ```
-┌─────────────────────────────────────┐    ┌─────────────────────┐
-│        Skymmich Container           │    │   PostgreSQL        │
-├─────────────────────────────────────┤    │   Container         │
-│  Frontend (React + TypeScript)      │    ├─────────────────────┤
-│  ├─ Vite build system               │    │  Database Engine    │
-│  ├─ Tailwind CSS + shadcn/ui        │◄──►│  Data Storage       │
-│  └─ Real-time WebSocket client      │    │  Connection Pool    │
-├─────────────────────────────────────┤    │  Health Checks      │
-│  Backend (Hono + Node.js)           │    └─────────────────────┘
-│  ├─ RESTful API endpoints           │
-│  ├─ WebSocket server (ws)           │    ┌─────────────────────┐
-│  ├─ Image proxy & thumbnails        │    │   External APIs     │
-│  └─ Session management              │◄──►├─────────────────────┤
-├─────────────────────────────────────┤    │  Immich Server      │
-│  Worker Manager                     │    │  Astrometry.net     │
-│  ├─ Background job processing       │    │  Image Sources      │
-│  ├─ Plate solving automation        │    └─────────────────────┘
-│  ├─ Crash recovery & monitoring     │
+┌─────────────────────────────────────┐
+│        Skymmich Container           │
+├─────────────────────────────────────┤
+│  Frontend (React + TypeScript)      │
+│  ├─ Vite build system               │    ┌─────────────────────┐
+│  ├─ Tailwind CSS + shadcn/ui        │    │   External APIs     │
+│  └─ Real-time WebSocket client      │    ├─────────────────────┤
+├─────────────────────────────────────┤◄──►│  Immich Server      │
+│  Backend (Hono + Node.js)           │    │  Astrometry.net     │
+│  ├─ RESTful API endpoints           │    │  Image Sources      │
+│  ├─ WebSocket server (ws)           │    └─────────────────────┘
+│  ├─ Image proxy & thumbnails        │
+│  └─ Session management              │    ┌─────────────────────┐
+├─────────────────────────────────────┤    │  PostgreSQL         │
+│  Worker Manager                     │    │  (optional)         │
+│  ├─ Background job processing       │◄──►│  External database  │
+│  ├─ Plate solving automation        │    │  for advanced use   │
+│  ├─ Crash recovery & monitoring     │    └─────────────────────┘
 │  └─ Graceful shutdown handling      │
+├─────────────────────────────────────┤
+│  SQLite (built-in, default)         │
+│  └─ /app/config/skymmich.db         │
 └─────────────────────────────────────┘
 ```
 
@@ -321,9 +349,8 @@ npm run dev:worker:standalone    # Standalone worker (uses .env.worker)
 npm run build          # Build frontend and backend
 npm run build:docker   # Build with Docker assets
 
-# Docker development
-docker compose up -d skymmich-db  # Database only
-npm run dev                        # Local app + Docker DB
+# Docker development (uses SQLite by default)
+docker compose up -d               # Full stack via Docker
 ```
 
 ### Testing
@@ -389,10 +416,15 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - [x] XMP sidecar generation for astrophotography metadata
 - [ ] XMP sidecar viewer and editor for astrophotography metadata
 
+### Integrations
+- [ ] **NINA Plugin**: Sync session data (targets, equipment, acquisition details) directly from N.I.N.A. to Skymmich
+- [ ] **Local Plate Solving**: Integration with local solvers (ASTAP, PixInsight) for offline solving without Astrometry.net
+
 ### Advanced Features
 - [ ] Advanced search and filtering with saved queries
 - [ ] Bulk image processing workflows and batch operations
-- [ ] Advanced plate solving with local solvers (ASTAP, PixInsight integration)
+- [ ] View saved/tagged targets on the Sky Map
+- [ ] Raw data and calibration frame management
 - [ ] Mobile app companion for field use
 - [ ] Community features (sharing, public galleries)
 

@@ -9,19 +9,16 @@ This directory contains all the necessary files for deploying Skymmich using Doc
 ```bash
 git clone <your-repo-url>
 cd skymmich
-cp .env.example .env
-# Edit .env with your configuration
 docker compose up -d
 ```
 
-### 2. Environment Configuration
+No external database or `.env` file required — Skymmich uses a built-in SQLite database by default.
 
-⚠️ **SECURITY**: Copy `docker/.env.docker.example` to `.env` in the project root and configure:
+### 2. Environment Configuration (Optional)
+
+Copy `docker/.env.docker.example` to `.env` in the project root to customize:
 
 ```bash
-# Required: PostgreSQL password (use a strong, unique password)
-POSTGRES_PASSWORD=your_secure_password_here
-
 # Optional: Application configuration
 SKYMMICH_PORT=5000
 IMMICH_URL=http://your-immich-server:2283
@@ -33,38 +30,42 @@ PLATE_SOLVE_MAX_CONCURRENT=3
 
 **Note**: API keys can also be configured via the admin web interface after startup.
 
+### Using PostgreSQL Instead
+
+To use PostgreSQL instead of the built-in SQLite database, layer the postgres override:
+
+```bash
+echo "POSTGRES_PASSWORD=your_secure_password" > .env
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d
+```
+
 ## Files Overview
 
 ### Core Files
 - `Dockerfile` - Multi-stage build for Skymmich application
-- `docker-compose.yml` - Complete development/production setup
+- `docker-compose.yml` - Default setup (SQLite, single container)
+- `docker-compose.postgres.yml` - PostgreSQL override (layer on top)
 - `startup.sh` - Container entry point script
 - `.env.docker.example` - Docker environment variable template
 
 ### UnRAID Templates
 - `unraid-templates/skymmich.xml` - Main application template
-- `unraid-templates/skymmich-db.xml` - PostgreSQL database template
 
 ## UnRAID Installation
 
-### Step 1: Install Database
+### Step 1: Install Skymmich
 1. Go to Docker tab in UnRAID
 2. Click "Add Container"
-3. Use template URL: `https://raw.githubusercontent.com/mstelz/Skymmich/main/docker/unraid-templates/skymmich-db.xml`
-4. Set a strong database password
+3. Use template URL: `https://raw.githubusercontent.com/mstelz/Skymmich/main/docker/unraid-templates/skymmich.xml`
+4. Optionally add your Immich and Astrometry.net credentials
 5. Apply and start container
 
-### Step 2: Install Skymmich
-1. Click "Add Container" again
-2. Use template URL: `https://raw.githubusercontent.com/mstelz/Skymmich/main/docker/unraid-templates/skymmich.xml`
-3. Configure database URL with the password from Step 1
-4. Add your Immich and Astrometry.net credentials (optional)
-5. Apply and start container
-
-### Step 3: Access Application
-- Open web interface: `http://your-unraid-ip:5000`
+### Step 2: Access Application
+- Open web interface: `http://your-unraid-ip:2284`
 - Configure admin settings
 - Start syncing your astrophotography collection!
+
+> To use PostgreSQL instead of the default SQLite database, set the `DATABASE_URL` field in the template to your PostgreSQL connection string.
 
 ## Docker Compose Commands
 
@@ -80,92 +81,175 @@ docker compose down
 
 # Rebuild and restart
 docker compose up -d --build
-
-# Scale worker (if needed)
-docker compose up -d --scale skymmich=1
 ```
 
 ## Container Architecture
 
 ```
-┌─────────────────────────────────────┐    ┌─────────────────────┐
-│        Skymmich Container          │    │   PostgreSQL        │
-├─────────────────────────────────────┤    │   Container         │
-│  Frontend (React SPA)              │    ├─────────────────────┤
-│  Backend (Hono API)                │◄──►│  Database Engine    │
-│  Worker (Plate Solving)            │    │  Data Storage       │
-│  Real-time Updates (WebSocket)     │    │  Health Checks      │
+┌─────────────────────────────────────┐
+│        Skymmich Container           │
+├─────────────────────────────────────┤
+│  Frontend (React SPA)              │
+│  Backend (Hono API)                │
+│  Worker (Plate Solving)            │    ┌─────────────────────┐
+│  Real-time Updates (WebSocket)     │    │  PostgreSQL         │
+│  SQLite Database (built-in)        │◄──►│  (optional)         │
 └─────────────────────────────────────┘    └─────────────────────┘
 ```
 
 ## Health Monitoring
-
-Both containers include health checks:
 
 ### Skymmich Health Check
 - Endpoint: `http://localhost:5000/api/health`
 - Checks database connectivity and worker status
 - 30-second intervals with 40-second startup period
 
-### PostgreSQL Health Check
+### PostgreSQL Health Check (if using PostgreSQL)
 - Command: `pg_isready -U skymmich -d skymmich`
 - 10-second intervals with 30-second startup period
 
 ## Data Persistence
 
 ### Volumes
-- **Skymmich Config**: `/mnt/user/appdata/skymmich/config`
-- **PostgreSQL Data**: `/mnt/user/appdata/skymmich/database`
+- **Skymmich Config + Database**: `/app/config` (includes `skymmich.db` when using SQLite)
+- **Logs**: `/app/logs`
+- **Sidecars**: `/app/sidecars`
+- **Cache**: `/app/cache`
 
 ### Backup Strategy
+
+**SQLite (default):**
 ```bash
-# Backup database
-docker exec skymmich-db pg_dump -U skymmich skymmich > backup.sql
+# Backup database (just copy the file)
+docker cp skymmich:/app/config/skymmich.db ./skymmich-backup.db
 
 # Backup configuration
 tar -czf skymmich-config-backup.tar.gz /mnt/user/appdata/skymmich/config
 
 # Restore database
+docker cp ./skymmich-backup.db skymmich:/app/config/skymmich.db
+docker restart skymmich
+```
+
+**PostgreSQL (if using postgres override):**
+```bash
+# Backup database
+docker exec skymmich-db pg_dump -U skymmich skymmich > backup.sql
+
+# Restore database
 docker exec -i skymmich-db psql -U skymmich skymmich < backup.sql
 ```
+
+## Migrating Between SQLite and PostgreSQL
+
+A migration script is included for moving data between database engines in either direction.
+
+**Important:** SQLite targets automatically run the bundled Drizzle migrations during the copy. PostgreSQL targets must still have their schema created ahead of time (start Skymmich once with the postgres override so the tables exist).
+
+### PostgreSQL → SQLite (switching to the new default)
+```bash
+# Stop the application first
+docker compose down
+
+# Run migration inside the container
+docker run --rm \
+  -v skymmich-config:/app/config \
+  --network skymmich-network \
+  ghcr.io/mstelz/skymmich:latest \
+  node /app/dist/tools/scripts/migrate-db.js \
+    --from postgresql://skymmich:password@skymmich-db:5432/skymmich \
+    --to sqlite:/app/config/skymmich.db
+
+# Then start with the default compose (no PostgreSQL)
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### SQLite → PostgreSQL
+```bash
+# Stop the application first
+docker compose down
+
+# Run migration inside the container
+docker run --rm \
+  -v skymmich-config:/app/config \
+  --network skymmich-network \
+  ghcr.io/mstelz/skymmich:latest \
+  node /app/dist/tools/scripts/migrate-db.js \
+    --from sqlite:/app/config/skymmich.db \
+    --to postgresql://skymmich:password@skymmich-db:5432/skymmich
+
+# Then start with the postgres override
+docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up -d
+```
+
+### Local Development
+```bash
+node tools/scripts/migrate-db.js \
+  --from sqlite:local.db \
+  --to postgresql://skymmich:password@localhost:5432/skymmich
+```
+
+### Automatic Migration During Container Startup
+
+Set the `AUTO_DB_MIGRATE_FROM` environment variable on the Skymmich container to have the startup script run the migration automatically before the application boots. The target defaults to whichever database the container is configured to use (PostgreSQL when `DATABASE_URL` is set, otherwise the built-in SQLite database at `/app/config/skymmich.db`).
+
+Optional environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTO_DB_MIGRATE_FROM` | _(required)_ | Source connection string (e.g. `postgresql://...` or `sqlite:/app/config/skymmich.db`). |
+| `AUTO_DB_MIGRATE_TO` | auto-detected | Override the destination connection string. |
+| `AUTO_DB_MIGRATE_ONCE` | `true` | When `true`, the migration runs only the first time and writes a marker file. |
+| `AUTO_DB_MIGRATE_MARKER` | `/app/config/.auto-db-migrated` | Marker file path used when `AUTO_DB_MIGRATE_ONCE=true`. Remove this file to re-run the automatic migration. |
+| `AUTO_DB_MIGRATE_RESET_SQLITE` | `true` | When migrating into SQLite, delete the target DB file before copying data. Set to `false` to keep the existing file. |
+
+Examples:
+
+```bash
+# Migrate once from PostgreSQL back to the built-in SQLite database
+AUTO_DB_MIGRATE_FROM=postgresql://skymmich:password@skymmich-db:5432/skymmich \
+  docker compose -f docker-compose.prod.yml up -d
+
+# Migrate from SQLite to PostgreSQL before switching to the postgres override
+AUTO_DB_MIGRATE_FROM=sqlite:/app/config/skymmich.db \
+  DATABASE_URL=postgresql://skymmich:password@skymmich-db:5432/skymmich \
+  docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up -d
+```
+
+After the automatic migration completes the container continues starting normally. Remove the environment variable (or delete the marker file) once the data has been copied.
 
 ## Troubleshooting
 
 ### Container Won't Start
 1. Check logs: `docker compose logs skymmich`
-2. Verify database connectivity
-3. Check environment variables
-4. Ensure ports aren't in use
+2. Check environment variables
+3. Ensure ports aren't in use
+4. Verify volume permissions (check PUID/PGID settings)
 
 ### Worker Not Running
 1. Check environment variable: `ENABLE_PLATE_SOLVING=true`
 2. View worker status in health endpoint
 3. Check Astrometry.net API key configuration
 
-### Database Connection Issues
-1. Verify PostgreSQL container is running
-2. Check DATABASE_URL format
-3. Ensure network connectivity between containers
-4. Verify database credentials
+### Database Issues
+1. **SQLite**: Check that `/app/config` volume is mounted and writable
+2. **PostgreSQL**: Verify the PostgreSQL container is running and `DATABASE_URL` is correct
 
 ### Performance Issues
 1. Monitor container resources
 2. Adjust `PLATE_SOLVE_MAX_CONCURRENT` setting
 3. Check available disk space
-4. Review PostgreSQL configuration
 
 ## Security Considerations
 
-🔒 **Critical Security Notes:**
+**Critical Security Notes:**
 
-- **Change default PostgreSQL password** - Use a strong, unique password
 - **Secure API key storage** - Set via environment variables or admin interface
 - **No secrets in images** - Container images contain no embedded secrets
 - **Regular updates** - Keep containers updated with latest security patches
 - **Monitor access** - Review logs for unauthorized access attempts
-- **Production secrets** - Consider using Docker secrets or external secret management
-- **Network security** - PostgreSQL port is not exposed externally
 - **File permissions** - Containers run as non-root user (`skymmich`)
+- If using PostgreSQL: use a strong password and don't expose the PostgreSQL port externally
 
 **Environment Variables vs Admin Interface:**
 - Environment variables take precedence for initial configuration
@@ -177,11 +261,6 @@ docker exec -i skymmich-db psql -U skymmich skymmich < backup.sql
 For development with hot reload:
 
 ```bash
-# Start only database
-docker compose up -d skymmich-db
-
-# Run application locally
-npm run dev:all
+# Run application locally (uses SQLite by default)
+npm run dev
 ```
-
-This allows development with live database while maintaining local development workflow.

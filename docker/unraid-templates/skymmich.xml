@@ -11,8 +11,14 @@
   <Project>https://github.com/mstelz/skymmich</Project>
   <Beta>False</Beta>
   <Category>MediaApp:Photos MediaApp:Other Tools:</Category>
-  <Date>2026-03-20</Date>
+  <Date>2026-03-23</Date>
   <Changes>
+    ### v0.9.0
+    - CHANGE: SQLite is now the default database — no external PostgreSQL required
+    - CHANGE: PostgreSQL is optional (set DATABASE_URL to use it)
+    - CHANGE: Database stored in /app/config directory (persisted via Config Directory volume)
+    - FIX: Tag filtering now works on both SQLite and PostgreSQL
+
     ### v0.7.1
     - FIX: Automatic permission handling for /app/cache
     - CONFIG: Added /app/cache volume mapping to standard template
@@ -73,7 +79,7 @@
     Skymmich is a comprehensive astrophotography image management and analysis application that bridges the gap between your astrophotography sessions and organized digital asset management. It provides seamless integration with Immich for photo management, advanced plate solving through Astrometry.net, and detailed equipment tracking to help you organize and analyze your celestial captures.
   </Overview>
   
-  <Requires>PostgreSQL</Requires>
+  <Requires/>
   
   <Description>
     Skymmich is a comprehensive astrophotography image management and analysis application. It provides automatic synchronization with Immich, plate solving capabilities through Astrometry.net, equipment tracking, and detailed image metadata management. Perfect for organizing and analyzing your astrophotography collection.
@@ -90,7 +96,8 @@
     - Advanced plate solving configuration options
     
     Requirements:
-    - PostgreSQL database (REQUIRED - install any PostgreSQL template first with database name 'skymmich', username 'skymmich', and a strong password)
+    - No external database needed (built-in SQLite database, stored in /app/config)
+    - Optional: PostgreSQL for advanced deployments (set DATABASE_URL)
     - Optional: Immich server for photo management
     - Optional: Astrometry.net API key for plate solving
     
@@ -114,7 +121,7 @@
   
   <Config Name="WebUI Port" Target="5000" Default="2284" Mode="tcp" Description="Port for web interface" Type="Port" Display="always" Required="true" Mask="false">2284</Config>
   
-  <Config Name="Config Directory" Target="/app/config" Default="/mnt/user/appdata/skymmich/config" Mode="rw" Description="Configuration storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/skymmich/config</Config>
+  <Config Name="Config Directory" Target="/app/config" Default="/mnt/user/appdata/skymmich/config" Mode="rw" Description="Configuration and SQLite database storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/skymmich/config</Config>
   
   <Config Name="Logs Directory" Target="/app/logs" Default="/mnt/user/appdata/skymmich/logs" Mode="rw" Description="Application logs storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/skymmich/logs</Config>
   
@@ -124,7 +131,7 @@
   
   <Config Name="XMP Sidecar Path" Target="XMP_SIDECAR_PATH" Default="/app/sidecars" Mode="" Description="Directory for XMP sidecar files" Type="Variable" Display="advanced" Required="false" Mask="false">/app/sidecars</Config>
   
-  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://skymmich:CHANGE_ME@postgres:5432/skymmich" Mode="" Description="PostgreSQL connection string (ensure PostgreSQL container is installed first)" Type="Variable" Display="always" Required="true" Mask="false">postgresql://skymmich:CHANGE_ME@postgres:5432/skymmich</Config>
+  <Config Name="Database URL" Target="DATABASE_URL" Default="" Mode="" Description="Leave empty to use built-in SQLite database. Set to a PostgreSQL connection string for external database support (e.g., postgresql://skymmich:password@postgres:5432/skymmich)" Type="Variable" Display="always" Required="false" Mask="false"></Config>
   
   <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Application environment" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
   
