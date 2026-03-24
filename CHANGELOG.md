@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0] - 2026-03-23
 
 ### Added
+- **Sky Map Equipment FOV Overlay**: Select telescope and camera from the sky map to display a real-time field-of-view rectangle overlay, calculated from focal length, pixel size, and sensor resolution. Includes a toggle to show/hide the FOV and displays which equipment specs are missing when the overlay can't be computed.
+- **Sky Map UI Improvements**: Repositioned Aladin Lite controls — coordinates and zoom in bottom-left, overlays menu in bottom-right, telescope/camera selectors in top-left. Added fullscreen support with responsive control placement.
 - **Database Admin Section**: New admin panel section showing database engine, file size, and last modified timestamp. Includes a one-click backup download button for SQLite databases.
 - **Database Migration Script**: New `migrate-db` tool for migrating data between PostgreSQL and SQLite in either direction. Discovers tables and column types dynamically from database metadata — no manual updates needed when the schema changes. SQLite targets automatically run Drizzle migrations to ensure the schema exists.
 - **Auto-Migration on Startup**: Set `AUTO_DB_MIGRATE_FROM` environment variable to automatically migrate data during Docker container startup. Supports one-time migration with a marker file, optional SQLite reset, and credential masking in logs.
