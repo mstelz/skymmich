@@ -36,8 +36,19 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 - **Astrophotography Filtering**: Filter by telescopes, cameras, targets, constellations, and acquisition details
 - **Deep Zoom Viewer**: High-resolution exploration of your deep-sky images with OpenSeaDragon
 - **Metadata Preservation**: Automatic EXIF handling for astrophotography workflows
-  > **Note**: XMP sidecar generation is currently experimental and may not work as intended in all configurations. This feature is under active development.
+  > **Note**: XMP sidecar generation is currently experimental and may not work as intended in all configurations. Configure `IMMICH_MAPPING_PATH` and `LOCAL_MAPPING_PATH` environment variables to map Immich volume paths to local paths for sidecar file placement.
 - **Zero Duplication**: View images directly from Immich without storage overhead
+- **Location Editing**: Save and reuse observing sites with map picker; coordinate changes sync back to the original Immich asset automatically
+
+### **DSO Catalog & Target Tracking**
+- **Built-in OpenNGC Catalog**: Browse, search, and filter thousands of deep-sky objects by type, constellation, magnitude, and angular size
+- **DSS Thumbnails**: Cached Digitized Sky Survey preview images for catalog objects
+- **Target Wishlists**: Annotate catalog objects with personal notes and tags on the Targets page
+- **Target Backfill**: Automatically match plate-solved images to catalog objects via the admin panel
+
+### **Acquisition Logging**
+- **Per-Filter Tracking**: Record exposure details per filter including frame count, exposure time, gain, offset, binning, and sensor temperature
+- **Integration Summary**: Automatic calculation of total frames, total integration time, and filter breakdown per image
 
 ### **Plate Solving**
 - **Astrometry.net Integration**: Automatic coordinate solving for your images
@@ -49,12 +60,20 @@ Perfect for organizing, analyzing, and showcasing your astrophotography collecti
 ### **Astrophotography Equipment Tracking**
 - **Telescope Catalog**: Manage your telescopes, mounts, and accessories with specifications
 - **Camera Database**: Track sensors, filters, and imaging configurations specific to astrophotography
+- **Equipment Groups**: Bundle equipment into reusable presets and apply them to images in one click
 - **Session Logging**: Automatic equipment association from EXIF metadata and manual tagging
 
 ### **Admin Interface**
 - **Configuration Management**: Secure API key and integration settings
-- **Sync Scheduling**: Configurable cron jobs for automated tasks
-- **Worker Control**: Enable/disable background processing for plate solving
+- **Automated Sync**: Cron jobs automatically sync images from Immich and clean up old notifications on a configurable schedule
+- **Worker Supervisor**: Background plate-solving workers automatically restart on failure with exponential backoff when Auto mode is enabled
+- **Database Backup**: One-click SQLite database download from the admin panel (PostgreSQL users should use `pg_dump`)
+- **Catalog Management**: Load, reload, and check for OpenNGC catalog updates; backfill target names for existing images
+
+### **Real-Time Notifications**
+- **Live Updates**: WebSocket-powered notifications for plate-solving results, Immich sync completions, and other events
+- **Manual Sync**: Trigger an Immich sync at any time from the header bar
+- **Notification Badge**: Unacknowledged notification count displayed in the navigation
 
 ### **Security & Deployment**
 - **Docker Ready**: Multi-stage containerization with health checks
