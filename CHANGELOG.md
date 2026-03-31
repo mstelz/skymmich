@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dev Dependencies**: Updated TypeScript to 6.0.2 and Vite to 8.0.3.
 - **GitHub Icon**: Replaced lucide-react `Github` icon (removed in v1.0) with inline SVG.
 - **TypeScript Config**: Added `ignoreDeprecations: "6.0"` for TypeScript 6.x `baseUrl` deprecation.
+- **CI**: Upgraded GitHub Actions workflows from Node 20 to Node 24.
 
 ### Security
 - **picomatch**: Override to >=4.0.4 to fix method injection vulnerability (GHSA).
