@@ -107,6 +107,7 @@ jobs:
           scan-type: 'image'
           hide-progress: false
           ignore-unfixed: true  # Ignore vulns in base image with no available fix
+          trivyignores: '.trivyignore'
 
       - name: Build and push Docker image (multi-arch)
         id: build
