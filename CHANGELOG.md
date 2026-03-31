@@ -5,6 +5,12 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-03-31
+
+### Changed
+- **Dependencies**: Updated production dependencies — @tanstack/react-query 5.95.2, drizzle-orm 0.45.2, hono 4.12.9, lucide-react 1.7.0, react-resizable-panels 4.8.0, recharts 3.8.1.
+- **Dev Dependencies**: Updated TypeScript to 6.0.2 and Vite to 8.0.3.
+
 ## [0.9.0] - 2026-03-23
 
 ### Added
