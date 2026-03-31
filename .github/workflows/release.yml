@@ -106,6 +106,7 @@ jobs:
           exit-code: '1'  # Fail the release on critical vulnerabilities
           scan-type: 'image'
           hide-progress: false
+          ignore-unfixed: true  # Ignore vulns in base image with no available fix
 
       - name: Build and push Docker image (multi-arch)
         id: build
