@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Dependencies**: Updated production dependencies — @tanstack/react-query 5.95.2, drizzle-orm 0.45.2, hono 4.12.9, lucide-react 1.7.0, react-resizable-panels 4.8.0, recharts 3.8.1.
 - **Dev Dependencies**: Updated TypeScript to 6.0.2 and Vite to 8.0.3.
+- **GitHub Icon**: Replaced lucide-react `Github` icon (removed in v1.0) with inline SVG.
+- **TypeScript Config**: Added `ignoreDeprecations: "6.0"` for TypeScript 6.x `baseUrl` deprecation.
+
+### Security
+- **picomatch**: Override to >=4.0.4 to fix method injection vulnerability (GHSA).
+- **brace-expansion**: Updated to fix zero-step sequence hang vulnerability.
 
 ## [0.9.0] - 2026-03-23
 
