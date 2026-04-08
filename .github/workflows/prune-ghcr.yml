@@ -5,28 +5,66 @@ on:
     - cron: '0 0 * * 0'  # Run weekly at midnight on Sunday
   workflow_dispatch:      # Allow manual trigger
 
+env:
+  PACKAGE_NAME: skymmich
+
 jobs:
   prune:
     runs-on: ubuntu-latest
     permissions:
       packages: write
-    
+
     steps:
       - name: Prune untagged images
         uses: actions/delete-package-versions@v5
         with:
-          package-name: 'skymmich'
+          package-name: ${{ env.PACKAGE_NAME }}
           package-type: 'container'
           min-versions-to-keep: 0
           delete-only-untagged-versions: 'true'
 
-      - name: Prune old timestamped and SHA tags
-        uses: actions/delete-package-versions@v5
+      - name: Prune old intermediate tags (keep releases, latest, main)
+        uses: actions/github-script@v7
         with:
-          package-name: 'skymmich'
-          package-type: 'container'
-          min-versions-to-keep: 10
-          # Keep all semver tags (v1.0.0, 1.0, 1), latest, and main
-          # Only prune sha-* and YYYYMMDD-HHmmss timestamp tags
-          ignore-versions: '^(v?[0-9]+(\.[0-9]+)*|latest|main)$'
-          delete-only-pre-release-versions: 'false'
+          script: |
+            const owner = context.repo.owner;
+            const packageName = process.env.PACKAGE_NAME;
+
+            // Protected tag patterns — never delete versions that carry these
+            const protectedPattern = /^(v?\d+(\.\d+)*|latest|main)$/;
+
+            // Fetch all versions (paginated)
+            const versions = await github.paginate(
+              github.rest.packages.getAllPackageVersionsForPackageOwnedByUser,
+              { package_type: 'container', package_name: packageName, username: owner, per_page: 100 }
+            );
+
+            // Partition into protected vs deletable
+            const deletable = [];
+            for (const v of versions) {
+              const tags = v.metadata?.container?.tags || [];
+              const hasProtectedTag = tags.some(t => protectedPattern.test(t));
+              if (hasProtectedTag) {
+                core.info(`KEEP  id=${v.id} tags=[${tags.join(', ')}]`);
+              } else {
+                deletable.push(v);
+              }
+            }
+
+            // Sort deletable by created_at descending, keep the 5 most recent
+            deletable.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const toKeep = 5;
+            const toDelete = deletable.slice(toKeep);
+
+            core.info(`Total versions: ${versions.length}, protected: ${versions.length - deletable.length}, deletable: ${deletable.length}, pruning: ${toDelete.length}`);
+
+            for (const v of toDelete) {
+              const tags = v.metadata?.container?.tags || [];
+              core.info(`DELETE id=${v.id} tags=[${tags.join(', ')}] created=${v.created_at}`);
+              await github.rest.packages.deletePackageVersionForUser({
+                package_type: 'container',
+                package_name: packageName,
+                username: owner,
+                package_version_id: v.id,
+              });
+            }
