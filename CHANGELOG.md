@@ -5,6 +5,13 @@ All notable changes to Skymmich will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-04-08
+
+### Security
+- **hono**: Updated to 4.12.12 to fix cookie name validation bypass, IP matching in ipRestriction(), path traversal in toSSG(), and middleware bypass via repeated slashes in serveStatic.
+- **@hono/node-server**: Updated to 1.19.13 to fix middleware bypass via repeated slashes in serveStatic.
+- **vite**: Updated to 8.0.5 to fix path traversal in optimized deps, `server.fs.deny` bypass, and arbitrary file read via WebSocket.
+
 ## [0.9.1] - 2026-03-31
 
 ### Changed

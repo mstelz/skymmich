@@ -109,3 +109,6 @@ vite.config.ts.*
 *.bak
 *.backup
 *~
+
+# Skills
+.claude
